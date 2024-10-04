@@ -1,0 +1,10 @@
+# macOS
+.DS_Store
+
+# VSCode
+.vscode
+
+# php
+composer.phar
+vendor/
+composer.lock
