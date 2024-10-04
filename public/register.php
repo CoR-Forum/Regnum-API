@@ -13,7 +13,7 @@ if (!$username || !$password || !$email) {
 
 $user = new User($pdo);
 if ($user->register($username, $password, $email)) {
-    echo json_encode(['message' => 'User registered successfully']);
+    echo json_encode(['message' => 'User registered successfully. Please check your email to activate your account.']);
 } else {
     echo json_encode(['message' => 'User registration failed']);
 }
