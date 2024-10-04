@@ -6,7 +6,7 @@ $username = $_GET['username'] ?? null;
 $licenseActivationToken = $_GET['token'] ?? null;
 
 if (!$username || !$licenseActivationToken) {
-    echo json_encode(['message' => 'Missing required ' . (!$username ? 'username, ' : '') . (!$licenseActivationToken ? 'license_key' : '')]);
+    echo json_encode(['status' => 'error', 'message' => 'Missing required ' . (!$username ? 'username, ' : '') . (!$licenseActivationToken ? 'license_key' : '')]);
     exit;
 }
 
@@ -16,7 +16,7 @@ $stmt->execute([$username]);
 $user = $stmt->fetch();
 
 if (!$user) {
-    echo json_encode(['message' => 'Invalid username']);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid username']);
     exit;
 }
 
@@ -24,7 +24,7 @@ $userId = $user['id'];
 
 $user = new User($pdo);
 if (!$user->isActivated($userId)) {
-    echo json_encode(['message' => 'User is not activated']);
+    echo json_encode(['status' => 'error', 'message' => 'User is not activated']);
     exit;
 }
 
@@ -34,12 +34,12 @@ $stmt->execute([$licenseActivationToken]);
 $license = $stmt->fetch();
 
 if (!$license) {
-    echo json_encode(['message' => 'Invalid activation key']);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid activation key']);
     exit;
 }
 
 if ($license['activated_by']) {
-    echo json_encode(['message' => 'Activation key already used']);
+    echo json_encode(['status' => 'error', 'message' => 'Activation key already used']);
     exit;
 }
 
@@ -51,5 +51,5 @@ $stmt->execute([$userId, $license['license_key'], $license['features']]);
 $stmt = $pdo->prepare('UPDATE license_activation_keys SET activated_by = ? WHERE activation_key = ?');
 $stmt->execute([$userId, $licenseActivationToken]);
 
-echo json_encode(['message' => 'Activation key used successfully']);
+echo json_encode(['status' => 'success', 'message' => 'Activation key used successfully']);
 ?>
