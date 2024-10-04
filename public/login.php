@@ -7,8 +7,21 @@ $password = $_GET['password'] ?? null;
 
 $user = new User($pdo);
 if ($user = $user->login($username, $password)) {
-    echo json_encode(['message' => 'Login successful', 'user' => $user]);
+    // Fetch the license details for the user
+    $stmt = $pdo->prepare('SELECT license_key, licensed_features, expires_at FROM licenses WHERE user_id = ?');
+    $stmt->execute([$user['id']]);
+    $license = $stmt->fetch();
+    
+    echo json_encode([
+        'status' => 'success',
+        'message' => 'Login successful',
+        'user' => $user['username'],
+        'email' => $user['email'],
+        'license_key' => $license['license_key'] ?? null,
+        'licensed_features' => $license['licensed_features'] ?? null,
+        'expires_at' => $license['expires_at'] ?? null
+    ]);
 } else {
-    echo json_encode(['message' => 'Login failed']);
+    echo json_encode(['status' => 'error', 'message' => 'Login failed']);
 }
 ?>
