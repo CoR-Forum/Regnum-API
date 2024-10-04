@@ -12,13 +12,16 @@ if ($user = $user->login($username, $password)) {
     $stmt->execute([$user['id']]);
     $license = $stmt->fetch();
     
+    // Decode the licensed_features JSON string
+    $licensed_features = json_decode($license['licensed_features'], true);
+
     echo json_encode([
         'status' => 'success',
         'message' => 'Login successful',
         'user' => $user['username'],
         'email' => $user['email'],
         'license_key' => $license['license_key'] ?? null,
-        'licensed_features' => $license['licensed_features'] ?? null,
+        'licensed_features' => $licensed_features ?? null,
         'expires_at' => $license['expires_at'] ?? null
     ]);
 } else {
