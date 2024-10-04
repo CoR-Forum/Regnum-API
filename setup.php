@@ -25,18 +25,39 @@ try {
         echo "Column 'activation_token' already exists in table 'users'.";
     }
 
-    // Add is_active column if it doesn't exist
-    $result = $pdo->query("SHOW COLUMNS FROM users LIKE 'is_active'");
-    $exists = $result->rowCount() > 0;
-    if (!$exists) {
-        $pdo->exec("ALTER TABLE users ADD is_active TINYINT(1) DEFAULT 0");
-        echo "Column 'is_active' added to table 'users'.";
-    } else {
-        echo "Column 'is_active' already exists in table 'users'.";
-    }
+    // Create license_activation_keys table if it doesn't exist
+    $sql = "
+    CREATE TABLE IF NOT EXISTS license_activation_keys (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        license_key VARCHAR(255) NOT NULL UNIQUE,
+        activation_key VARCHAR(255) NOT NULL UNIQUE,
+        activated_by INT DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP DEFAULT NULL,
+        features TEXT,
+        FOREIGN KEY (activated_by) REFERENCES users(id)
+    )";
+    $pdo->exec($sql);
 
+    // insert default license activation key
+    $stmt = $pdo->prepare('INSERT INTO license_activation_keys (license_key, activation_key, features) VALUES (?, ?, ?)');
+    $stmt->execute(['igh4ieg6eigahX0oe7vo1fuaz9ic2f', 'po9Hohthohsheith4Cohbodiel7rae', '["zoom", "speedhack"]']);
 
-    echo "Database and table 'users' created/updated successfully.";
+    // Create licenses table if it doesn't exist
+    $sql = "
+    CREATE TABLE IF NOT EXISTS licenses (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        license_key VARCHAR(255) NOT NULL,
+        licensed_features TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP DEFAULT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (license_key) REFERENCES license_activation_keys(license_key)
+    )";
+    $pdo->exec($sql);
+
+    echo "Database and tables 'users', 'licenses', and 'license_activation_keys' created/updated successfully.";
 } catch (\PDOException $e) {
     echo "Error: " . $e->getMessage();
 }

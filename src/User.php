@@ -24,6 +24,12 @@ class User {
         $this->emailLinkDomain = $emailLinkDomain;
     }
 
+    public function isActivated($userId) {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = ? AND is_active = 1');
+        $stmt->execute([$userId]);
+        return $stmt->fetch() !== false;
+    }
+
     public function register($username, $password, $email) {
         $hash = password_hash($password, PASSWORD_BCRYPT);
         $token = bin2hex(random_bytes(16));
