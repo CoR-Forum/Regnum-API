@@ -3,8 +3,12 @@
 
 # VSCode
 .vscode
+fiveserver.config.js
 
 # php
 composer.phar
 vendor/
 composer.lock
+
+# config
+config/config.php
