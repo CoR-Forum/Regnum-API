@@ -20,16 +20,20 @@ if (!$license) {
 
 // Check if the license is expired
 $currentDate = new DateTime();
-$expiresAt = new DateTime($license['expires_at']);
-
-if ($expiresAt < $currentDate) {
-    echo json_encode(['status' => 'error', 'message' => 'License key expired']);
-    exit;
+if ($license['expires_at'] !== null) {
+    $expiresAt = new DateTime($license['expires_at']);
+    if ($expiresAt < $currentDate) {
+        echo json_encode(['status' => 'error', 'message' => 'License key expired']);
+        exit;
+    }
 }
+
+// Decode licensed_features
+$licensedFeatures = json_decode($license['licensed_features'], true);
 
 echo json_encode([
     'status' => 'success',
-    'licensed_features' => $license['licensed_features'],
+    'licensed_features' => $licensedFeatures,
     'expires_at' => $license['expires_at']
 ]);
 ?>
