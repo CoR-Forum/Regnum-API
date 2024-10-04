@@ -2,12 +2,17 @@
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/User.php';
 
-$data = json_decode(file_get_contents('php://input'), true);
-$username = $data['username'];
-$password = $data['password'];
+$username = $_GET['username'] ?? null;
+$password = $_GET['password'] ?? null;
+$email = $_GET['email'] ?? null;
+
+if (!$username || !$password || !$email) {
+    echo json_encode(['message' => 'Missing required ' . (!$username ? 'username, ' : '') . (!$password ? 'password, ' : '') . (!$email ? 'email' : '')]);
+    exit;
+}
 
 $user = new User($pdo);
-if ($user->register($username, $password)) {
+if ($user->register($username, $password, $email)) {
     echo json_encode(['message' => 'User registered successfully']);
 } else {
     echo json_encode(['message' => 'User registration failed']);

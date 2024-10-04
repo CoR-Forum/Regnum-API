@@ -2,9 +2,8 @@
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/User.php';
 
-$data = json_decode(file_get_contents('php://input'), true);
-$username = $data['username'];
-$password = $data['password'];
+$username = $_GET['username'] ?? null;
+$password = $_GET['password'] ?? null;
 
 $user = new User($pdo);
 if ($user = $user->login($username, $password)) {
