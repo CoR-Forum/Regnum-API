@@ -3,9 +3,9 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/User.php';
 require_once __DIR__ . '/../src/License.php';
 $username = $_GET['username'] ?? null;
-$licenseActivationToken = $_GET['token'] ?? null;
-if (!$username || !$licenseActivationToken) {
-    echo json_encode(['status' => 'error', 'message' => 'Missing required ' . (!$username ? 'username, ' : '') . (!$licenseActivationToken ? 'license_key' : '')]);
+$licenseKey = $_GET['key'] ?? null;
+if (!$username || !$licenseKey) {
+    echo json_encode(['status' => 'error', 'message' => 'Missing required ' . (!$username ? 'username, ' : '') . (!$licenseKey ? 'license_key' : '')]);
     exit;
 }
 // Fetch userId based on username
@@ -23,6 +23,6 @@ if (!$user->isActivated($userId)) {
     exit;
 }
 $license = new License($pdo);
-$result = $license->activateLicense($userId, $licenseActivationToken);
+$result = $license->activateLicense($userId, $licenseKey);
 echo json_encode($result);
 ?>
