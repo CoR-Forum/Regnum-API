@@ -8,7 +8,7 @@ $password = $_GET['password'] ?? null;
 $user = new User($pdo);
 if ($user = $user->login($username, $password)) {
     // Fetch the license details for the user
-    $stmt = $pdo->prepare('SELECT license_key, licensed_features, expires_at FROM licenses WHERE user_id = ?');
+    $stmt = $pdo->prepare('SELECT license_key, licensed_features, expires_at FROM active_licenses WHERE user_id = ?');
     $stmt->execute([$user['id']]);
     $license = $stmt->fetch();
     

@@ -25,9 +25,9 @@ try {
         echo "Column 'activation_token' already exists in table 'users'.";
     }
 
-    // Create license_activation_keys table if it doesn't exist
+    // Create licenses table if it doesn't exist
     $sql = "
-    CREATE TABLE IF NOT EXISTS license_activation_keys (
+    CREATE TABLE IF NOT EXISTS licenses (
         id INT AUTO_INCREMENT PRIMARY KEY,
         license_key VARCHAR(255) NOT NULL UNIQUE,
         activation_key VARCHAR(255) NOT NULL UNIQUE,
@@ -41,15 +41,15 @@ try {
 
     // insert default license activation key
     try {
-        $stmt = $pdo->prepare('INSERT INTO license_activation_keys (license_key, activation_key, features) VALUES (?, ?, ?)');
+        $stmt = $pdo->prepare('INSERT INTO licenses (license_key, activation_key, features) VALUES (?, ?, ?)');
         $stmt->execute(['igh4ieg6eigahX0oe7vo1fuaz9ic2f', 'po9Hohthohsheith4Cohbodiel7rae', '["zoom", "speedhack"]']);
     } catch (\PDOException $e) {
         echo "Error inserting default license activation key: " . $e->getMessage();
     }
 
-    // Create licenses table if it doesn't exist
+    // Create table for active licenses if it doesn't exist
     $sql = "
-    CREATE TABLE IF NOT EXISTS licenses (
+    CREATE TABLE IF NOT EXISTS active_licenses (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
         license_key VARCHAR(255) NOT NULL,
@@ -57,7 +57,7 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         expires_at TIMESTAMP DEFAULT NULL,
         FOREIGN KEY (user_id) REFERENCES users(id),
-        FOREIGN KEY (license_key) REFERENCES license_activation_keys(license_key)
+        FOREIGN KEY (license_key) REFERENCES licenses(license_key)
     )";
     $pdo->exec($sql);
 
@@ -71,7 +71,7 @@ try {
     )";
     $pdo->exec($sql);
 
-    echo "Database and tables 'users', 'licenses', and 'license_activation_keys' created/updated successfully.";
+    echo "Database and tables 'users', 'active_licenses', and 'licenses' created/updated successfully.";
 } catch (\PDOException $e) {
     echo "Error: " . $e->getMessage();
 }
