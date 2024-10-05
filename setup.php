@@ -57,7 +57,7 @@ try {
     )";
     $pdo->exec($sql);
 
-    echo "Database and tables 'users', 'active_licenses', and 'licenses' created/updated successfully.";
+    echo "Database and tables initialized successfully.";
 } catch (\PDOException $e) {
     echo "Error: " . $e->getMessage();
 }
