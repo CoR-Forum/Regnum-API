@@ -30,14 +30,25 @@ try {
     CREATE TABLE IF NOT EXISTS licenses (
         id INT AUTO_INCREMENT PRIMARY KEY,
         license_key VARCHAR(255) NOT NULL UNIQUE,
-        activation_key VARCHAR(255) NOT NULL UNIQUE,
         activated_by INT DEFAULT NULL,
+        activated_at TIMESTAMP DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         expires_at TIMESTAMP DEFAULT NULL,
         licensed_features TEXT,
         FOREIGN KEY (activated_by) REFERENCES users(id)
     )";
     $pdo->exec($sql);
+
+    // create activated_at column if it doesn't exist
+    $result = $pdo->query("SHOW COLUMNS FROM licenses LIKE 'activated_at'");
+    $exists = $result->rowCount() > 0;
+
+    if (!$exists) {
+        $pdo->exec("ALTER TABLE licenses ADD activated_at TIMESTAMP DEFAULT NULL");
+        echo "Column 'activated_at' added to table 'licenses'.";
+    } else {
+        echo "Column 'activated_at' already exists in table 'licenses'.";
+    }
 
     // insert default license activation key
     try {

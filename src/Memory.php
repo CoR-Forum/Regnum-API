@@ -5,7 +5,7 @@ class Memory {
         $this->pdo = $pdo;
     }
     public function getMemoryPointers($userId) {
-        $stmt = $this->pdo->prepare('SELECT licensed_features, expires_at FROM licenses WHERE activated_by = ?');
+        $stmt = $this->pdo->prepare('SELECT licensed_features, expires_at FROM licenses WHERE activated_by = ? ORDER BY activated_at DESC LIMIT 1');
         $stmt->execute([$userId]);
         $license = $stmt->fetch();
         if (!$license) {

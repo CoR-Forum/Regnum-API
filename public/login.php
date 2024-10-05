@@ -1,12 +1,14 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/User.php';
+
 $username = $_GET['username'] ?? null;
 $password = $_GET['password'] ?? null;
+
 $user = new User($pdo);
 if ($user = $user->login($username, $password)) {
-    // Fetch the license details for the user
-    $stmt = $pdo->prepare('SELECT license_key, licensed_features, expires_at FROM licenses WHERE activated_by = ?');
+    // Fetch the most recently activated license details for the user
+    $stmt = $pdo->prepare('SELECT license_key, licensed_features, expires_at FROM licenses WHERE activated_by = ? ORDER BY activated_at DESC LIMIT 1');
     $stmt->execute([$user['id']]);
     $license = $stmt->fetch();
     

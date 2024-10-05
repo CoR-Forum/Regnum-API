@@ -25,8 +25,8 @@ class License {
             return ['status' => 'error', 'message' => 'License key is expired'];
         }
         // Update the licenses table to mark the activation key as used and associate it with the user
-        $stmt = $this->pdo->prepare('UPDATE licenses SET activated_by = ? WHERE license_key = ?');
-        $stmt->execute([$userId, $licenseKey]);
+        $stmt = $this->pdo->prepare('UPDATE licenses SET activated_by = ?, activated_at = ? WHERE license_key = ?');
+        $stmt->execute([$userId, (new DateTime())->format('Y-m-d H:i:s'), $licenseKey]);
         return ['status' => 'success', 'message' => 'Activation key used successfully'];
     }
     public function fetchLicenseDetails($userId) {
