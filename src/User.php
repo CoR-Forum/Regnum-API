@@ -24,6 +24,12 @@ class User {
         $this->emailLinkDomain = $emailLinkDomain;
     }
 
+    public function userExists($username, $email) {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE username = ? OR email = ?');
+        $stmt->execute([$username, $email]);
+        return $stmt->fetch() !== false;
+    }
+    
     public function isActivated($userId) {
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = ? AND is_active = 1');
         $stmt->execute([$userId]);
