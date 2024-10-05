@@ -40,8 +40,12 @@ try {
     $pdo->exec($sql);
 
     // insert default license activation key
-    $stmt = $pdo->prepare('INSERT INTO license_activation_keys (license_key, activation_key, features) VALUES (?, ?, ?)');
-    $stmt->execute(['igh4ieg6eigahX0oe7vo1fuaz9ic2f', 'po9Hohthohsheith4Cohbodiel7rae', '["zoom", "speedhack"]']);
+    try {
+        $stmt = $pdo->prepare('INSERT INTO license_activation_keys (license_key, activation_key, features) VALUES (?, ?, ?)');
+        $stmt->execute(['igh4ieg6eigahX0oe7vo1fuaz9ic2f', 'po9Hohthohsheith4Cohbodiel7rae', '["zoom", "speedhack"]']);
+    } catch (\PDOException $e) {
+        echo "Error inserting default license activation key: " . $e->getMessage();
+    }
 
     // Create licenses table if it doesn't exist
     $sql = "
@@ -54,6 +58,16 @@ try {
         expires_at TIMESTAMP DEFAULT NULL,
         FOREIGN KEY (user_id) REFERENCES users(id),
         FOREIGN KEY (license_key) REFERENCES license_activation_keys(license_key)
+    )";
+    $pdo->exec($sql);
+
+    // create table for storing memory addresses and offsets
+    $sql = "
+    CREATE TABLE IF NOT EXISTS memory_pointers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        feature VARCHAR(255) NOT NULL,
+        address VARCHAR(255) NOT NULL,
+        offsets TEXT
     )";
     $pdo->exec($sql);
 
