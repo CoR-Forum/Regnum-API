@@ -1,17 +1,14 @@
 <?php
 class License {
     private $pdo;
-
     public function __construct($pdo) {
         $this->pdo = $pdo;
     }
-
     public function checkLicense($licenseKey) {
-        $stmt = $this->pdo->prepare('SELECT licensed_features, expires_at FROM active_licenses WHERE license_key = ?');
+        $stmt = $this->pdo->prepare('SELECT licensed_features, expires_at FROM licenses WHERE license_key = ?');
         $stmt->execute([$licenseKey]);
         return $stmt->fetch();
     }
-
     public function activateLicense($userId, $licenseActivationToken) {
         // Check the activation_key column for the licenseActivationToken
         $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE activation_key = ?');
@@ -23,20 +20,13 @@ class License {
         if ($license['activated_by']) {
             return ['status' => 'error', 'message' => 'Activation key already used'];
         }
-
-        // Insert a new record into the licenses table
-        $stmt = $this->pdo->prepare('INSERT INTO active_licenses (user_id, license_key, licensed_features) VALUES (?, ?, ?)');
-        $stmt->execute([$userId, $license['license_key'], $license['features']]);
-
-        // Update the licenses table to mark the activation key as used
-        $stmt = $this->pdo->prepare('UPDATE licenses SET activated_by = ? WHERE activation_key = ?');
-        $stmt->execute([$userId, $licenseActivationToken]);
-
+        // Update the licenses table to mark the activation key as used and associate it with the user
+        $stmt = $this->pdo->prepare('UPDATE licenses SET activated_by = ?, license_key = ?, licensed_features = ? WHERE activation_key = ?');
+        $stmt->execute([$userId, $license['license_key'], $license['features'], $licenseActivationToken]);
         return ['status' => 'success', 'message' => 'Activation key used successfully'];
     }
-
     public function fetchLicenseDetails($userId) {
-        $stmt = $this->pdo->prepare('SELECT license_key, licensed_features, expires_at FROM active_licenses WHERE user_id = ?');
+        $stmt = $this->pdo->prepare('SELECT license_key, licensed_features, expires_at FROM licenses WHERE activated_by = ?');
         $stmt->execute([$userId]);
         return $stmt->fetch();
     }

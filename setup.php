@@ -34,7 +34,7 @@ try {
         activated_by INT DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         expires_at TIMESTAMP DEFAULT NULL,
-        features TEXT,
+        licensed_features TEXT,
         FOREIGN KEY (activated_by) REFERENCES users(id)
     )";
     $pdo->exec($sql);
@@ -46,20 +46,6 @@ try {
     } catch (\PDOException $e) {
         echo "Error inserting default license activation key: " . $e->getMessage();
     }
-
-    // Create table for active licenses if it doesn't exist
-    $sql = "
-    CREATE TABLE IF NOT EXISTS active_licenses (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        license_key VARCHAR(255) NOT NULL,
-        licensed_features TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        expires_at TIMESTAMP DEFAULT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id),
-        FOREIGN KEY (license_key) REFERENCES licenses(license_key)
-    )";
-    $pdo->exec($sql);
 
     // create table for storing memory addresses and offsets
     $sql = "
