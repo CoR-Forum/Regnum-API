@@ -50,14 +50,16 @@ class User {
         $token = bin2hex(random_bytes(16));
         $stmt = $this->pdo->prepare('INSERT INTO users (username, password, email, activation_token) VALUES (?, ?, ?, ?)');
         if ($stmt->execute([$username, $hash, $email, $token])) {
-            $this->sendActivationEmail($email, $token);
+            $subject = 'Activate your account';
+            $body = "Click the link to activate your account: {$this->emailLinkDomain}activate.php?token=$token";
+            $this->sendEmailToUser($email, $subject, $body);
             return true;
         }
         return false;
     }
 
-    // Send an activation email to the user with the activation token
-    private function sendActivationEmail($email, $token) {
+    // General function to send an email to the user
+    private function sendEmailToUser($email, $subject, $body) {
         $mail = new PHPMailer(true);
         try {
             // Server settings
@@ -74,10 +76,9 @@ class User {
             $mail->addAddress($email);
 
             // Content
-            $domain = $this->emailLinkDomain;
             $mail->isHTML(true);
-            $mail->Subject = 'Activate your account';
-            $mail->Body    = "Click the link to activate your account: {$domain}activate.php?token=$token";
+            $mail->Subject = $subject;
+            $mail->Body    = $body;
 
             $mail->send();
         } catch (Exception $e) {
