@@ -99,5 +99,12 @@ class User {
         }
         return false;
     }
+
+    public function getUserId($username) {
+        $stmt = $this->pdo->prepare('SELECT id FROM users WHERE username = ?');
+        $stmt->execute([$username]);
+        $user = $stmt->fetch();
+        return $user['id'] ?? null;
+    }
 }
 ?>
