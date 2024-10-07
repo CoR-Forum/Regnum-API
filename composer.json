@@ -1,4 +1,6 @@
 {
+    "name": "sylent-x/sylent-x-api",
+    "description": "Sylent-X API",
     "require": {
         "phpmailer/phpmailer": "^6.9"
     }
