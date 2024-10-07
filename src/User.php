@@ -42,6 +42,13 @@ class User {
         return $stmt->fetch() !== false;
     }
 
+    // check if user is an admin
+    public function isAdmin($userId) {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = ? AND is_admin = 1');
+        $stmt->execute([$userId]);
+        return $stmt->fetch() !== false;
+    }
+
     // Register a new user with the given username, password, and email.
     // The password is hashed before storing it in the database.
     // An activation token is generated and sent to the user's email.

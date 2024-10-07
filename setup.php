@@ -11,33 +11,12 @@ try {
         email VARCHAR(100) NOT NULL,
         activation_token VARCHAR(255) DEFAULT NULL,
         is_active TINYINT(1) DEFAULT 0,
+        is_admin TINYINT(1) DEFAULT 0,
         shoutbox_banned TINYINT(1) DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )";
     $pdo->exec($sql);
-
-    // Add updated_at column if it doesn't exist
-    $result = $pdo->query("SHOW COLUMNS FROM users LIKE 'updated_at'");
-    $exists = $result->rowCount() > 0;
-
-    if (!$exists) {
-        $pdo->exec("ALTER TABLE users ADD updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
-        echo "Column 'updated_at' added to table 'users'.";
-    } else {
-        echo "Column 'updated_at' already exists in table 'users'.";
-    }
-
-    // add shoutbox_banned column if it doesn't exist
-    $result = $pdo->query("SHOW COLUMNS FROM users LIKE 'shoutbox_banned'");
-    $exists = $result->rowCount() > 0;
-
-    if (!$exists) {
-        $pdo->exec("ALTER TABLE users ADD shoutbox_banned TINYINT(1) DEFAULT 0");
-        echo "Column 'shoutbox_banned' added to table 'users'.";
-    } else {
-        echo "Column 'shoutbox_banned' already exists in table 'users'.";
-    }
 
     // Create licenses table if it doesn't exist
     $sql = "

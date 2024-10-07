@@ -23,6 +23,9 @@ if ($user = $user->login($username, $password)) {
     } elseif ($action === 'get') {
         $messages = $shoutbox->getMessages();
         echo json_encode(['status' => 'success', 'messages' => $messages]);
+    } elseif ($action === 'delete' && $message) {
+        $result = $shoutbox->deleteMessage($user['id'], $message);
+        echo json_encode($result);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Invalid action or missing message']);
     }
