@@ -37,3 +37,12 @@ jobs:
 
     # - name: Run test suite
     #   run: composer run-script test
+
+    - name: Deploy to webserver
+      uses: SamKirkland/FTP-Deploy-Action@4.1.0
+      with:
+        ftp-server: ${{ secrets.FTP_URI }}
+        ftp-username: ${{ secrets.FTP_USERNAME }}
+        ftp-password: ${{ secrets.FTP_PASSWORD }}
+        local-dir: ./ # Adjust this to your local directory to upload
+        git-ftp-args: --insecure # Optional: Use if you have SSL issues
