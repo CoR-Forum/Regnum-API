@@ -7,6 +7,10 @@ class Shoutbox {
     }
 
     public function addMessage($userId, $message) {
+        if ($this->isUserBanned($userId)) {
+            return ['status' => 'error', 'message' => 'User is banned from the shoutbox'];
+        }
+
         $stmt = $this->pdo->prepare('INSERT INTO shoutbox_messages (user_id, message, created_at) VALUES (?, ?, ?)');
         $stmt->execute([$userId, $message, (new DateTime())->format('Y-m-d H:i:s')]);
 
@@ -26,6 +30,13 @@ class Shoutbox {
         $stmt->bindValue(1, (int)$limit, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    private function isUserBanned($userId) {
+        $stmt = $this->pdo->prepare('SELECT shoutbox_banned FROM users WHERE id = ?');
+        $stmt->execute([$userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result && $result['shoutbox_banned'];
     }
 }
 ?>
