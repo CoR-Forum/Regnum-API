@@ -11,18 +11,20 @@ try {
         email VARCHAR(100) NOT NULL,
         activation_token VARCHAR(255) DEFAULT NULL,
         is_active TINYINT(1) DEFAULT 0,
+        is_banned TINYINT(1) DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )";
     $pdo->exec($sql);
 
-    // Add activation_token column if it doesn't exist
-    $result = $pdo->query("SHOW COLUMNS FROM users LIKE 'activation_token'");
+    // Add is_banned column if it doesn't exist
+    $result = $pdo->query("SHOW COLUMNS FROM users LIKE 'is_banned'");
     $exists = $result->rowCount() > 0;
+
     if (!$exists) {
-        $pdo->exec("ALTER TABLE users ADD activation_token VARCHAR(100) DEFAULT NULL");
-        echo "Column 'activation_token' added to table 'users'.";
+        $pdo->exec("ALTER TABLE users ADD is_banned TINYINT(1) DEFAULT 0");
+        echo "Column 'is_banned' added to table 'users'.";
     } else {
-        echo "Column 'activation_token' already exists in table 'users'.";
+        echo "Column 'is_banned' already exists in table 'users'.";
     }
 
     // Create licenses table if it doesn't exist

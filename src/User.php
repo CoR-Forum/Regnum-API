@@ -42,6 +42,13 @@ class User {
         return $stmt->fetch() !== false;
     }
 
+    // Check if the user is banned
+    public function isBanned($userId) {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = ? AND is_banned = 1');
+        $stmt->execute([$userId]);
+        return $stmt->fetch() !== false;
+    }
+
     // Register a new user with the given username, password, and email.
     // The password is hashed before storing it in the database.
     // An activation token is generated and sent to the user's email.
@@ -125,7 +132,7 @@ class User {
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE username = ?');
         $stmt->execute([$username]);
         $user = $stmt->fetch();
-        if ($user && password_verify($password, $user['password']) && $user['is_active']) {
+        if ($user && password_verify($password, $user['password']) && $this->isActivated($user['id']) && !$this->isBanned($user['id'])) {
             return $user;
         }
         return false;
