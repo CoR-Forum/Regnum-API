@@ -34,5 +34,12 @@ class License {
         $stmt->execute([$userId]);
         return $stmt->fetch();
     }
+
+    // function to get the last activated license for a user
+    public function getLastActivatedLicense($userId) {
+        $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE activated_by = ? ORDER BY activated_at DESC LIMIT 1');
+        $stmt->execute([$userId]);
+        return $stmt->fetch();
+    }
 }
 ?>
