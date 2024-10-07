@@ -59,6 +59,9 @@ class User {
     }
 
     // General function to send an email to the user
+    // using the PHPMailer library
+    // The email host, username, name, password, and port are set in the constructor
+    // The email is sent in HTML format with the given subject and body
     private function sendEmailToUser($email, $subject, $body) {
         $mail = new PHPMailer(true);
         try {
@@ -86,7 +89,7 @@ class User {
         }
     }
 
-    // Activate the user account with the given activation token
+    // Activate the user account with the given activation token.
     public function activate($token) {
         if (empty($token)) {
             return false;
@@ -101,6 +104,21 @@ class User {
         }
         return false;
     }
+
+    // Re-send the activation email to the user with the given email address
+    public function resendActivationEmail($email) {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE email = ?');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        if ($user) {
+            $subject = 'Activate your account';
+            $body = "Click the link to activate your account: {$this->emailLinkDomain}activate.php?token={$user['activation_token']}";
+            $this->sendEmailToUser($email, $subject, $body);
+            return true;
+        }
+        return false;
+    }
+    
 
     // Login the user with the given username and password
     public function login($username, $password) {
