@@ -1,9 +1,12 @@
 <?php
+// Path: src/User.php
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 require '../vendor/autoload.php';
 
+// User class
 class User {
     private $pdo;
     private $emailHost;
@@ -13,6 +16,7 @@ class User {
     private $emailPort;
     private $emailLinkDomain;
 
+    // Constructor with $pdo parameter
     public function __construct($pdo) {
         $this->pdo = $pdo;
         global $emailHost, $emailUsername, $emailName, $emailPassword, $emailPort, $emailLinkDomain;
@@ -24,18 +28,23 @@ class User {
         $this->emailLinkDomain = $emailLinkDomain;
     }
 
+    // Check if the user exists with the given username or email
     public function userExists($username, $email) {
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE username = ? OR email = ?');
         $stmt->execute([$username, $email]);
         return $stmt->fetch() !== false;
     }
     
+    // Check if the user is activated
     public function isActivated($userId) {
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = ? AND is_active = 1');
         $stmt->execute([$userId]);
         return $stmt->fetch() !== false;
     }
 
+    // Register a new user with the given username, password, and email.
+    // The password is hashed before storing it in the database.
+    // An activation token is generated and sent to the user's email.
     public function register($username, $password, $email) {
         $hash = password_hash($password, PASSWORD_BCRYPT);
         $token = bin2hex(random_bytes(16));
@@ -47,6 +56,7 @@ class User {
         return false;
     }
 
+    // Send an activation email to the user with the activation token
     private function sendActivationEmail($email, $token) {
         $mail = new PHPMailer(true);
         try {
@@ -75,6 +85,7 @@ class User {
         }
     }
 
+    // Activate the user account with the given activation token
     public function activate($token) {
         if (empty($token)) {
             return false;
@@ -90,6 +101,7 @@ class User {
         return false;
     }
 
+    // Login the user with the given username and password
     public function login($username, $password) {
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE username = ?');
         $stmt->execute([$username]);
@@ -99,7 +111,8 @@ class User {
         }
         return false;
     }
-
+    
+    // Get the user ID with the given username
     public function getUserId($username) {
         $stmt = $this->pdo->prepare('SELECT id FROM users WHERE username = ?');
         $stmt->execute([$username]);
