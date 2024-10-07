@@ -5,9 +5,11 @@
 - php
 - composer (e.g. ``bew install composer``)
 
+### Process
+
 1. Copy ``config/config.php.example`` to ``config/config.php`` and change the variables.
 2. Run the setup script, e.g. ``php setup.php``
-3. Setup a ``.htaccess`` file for routing:
+3. Optional: Setup a ``.htaccess`` file for routing:
 
 ```
 RewriteEngine On
@@ -21,6 +23,14 @@ RewriteRule ^(.*)$ public/$1 [L]
 ```
 composer install
 ```
+
+5. Run PHP
+
+```
+php -S 127.0.0.1:5500 -t .
+```
+
+### Optional
 
 Optional for FiveServer (macOS example)
 
