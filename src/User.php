@@ -126,15 +126,20 @@ class User {
         return false;
     }
 
-    // initiate the password reset process for the user with the given email address
     public function initiatePasswordReset($email) {
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE email = ?');
         $stmt->execute([$email]);
         $user = $stmt->fetch();
         if ($user) {
+            // Disable existing tokens
+            $stmt = $this->pdo->prepare('UPDATE password_reset_tokens SET disabled_at = ? WHERE user_id = ? AND disabled_at IS NULL');
+            $now = (new DateTime())->format('Y-m-d H:i:s');
+            $stmt->execute([$now, $user['id']]);
+
+            // Create a new token
             $token = bin2hex(random_bytes(16));
             $stmt = $this->pdo->prepare('INSERT INTO password_reset_tokens (user_id, token, created_at) VALUES (?, ?, ?)');
-            if ($stmt->execute([$user['id'], $token, (new DateTime())->format('Y-m-d H:i:s')])) {
+            if ($stmt->execute([$user['id'], $token, $now])) {
                 $subject = 'Reset your password';
                 $body = "Use this token to reset your password: $token";
                 $this->sendEmailToUser($email, $subject, $body);
@@ -147,10 +152,13 @@ class User {
     // Reset the user's password with the given token and new password
     public function resetPassword($token, $password) {
         $hash = password_hash($password, PASSWORD_BCRYPT);
-        $stmt = $this->pdo->prepare('SELECT user_id, created_at FROM password_reset_tokens WHERE token = ? AND used_at IS NULL');
+        $stmt = $this->pdo->prepare('SELECT user_id, created_at, disabled_at FROM password_reset_tokens WHERE token = ? AND used_at IS NULL');
         $stmt->execute([$token]);
         $result = $stmt->fetch();
         if ($result) {
+            if ($result['disabled_at'] !== null) {
+                return false;
+            }
             $createdAt = new DateTime($result['created_at']);
             $now = new DateTime();
             $interval = $now->diff($createdAt);

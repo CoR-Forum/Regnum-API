@@ -35,9 +35,21 @@ try {
         token VARCHAR(255) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         used_at TIMESTAMP DEFAULT NULL,
+        disabled_at TIMESTAMP DEFAULT NULL,
         FOREIGN KEY (user_id) REFERENCES users(id)
     )";
     $pdo->exec($sql);
+
+    // disabled_at column if it doesn't exist
+    $result = $pdo->query("SHOW COLUMNS FROM password_reset_tokens LIKE 'disabled_at'");
+    $exists = $result->rowCount() > 0;
+
+    if (!$exists) {
+        $pdo->exec("ALTER TABLE password_reset_tokens ADD disabled_at TIMESTAMP DEFAULT NULL");
+        echo "Column 'disabled_at' added to table 'password_reset_tokens'.";
+    } else {
+        echo "Column 'disabled_at' already exists in table 'password_reset_tokens'.";
+    }
 
     // Create licenses table if it doesn't exist
     $sql = "
