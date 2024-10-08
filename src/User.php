@@ -125,7 +125,54 @@ class User {
         }
         return false;
     }
-    
+
+    // initiate the password reset process for the user with the given email address
+    public function initiatePasswordReset($email) {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE email = ?');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        if ($user) {
+            $token = bin2hex(random_bytes(16));
+            $stmt = $this->pdo->prepare('INSERT INTO password_reset_tokens (user_id, token, created_at) VALUES (?, ?, ?)');
+            if ($stmt->execute([$user['id'], $token, (new DateTime())->format('Y-m-d H:i:s')])) {
+                $subject = 'Reset your password';
+                $body = "Click the link to reset your password: {$this->emailLinkDomain}reset.php?token=$token";
+                $this->sendEmailToUser($email, $subject, $body);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Reset the user's password with the given token and new password
+    public function resetPassword($token, $password) {
+        $hash = password_hash($password, PASSWORD_BCRYPT);
+        $stmt = $this->pdo->prepare('SELECT user_id, created_at FROM password_reset_tokens WHERE token = ? AND used_at IS NULL');
+        $stmt->execute([$token]);
+        $result = $stmt->fetch();
+        if ($result) {
+            $createdAt = new DateTime($result['created_at']);
+            $now = new DateTime();
+            $interval = $now->diff($createdAt);
+            if ($interval->h < 1) {
+                $stmt = $this->pdo->prepare('UPDATE users SET password = ? WHERE id = ?');
+                if ($stmt->execute([$hash, $result['user_id']])) {
+                    $stmt = $this->pdo->prepare('UPDATE password_reset_tokens SET used_at = ? WHERE token = ?');
+                    $stmt->execute([$now->format('Y-m-d H:i:s'), $token]);
+                    return true;
+                }
+            } else {
+                // Token expired, initiate password reset again
+                $stmt = $this->pdo->prepare('SELECT email FROM users WHERE id = ?');
+                $stmt->execute([$result['user_id']]);
+                $user = $stmt->fetch();
+                if ($user) {
+                    $this->initiatePasswordReset($user['email']);
+                }
+            }
+        }
+        return false;
+    }
 
     // Login the user with the given username and password
     public function login($username, $password) {

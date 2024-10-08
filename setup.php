@@ -27,6 +27,18 @@ try {
         echo "Column 'is_banned' already exists in table 'users'.";
     }
 
+    // Create table for password reset tokens
+    $sql = "
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        token VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        used_at TIMESTAMP DEFAULT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )";
+    $pdo->exec($sql);
+
     // Create licenses table if it doesn't exist
     $sql = "
     CREATE TABLE IF NOT EXISTS licenses (
