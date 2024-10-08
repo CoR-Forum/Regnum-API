@@ -26,6 +26,16 @@ if ($loggedInUser) {
         $admin = new Admin($pdo, $loggedInUser['is_admin']);
         $allUsers = $admin->getAllUsers();
         echo json_encode(['status' => 'success', 'users' => $allUsers]);
+    } else if ($action === 'toggleUserBan') {
+        $userId = $_GET['userId'] ?? null;
+        if (!$userId) {
+            echo json_encode(['status' => 'error', 'message' => 'Missing required user ID']);
+            exit;
+        }
+
+        $admin = new Admin($pdo, $loggedInUser['is_admin']);
+        $result = $admin->toggleUserBan($userId);
+        echo json_encode($result);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
     }

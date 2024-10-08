@@ -23,4 +23,11 @@ class Admin {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function toggleUserBan($userId) {
+        $this->checkAdmin();
+        $stmt = $this->pdo->prepare('UPDATE users SET is_banned = NOT is_banned WHERE id = ?');
+        $stmt->execute([$userId]);
+        return ['status' => 'success', 'message' => 'User ' . ($stmt->rowCount() ? 'banned' : 'unbanned ') . 'successfully.'];
+    }
+
 }
