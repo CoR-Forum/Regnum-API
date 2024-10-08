@@ -41,12 +41,13 @@ class User {
         $stmt->execute([$userId]);
         return $stmt->fetch() !== false;
     }
+    // check if user is an admin
+    public function isAdmin($userId) {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = ? AND is_admin = 1');
 
-    // Check if the user is banned
+      // Check if the user is banned
     public function isBanned($userId) {
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = ? AND is_banned = 1');
-        $stmt->execute([$userId]);
-        return $stmt->fetch() !== false;
     }
 
     // Register a new user with the given username, password, and email.
