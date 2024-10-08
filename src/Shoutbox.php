@@ -21,7 +21,7 @@ class Shoutbox {
     }
 
     public function getMessages($limit = null) {
-        $sql = 'SELECT s.message, s.created_at, u.username FROM shoutbox_messages s JOIN users u ON s.user_id = u.id WHERE s.deleted_at IS NULL ORDER BY s.created_at ASC';
+        $sql = 'SELECT s.id, s.created_at, u.username, s.message FROM shoutbox_messages s JOIN users u ON s.user_id = u.id WHERE s.deleted_at IS NULL ORDER BY s.created_at ASC';
         if ($limit !== null) {
             $sql .= ' LIMIT ?';
         }
