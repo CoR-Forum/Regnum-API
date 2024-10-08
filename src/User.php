@@ -41,12 +41,13 @@ class User {
         $stmt->execute([$userId]);
         return $stmt->fetch() !== false;
     }
-
     // check if user is an admin
     public function isAdmin($userId) {
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = ? AND is_admin = 1');
-        $stmt->execute([$userId]);
-        return $stmt->fetch() !== false;
+
+      // Check if the user is banned
+    public function isBanned($userId) {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = ? AND is_banned = 1');
     }
 
     // Register a new user with the given username, password, and email.
@@ -125,14 +126,69 @@ class User {
         }
         return false;
     }
-    
+
+    public function initiatePasswordReset($email) {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE email = ?');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        if ($user) {
+            // Disable existing tokens
+            $stmt = $this->pdo->prepare('UPDATE password_reset_tokens SET disabled_at = ? WHERE user_id = ? AND disabled_at IS NULL');
+            $now = (new DateTime())->format('Y-m-d H:i:s');
+            $stmt->execute([$now, $user['id']]);
+
+            // Create a new token
+            $token = bin2hex(random_bytes(16));
+            $stmt = $this->pdo->prepare('INSERT INTO password_reset_tokens (user_id, token, created_at) VALUES (?, ?, ?)');
+            if ($stmt->execute([$user['id'], $token, $now])) {
+                $subject = 'Reset your password';
+                $body = "Use this token to reset your password: $token";
+                $this->sendEmailToUser($email, $subject, $body);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Reset the user's password with the given token and new password
+    public function resetPassword($token, $password) {
+        $hash = password_hash($password, PASSWORD_BCRYPT);
+        $stmt = $this->pdo->prepare('SELECT user_id, created_at, disabled_at FROM password_reset_tokens WHERE token = ? AND used_at IS NULL');
+        $stmt->execute([$token]);
+        $result = $stmt->fetch();
+        if ($result) {
+            if ($result['disabled_at'] !== null) {
+                return false;
+            }
+            $createdAt = new DateTime($result['created_at']);
+            $now = new DateTime();
+            $interval = $now->diff($createdAt);
+            if ($interval->h < 1) {
+                $stmt = $this->pdo->prepare('UPDATE users SET password = ? WHERE id = ?');
+                if ($stmt->execute([$hash, $result['user_id']])) {
+                    $stmt = $this->pdo->prepare('UPDATE password_reset_tokens SET used_at = ? WHERE token = ?');
+                    $stmt->execute([$now->format('Y-m-d H:i:s'), $token]);
+                    return true;
+                }
+            } else {
+                // Token expired, initiate password reset again
+                $stmt = $this->pdo->prepare('SELECT email FROM users WHERE id = ?');
+                $stmt->execute([$result['user_id']]);
+                $user = $stmt->fetch();
+                if ($user) {
+                    $this->initiatePasswordReset($user['email']);
+                }
+            }
+        }
+        return false;
+    }
 
     // Login the user with the given username and password
     public function login($username, $password) {
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE username = ?');
         $stmt->execute([$username]);
         $user = $stmt->fetch();
-        if ($user && password_verify($password, $user['password']) && $user['is_active']) {
+        if ($user && password_verify($password, $user['password']) && $this->isActivated($user['id']) && !$this->isBanned($user['id'])) {
             return $user;
         }
         return false;
