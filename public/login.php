@@ -35,9 +35,9 @@ if ($user = $user->login($username, $password)) {
     ];
 
     if ($user['is_admin'] == 1) {
-        $response['group'] = "admin";
+        $response['role'] = "admin";
     } else {
-        $response['group'] = "user";
+        $response['role'] = "user";
     }
 
     echo json_encode($response);
