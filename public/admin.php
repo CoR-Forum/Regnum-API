@@ -22,7 +22,7 @@ $user = new User($pdo);
 $loggedInUser = $user->login($username, $password);
 
 if ($loggedInUser) {
-    if ($action === 'allUsers') {
+    if ($action === 'getUsers') {
         $admin = new Admin($pdo, $loggedInUser['is_admin']);
         $allUsers = $admin->getAllUsers();
         echo json_encode(['status' => 'success', 'users' => $allUsers]);
