@@ -18,7 +18,7 @@ if ($action === 'init') {
     // Initiate the password reset
     $user = new User($pdo);
     if ($user->initiatePasswordReset($email)) {
-        echo json_encode(['status' => 'success', 'message' => 'Password reset initiated successfully']);
+        echo json_encode(['status' => 'success', 'message' => 'Password reset initiated successfully. Check your email for the reset code']);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Password reset initiation failed']);
     }

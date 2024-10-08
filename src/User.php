@@ -136,7 +136,7 @@ class User {
             $stmt = $this->pdo->prepare('INSERT INTO password_reset_tokens (user_id, token, created_at) VALUES (?, ?, ?)');
             if ($stmt->execute([$user['id'], $token, (new DateTime())->format('Y-m-d H:i:s')])) {
                 $subject = 'Reset your password';
-                $body = "Click the link to reset your password: {$this->emailLinkDomain}reset.php?token=$token";
+                $body = "Use this token to reset your password: $token";
                 $this->sendEmailToUser($email, $subject, $body);
                 return true;
             }
