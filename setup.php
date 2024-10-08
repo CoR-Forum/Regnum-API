@@ -10,24 +10,25 @@ try {
         password VARCHAR(255) NOT NULL,
         email VARCHAR(100) NOT NULL,
         activation_token VARCHAR(255) DEFAULT NULL,
+        activated_at TIMESTAMP DEFAULT NULL,
         is_active TINYINT(1) DEFAULT 0,
         is_admin TINYINT(1) DEFAULT 0,
         shoutbox_banned TINYINT(1) DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        is_banned TINYINT(1) DEFAULT 0,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        is_banned TINYINT(1) DEFAULT 0
     )";
     $pdo->exec($sql);
 
-    // Add is_banned column if it doesn't exist
-    $result = $pdo->query("SHOW COLUMNS FROM users LIKE 'is_banned'");
+    // Add activated_at column if it doesn't exist
+    $result = $pdo->query("SHOW COLUMNS FROM users LIKE 'activated_at'");
     $exists = $result->rowCount() > 0;
 
     if (!$exists) {
-        $pdo->exec("ALTER TABLE users ADD is_banned TINYINT(1) DEFAULT 0");
-        echo "Column 'is_banned' added to table 'users'.";
+        $pdo->exec("ALTER TABLE users ADD activated_at TIMESTAMP DEFAULT NULL");
+        echo "Column 'activated_at' added to table 'users'.";
     } else {
-        echo "Column 'is_banned' already exists in table 'users'.";
+        echo "Column 'activated_at' already exists in table 'users'.";
     }
 
     // Create table for password reset tokens
@@ -42,17 +43,6 @@ try {
         FOREIGN KEY (user_id) REFERENCES users(id)
     )";
     $pdo->exec($sql);
-
-    // disabled_at column if it doesn't exist
-    $result = $pdo->query("SHOW COLUMNS FROM password_reset_tokens LIKE 'disabled_at'");
-    $exists = $result->rowCount() > 0;
-
-    if (!$exists) {
-        $pdo->exec("ALTER TABLE password_reset_tokens ADD disabled_at TIMESTAMP DEFAULT NULL");
-        echo "Column 'disabled_at' added to table 'password_reset_tokens'.";
-    } else {
-        echo "Column 'disabled_at' already exists in table 'password_reset_tokens'.";
-    }
 
     // Create licenses table if it doesn't exist
     $sql = "

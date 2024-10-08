@@ -112,8 +112,9 @@ class User {
         $stmt->execute([$token]);
         $user = $stmt->fetch();
         if ($user) {
-            $stmt = $this->pdo->prepare('UPDATE users SET is_active = 1, activation_token = NULL WHERE activation_token = ?');
-            return $stmt->execute([$token]);
+            $now = (new DateTime())->format('Y-m-d H:i:s');
+            $stmt = $this->pdo->prepare('UPDATE users SET is_active = 1, activation_token = NULL, activated_at = ? WHERE activation_token = ?');
+            return $stmt->execute([$now, $token]);
         }
         return false;
     }
