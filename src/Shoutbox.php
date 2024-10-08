@@ -21,7 +21,7 @@ class Shoutbox {
     }
 
     public function getMessages($limit = null) {
-        $sql = 'SELECT s.id, s.created_at, u.username, s.message FROM shoutbox_messages s JOIN users u ON s.user_id = u.id WHERE s.deleted_at IS NULL ORDER BY s.created_at ASC';
+        $sql = 'SELECT s.id, s.created_at, u.username, u.is_admin, s.message FROM shoutbox_messages s JOIN users u ON s.user_id = u.id WHERE s.deleted_at IS NULL ORDER BY s.created_at ASC';
         if ($limit !== null) {
             $sql .= ' LIMIT ?';
         }
@@ -30,7 +30,17 @@ class Shoutbox {
             $stmt->bindValue(1, (int)$limit, PDO::PARAM_INT);
         }
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Add [A] in front of admin usernames
+        foreach ($messages as &$message) {
+            if ($message['is_admin']) {
+                $message['username'] = '[A] ' . $message['username'];
+            }
+            unset($message['is_admin']); // Remove is_admin from the result
+        }
+
+        return $messages;
     }
 
     private function isUserBanned($userId) {
