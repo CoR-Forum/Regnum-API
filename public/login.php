@@ -21,7 +21,7 @@ if ($user = $user->login($username, $password)) {
         $licensed_features = ["zoom"];
     }
     
-    echo json_encode([
+    $response = [
         'status' => 'success',
         'message' => 'Login successful',
         'username' => $user['username'],
@@ -32,7 +32,15 @@ if ($user = $user->login($username, $password)) {
         'license_key' => $license['license_key'] ?? null,
         'licensed_features' => $licensed_features,
         'expires_at' => $license['expires_at'] ?? null
-    ]);
+    ];
+
+    if ($user['is_admin'] == 1) {
+        $response['group'] = "admin";
+    } else {
+        $response['group'] = "user";
+    }
+
+    echo json_encode($response);
 } else {
     echo json_encode(['status' => 'error', 'message' => 'Login failed']);
 }
