@@ -217,6 +217,11 @@ class User {
                     $magnat = new Magnat($this->pdo);
                     $magnat->giveMagnat($user['id'], 100, 'daily_login');
                 }
+    
+                if ($interval->h >= 6 || $interval->days > 0) {
+                    $magnat = new Magnat($this->pdo);
+                    $magnat->giveMagnat($user['id'], 25, 'six_hour_login');
+                }
             } else {
                 // If last_login is null, initialize it with the current time
                 $this->updateLastLoginTime($user['id']);
