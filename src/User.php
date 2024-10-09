@@ -207,5 +207,13 @@ class User {
         $user = $stmt->fetch();
         return $user['id'] ?? null;
     }
+
+    // public API function to save the sylent-x settings in user_settings
+    // a user can only have one entry in the user_settings table
+    public function saveSettings($userId, $settings) {
+        $stmt = $this->pdo->prepare('INSERT INTO user_settings (user_id, settings) VALUES (?, ?) ON DUPLICATE KEY UPDATE settings = ?');
+        $stmt->execute([$userId, $settings, $settings]);
+        return true;
+    }
 }
 ?>
