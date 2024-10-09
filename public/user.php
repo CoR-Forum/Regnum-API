@@ -139,6 +139,21 @@ switch ($action) {
         }
         break;
 
+    case 'loadSettings';
+        if (!$username || !$password) {
+            echo json_encode(['status' => 'error', 'message' => 'Missing required username or password']);
+            exit;
+        }
+        
+        $loggedInUser = $user->login($username, $password);
+        if ($loggedInUser) {
+            $settings = $user->loadSettings($loggedInUser['id']);
+            echo json_encode(['status' => 'success', 'settings' => $settings]);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid username or password']);
+        }
+        break;
+
     default:
         echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
         break;

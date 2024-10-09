@@ -215,5 +215,12 @@ class User {
         $stmt->execute([$userId, $settings, $settings]);
         return true;
     }
+
+    public function loadSettings($userId) {
+        $stmt = $this->pdo->prepare('SELECT settings FROM user_settings WHERE user_id = ?');
+        $stmt->execute([$userId]);
+        $result = $stmt->fetch();
+        return $result ? $result['settings'] : null;
+    }
 }
 ?>
