@@ -6,6 +6,7 @@ require_once __DIR__ . '/../src/License.php';
 $action = $_GET['action'] ?? null;
 $username = $_GET['username'] ?? null;
 $password = $_GET['password'] ?? null;
+$settings = $_GET['settings'] ?? null;
 $email = $_GET['email'] ?? null;
 $token = $_GET['token'] ?? null;
 
@@ -117,6 +118,23 @@ switch ($action) {
             echo json_encode(['status' => 'success', 'message' => 'Account activated successfully']);
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Account activation failed']);
+        }
+        break;
+
+    case 'saveSettings':
+        if (!$username || !$password || !$settings) {
+            echo json_encode(['status' => 'error', 'message' => 'Missing required username, password, or settings']);
+            exit;
+        }
+        
+        if ($user = $user->login($username, $password)) {
+            if ($user->saveSettings($user['id'], $settings)) {
+                echo json_encode(['status' => 'success', 'message' => 'Settings saved successfully']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Settings save failed']);
+            }
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid username or password']);
         }
         break;
 
