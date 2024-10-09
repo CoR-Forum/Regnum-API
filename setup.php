@@ -91,6 +91,17 @@ try {
     )";
     $pdo->exec($sql);
 
+    // sylent-x user settings table
+    $sql = "
+    CREATE TABLE IF NOT EXISTS user_settings (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        settings TEXT NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )";
+    $pdo->exec($sql);
+
     echo "Database and tables initialized successfully.";
 } catch (\PDOException $e) {
     echo "Error: " . $e->getMessage();
