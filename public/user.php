@@ -127,8 +127,9 @@ switch ($action) {
             exit;
         }
         
-        if ($user = $user->login($username, $password)) {
-            if ($user->saveSettings($user['id'], $settings)) {
+        $loggedInUser = $user->login($username, $password);
+        if ($loggedInUser) {
+            if ($user->saveSettings($loggedInUser['id'], $settings)) {
                 echo json_encode(['status' => 'success', 'message' => 'Settings saved successfully']);
             } else {
                 echo json_encode(['status' => 'error', 'message' => 'Settings save failed']);
