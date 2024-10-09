@@ -148,7 +148,8 @@ switch ($action) {
         $loggedInUser = $user->login($username, $password);
         if ($loggedInUser) {
             $settings = $user->loadSettings($loggedInUser['id']);
-            echo json_encode(['status' => 'success', 'settings' => $settings]);
+            $settingsArray = json_decode($settings, true); // Decode the settings JSON string
+            echo json_encode(['status' => 'success', 'settings' => $settingsArray]);
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Invalid username or password']);
         }
