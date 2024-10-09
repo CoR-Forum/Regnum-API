@@ -16,20 +16,10 @@ try {
         shoutbox_banned TINYINT(1) DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        last_login TIMESTAMP DEFAULT NULL,
         is_banned TINYINT(1) DEFAULT 0
     )";
     $pdo->exec($sql);
-
-    // Add activated_at column if it doesn't exist
-    $result = $pdo->query("SHOW COLUMNS FROM users LIKE 'activated_at'");
-    $exists = $result->rowCount() > 0;
-
-    if (!$exists) {
-        $pdo->exec("ALTER TABLE users ADD activated_at TIMESTAMP DEFAULT NULL");
-        echo "Column 'activated_at' added to table 'users'.";
-    } else {
-        echo "Column 'activated_at' already exists in table 'users'.";
-    }
 
     // Create table for password reset tokens
     $sql = "
@@ -57,14 +47,6 @@ try {
         FOREIGN KEY (activated_by) REFERENCES users(id)
     )";
     $pdo->exec($sql);
-
-    // insert default license activation key
-    try {
-        $stmt = $pdo->prepare('INSERT INTO licenses (license_key, features) VALUES (?, ?, ?)');
-        $stmt->execute(['igh4ieg6eigahX0oe7vo1fuaz9ic2f', '["zoom", "speedhack"]']);
-    } catch (\PDOException $e) {
-        echo "Error inserting default license activation key: " . $e->getMessage();
-    }
 
     // create table for storing memory addresses and offsets
     $sql = "
@@ -103,16 +85,33 @@ try {
     )";
     $pdo->exec($sql);
 
-    // add the constraint to the user_settings table if it doesn't exist
-    $result = $pdo->query("SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = 'sylent_x' AND TABLE_NAME = 'user_settings' AND CONSTRAINT_NAME = 'user_settings_user_id_unique'");
-    $exists = $result->fetchColumn() > 0;
+    // magnat currency
+    // create table for storing magnat amounts, every user_id can only have one entry
+    $sql = "
+    CREATE TABLE IF NOT EXISTS magnat (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        amount INT NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        CONSTRAINT magnat_currency_user_id_unique UNIQUE (user_id)
+    )";
+    $pdo->exec($sql);
 
-    if (!$exists) {
-        $pdo->exec("ALTER TABLE user_settings ADD CONSTRAINT user_settings_user_id_unique UNIQUE (user_id)");
-        echo "Constraint 'user_settings_user_id_unique' added to table 'user_settings'.";
-    } else {
-        echo "Constraint 'user_settings_user_id_unique' already exists in table 'user_settings'.";
-    }
+    // magnat transactions
+    // create table for storing magnat currency transactions
+    $sql = "
+    CREATE TABLE IF NOT EXISTS magnat_transactions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        magnat_id INT NOT NULL,
+        amount INT NOT NULL,
+        type VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (magnat_id) REFERENCES magnat(id)
+    )";
+    $pdo->exec($sql);
 
     echo "Database and tables initialized successfully.";
 } catch (\PDOException $e) {

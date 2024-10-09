@@ -28,6 +28,17 @@ class User {
         $this->emailLinkDomain = $emailLinkDomain;
     }
 
+    public function getLastLoginTime($userId) {
+        $stmt = $this->pdo->prepare('SELECT last_login FROM users WHERE id = ?');
+        $stmt->execute([$userId]);
+        return $stmt->fetchColumn();
+    }
+
+    public function updateLastLoginTime($userId) {
+        $stmt = $this->pdo->prepare('UPDATE users SET last_login = NOW() WHERE id = ?');
+        $stmt->execute([$userId]);
+    }
+
     // Check if the user exists with the given username or email
     public function userExists($username, $email) {
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE username = ? OR email = ?');
@@ -195,6 +206,25 @@ class User {
         $stmt->execute([$username]);
         $user = $stmt->fetch();
         if ($user && password_verify($password, $user['password']) && $this->isActivated($user['id']) && !$this->isBanned($user['id'])) {
+            $lastLoginTime = $this->getLastLoginTime($user['id']);
+            $currentTime = new DateTime();
+    
+            if ($lastLoginTime) {
+                $lastLoginDateTime = new DateTime($lastLoginTime);
+                $interval = $currentTime->diff($lastLoginDateTime);
+    
+                if ($interval->days >= 1) {
+                    $magnat = new Magnat($this->pdo);
+                    $magnat->giveMagnat($user['id'], 100, 'daily_login');
+                }
+            } else {
+                // If last_login is null, initialize it with the current time
+                $this->updateLastLoginTime($user['id']);
+                $magnat = new Magnat($this->pdo);
+                $magnat->giveMagnat($user['id'], 300, 'first_login');
+            }
+    
+            $this->updateLastLoginTime($user['id']);
             return $user;
         }
         return false;
