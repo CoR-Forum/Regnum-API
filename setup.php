@@ -98,9 +98,21 @@ try {
         user_id INT NOT NULL,
         settings TEXT NOT NULL,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        CONSTRAINT user_settings_user_id_unique UNIQUE (user_id)
     )";
     $pdo->exec($sql);
+
+    // add the constraint to the user_settings table if it doesn't exist
+    $result = $pdo->query("SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = 'sylent_x' AND TABLE_NAME = 'user_settings' AND CONSTRAINT_NAME = 'user_settings_user_id_unique'");
+    $exists = $result->fetchColumn() > 0;
+
+    if (!$exists) {
+        $pdo->exec("ALTER TABLE user_settings ADD CONSTRAINT user_settings_user_id_unique UNIQUE (user_id)");
+        echo "Constraint 'user_settings_user_id_unique' added to table 'user_settings'.";
+    } else {
+        echo "Constraint 'user_settings_user_id_unique' already exists in table 'user_settings'.";
+    }
 
     echo "Database and tables initialized successfully.";
 } catch (\PDOException $e) {
