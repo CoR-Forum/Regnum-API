@@ -38,7 +38,7 @@ switch ($action) {
                 'email' => $user['email'],
                 'license_key' => $license['license_key'] ?? null,
                 'licensed_features' => $licensed_features,
-                'expires_at' => $license['expires_at'] ?? null
+                'runtime_end' => $license['runtime_end'] ?? null
             ];
             if ($user['is_admin'] == 1) {
                 $response['role'] = "admin";

@@ -41,6 +41,8 @@ try {
         license_key VARCHAR(255) NOT NULL UNIQUE,
         activated_by INT DEFAULT NULL,
         activated_at TIMESTAMP DEFAULT NULL,
+        runtime VARCHAR(10) DEFAULT NULL,
+        runtime_end TIMESTAMP DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         expires_at TIMESTAMP DEFAULT NULL,
         licensed_features TEXT,
