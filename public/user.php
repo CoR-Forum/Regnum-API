@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/User.php';
 require_once __DIR__ . '/../src/License.php';
+require_once __DIR__ . '/../src/Magnat.php';
 
 $action = $_GET['action'] ?? null;
 $username = $_GET['username'] ?? null;
