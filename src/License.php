@@ -8,8 +8,7 @@ class License {
         $stmt = $this->pdo->prepare('SELECT licensed_features, runtime_end FROM licenses WHERE license_key = ?');
         $stmt->execute([$licenseKey]);
         return $stmt->fetch();
-    }
-    public function activateLicense($userId, $licenseKey) {
+    }public function activateLicense($userId, $licenseKey) {
         // Check the license_key column for the licenseKey
         $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE license_key = ?');
         $stmt->execute([$licenseKey]);
@@ -28,7 +27,9 @@ class License {
         // Calculate runtime_end based on the runtime
         $runtime = $license['runtime'];
         $runtimeEnd = new DateTime();
-        if (preg_match('/(\d+)([hdmy])/', $runtime, $matches)) {
+        if ($runtime === null) {
+            $runtimeEnd = new DateTime('2099-12-31');
+        } else if (preg_match('/(\d+)([hdmy])/', $runtime, $matches)) {
             $value = (int)$matches[1];
             $unit = $matches[2];
             switch ($unit) {
