@@ -3,9 +3,16 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/User.php';
 require_once __DIR__ . '/../src/License.php';
 
-// Get the username and license key from the URL
+// Get the action, username, and license key from the URL
+$action = $_GET['action'] ?? null;
 $username = $_GET['username'] ?? null;
 $licenseKey = $_GET['key'] ?? null;
+
+// Check if the action is set to 'activate'
+if ($action !== 'activate') {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
+    exit;
+}
 
 // Check if the username or license key is missing
 if (!$username || !$licenseKey) {
