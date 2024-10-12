@@ -22,7 +22,7 @@ class License {
             return ['status' => 'error', 'message' => 'License key already used'];
         }
         // Check if the license is expired
-        if (new DateTime() > new DateTime($license['expires_at'])) {
+        if ($license['expires_at'] && new DateTime() > new DateTime($license['expires_at'])) {
             return ['status' => 'error', 'message' => 'License key is expired'];
         }
     
@@ -52,6 +52,11 @@ class License {
             return ['status' => 'error', 'message' => 'Invalid runtime format'];
         }
     
+        // Validate runtimeEnd format
+        if (!$runtimeEnd || $runtimeEnd->format('Y-m-d H:i:s') === false) {
+            return ['status' => 'error', 'message' => 'Invalid runtime end date'];
+        }
+
         // Update the licenses table to mark the activation key as used and associate it with the user
         $stmt = $this->pdo->prepare('UPDATE licenses SET activated_by = ?, activated_at = ?, runtime_end = ? WHERE license_key = ?');
         $stmt->execute([$userId, (new DateTime())->format('Y-m-d H:i:s'), $runtimeEnd->format('Y-m-d H:i:s'), $licenseKey]);
