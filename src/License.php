@@ -8,7 +8,9 @@ class License {
         $stmt = $this->pdo->prepare('SELECT licensed_features, runtime_end FROM licenses WHERE license_key = ?');
         $stmt->execute([$licenseKey]);
         return $stmt->fetch();
-    }public function activateLicense($userId, $licenseKey) {
+    }
+    
+    public function activateLicense($userId, $licenseKey) {
         // Check the license_key column for the licenseKey
         $stmt = $this->pdo->prepare('SELECT * FROM licenses WHERE license_key = ?');
         $stmt->execute([$licenseKey]);
@@ -55,6 +57,7 @@ class License {
         $stmt->execute([$userId, (new DateTime())->format('Y-m-d H:i:s'), $runtimeEnd->format('Y-m-d H:i:s'), $licenseKey]);
         return ['status' => 'success', 'message' => 'Activation key used successfully'];
     }
+
     public function fetchLicenseDetails($userId) {
         $stmt = $this->pdo->prepare('SELECT license_key, licensed_features, runtime_end FROM licenses WHERE activated_by = ?');
         $stmt->execute([$userId]);
