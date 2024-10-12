@@ -36,6 +36,28 @@ if ($loggedInUser) {
         $admin = new Admin($pdo, $loggedInUser['is_admin']);
         $result = $admin->toggleUserBan($userId);
         echo json_encode($result);
+    } else if ($action === 'generateLicenseKey') {
+        if (!$loggedInUser['is_admin']) {
+            echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+            exit;
+        }
+
+        $licensedFeatures = $_GET['licensedFeatures'] ?? null;
+        if (!$licensedFeatures) {
+            echo json_encode(['status' => 'error', 'message' => 'Missing required licensed features']);
+            exit;
+        }
+
+        // Validate licensedFeatures as a JSON array
+        $licensedFeaturesArray = json_decode($licensedFeatures, true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($licensedFeaturesArray)) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid licensed features format']);
+            exit;
+        }
+
+        $license = new License($pdo);
+        $newLicenseKey = $license->generateNewLicense($licensedFeatures, $_GET['runtime'] ?? null);
+        echo json_encode(['status' => 'success', 'licenseKey' => $newLicenseKey]);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
     }

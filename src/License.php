@@ -70,5 +70,12 @@ class License {
         $stmt->execute([$userId]);
         return $stmt->fetch();
     }
+
+    public function generateNewLicense($licensedFeatures, $runtime) {
+        $licenseKey = "Sylent-X-" . bin2hex(random_bytes(16));
+        $stmt = $this->pdo->prepare('INSERT INTO licenses (license_key, licensed_features, runtime) VALUES (?, ?, ?)');
+        $stmt->execute([$licenseKey, $licensedFeatures, $runtime ?: null]);
+        return $licenseKey;
+    }
 }
 ?>
