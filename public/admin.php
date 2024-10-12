@@ -78,6 +78,10 @@ if ($loggedInUser) {
         $license = new License($pdo);
         $newLicenseKey = $license->generateNewLicense($licensedFeatures, $_GET['runtime'] ?? null);
         echo json_encode(['status' => 'success', 'licenseKey' => $newLicenseKey]);
+    } else if ($action === 'getLicenses') {
+        $admin = new Admin($pdo, $loggedInUser['is_admin']);
+        $allLicenses = $admin->getAllLicenses();
+        echo json_encode(['status' => 'success', 'licenses' => $allLicenses]);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
     }

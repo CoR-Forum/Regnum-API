@@ -44,4 +44,11 @@ class Admin {
         return ['status' => 'success', 'message' => 'User ' . ($stmt->rowCount() ? 'activated' : 'deactivated ') . 'successfully.'];
     }
 
+    public function getAllLicenses() {
+        $this->checkAdmin();
+        $stmt = $this->pdo->prepare('SELECT id, license_key, licensed_features, activated_by, activated_at, runtime_end, runtime, expires_at FROM licenses');
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
 }
