@@ -46,9 +46,29 @@ class Admin {
 
     public function getAllLicenses() {
         $this->checkAdmin();
-        $stmt = $this->pdo->prepare('SELECT id, license_key, licensed_features, activated_by, activated_at, runtime_end, runtime, expires_at FROM licenses');
+        $stmt = $this->pdo->prepare('
+            SELECT 
+                licenses.id, 
+                licenses.license_key, 
+                licenses.licensed_features, 
+                licenses.activated_by, 
+                users.username AS activated_by_username, 
+                licenses.activated_at, 
+                licenses.runtime_end, 
+                licenses.runtime, 
+                licenses.expires_at 
+            FROM licenses
+            LEFT JOIN users ON licenses.activated_by = users.id
+        ');
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function disableLicense($licenseId) {
+        $this->checkAdmin();
+        $stmt = $this->pdo->prepare('UPDATE licenses SET expires_at = NOW() WHERE id = ?');
+        $stmt->execute([$licenseId]);
+        return ['status' => 'success', 'message' => 'License disabled successfully.'];
     }
 
 }

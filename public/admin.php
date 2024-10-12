@@ -82,10 +82,25 @@ if ($loggedInUser) {
         $admin = new Admin($pdo, $loggedInUser['is_admin']);
         $allLicenses = $admin->getAllLicenses();
         echo json_encode(['status' => 'success', 'licenses' => $allLicenses]);
+    } else if ($action === 'disableLicense') {
+        if (!$loggedInUser['is_admin']) {
+            echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+            exit;
+        }
+
+        $licenseId = $_GET['licenseId'] ?? null;
+        if (!$licenseId) {
+            echo json_encode(['status' => 'error', 'message' => 'Missing required license ID']);
+            exit;
+        }
+
+        $admin = new Admin($pdo, $loggedInUser['is_admin']);
+        $result = $admin->disableLicense($licenseId);
+        echo json_encode($result);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
     }
 } else {
-    echo json_encode(['status' => 'error', 'message' => 'Login failed']);
+    echo json_encode(['status' => 'error', 'message' => 'Invalid username or password']);
 }
 ?>
