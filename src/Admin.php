@@ -30,4 +30,18 @@ class Admin {
         return ['status' => 'success', 'message' => 'User ' . ($stmt->rowCount() ? 'banned' : 'unbanned ') . 'successfully.'];
     }
 
+    public function toggleUserAdmin($userId) {
+        $this->checkAdmin();
+        $stmt = $this->pdo->prepare('UPDATE users SET is_admin = NOT is_admin WHERE id = ?');
+        $stmt->execute([$userId]);
+        return ['status' => 'success', 'message' => 'User ' . ($stmt->rowCount() ? 'promoted' : 'demoted ') . 'successfully.'];
+    }
+
+    public function toggleUserActivation($userId) {
+        $this->checkAdmin();
+        $stmt = $this->pdo->prepare('UPDATE users SET is_active = NOT is_active WHERE id = ?');
+        $stmt->execute([$userId]);
+        return ['status' => 'success', 'message' => 'User ' . ($stmt->rowCount() ? 'activated' : 'deactivated ') . 'successfully.'];
+    }
+
 }

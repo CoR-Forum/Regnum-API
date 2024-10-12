@@ -36,6 +36,26 @@ if ($loggedInUser) {
         $admin = new Admin($pdo, $loggedInUser['is_admin']);
         $result = $admin->toggleUserBan($userId);
         echo json_encode($result);
+    } else if ($action === 'toggleUserAdmin') {
+        $userId = $_GET['userId'] ?? null;
+        if (!$userId) {
+            echo json_encode(['status' => 'error', 'message' => 'Missing required user ID']);
+            exit;
+        }
+
+        $admin = new Admin($pdo, $loggedInUser['is_admin']);
+        $result = $admin->toggleUserAdmin($userId);
+        echo json_encode($result);
+    } else if ($action === 'toggleUserActivation') {
+        $userId = $_GET['userId'] ?? null;
+        if (!$userId) {
+            echo json_encode(['status' => 'error', 'message' => 'Missing required user ID']);
+            exit;
+        }
+
+        $admin = new Admin($pdo, $loggedInUser['is_admin']);
+        $result = $admin->toggleUserActivation($userId);
+        echo json_encode($result);
     } else if ($action === 'generateLicenseKey') {
         if (!$loggedInUser['is_admin']) {
             echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
