@@ -16,6 +16,11 @@ $user = new User($pdo);
 switch ($action) {
     case 'login':
         if ($user = $user->login($username, $password)) {
+            if ($user['is_banned']) {
+                echo json_encode(['status' => 'error', 'message' => 'User is banned']);
+                break;
+            }
+
             $licenseObj = new License($pdo);
             $license = $licenseObj->getLastActivatedLicense($user['id']);
             
@@ -54,7 +59,6 @@ switch ($action) {
             echo json_encode(['status' => 'error', 'message' => 'Login failed']);
         }
         break;
-
     case 'register':
         if (!$username || !$password || !$email) {
             echo json_encode(['status' => 'error', 'message' => 'Missing required ' . (!$username ? 'username, ' : '') . (!$password ? 'password, ' : '') . (!$email ? 'email' : '')]);
