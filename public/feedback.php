@@ -44,24 +44,34 @@ if (!$loggedInUser) {
 $stmt = $pdo->prepare('INSERT INTO feedback (type, user_id, feedback, log) VALUES (?, ?, ?, ?)');
 $stmt->execute([$type, $loggedInUser['id'], $feedback, $log]);
 
+$fields = [
+    [
+        'name' => 'Type',
+        'value' => $type,
+        'inline' => true
+    ],
+    [
+        'name' => 'From',
+        'value' => $username,
+        'inline' => true
+    ]
+];
+
+if ($log) {
+    $fields[] = [
+        'name' => 'Log Included',
+        'value' => 'Yes',
+        'inline' => true
+    ];
+}
+
 $payload = json_encode([
     'embeds' => [
         [
             'title' => 'Feedback',
             'description' => $feedback,
             'color' => 16711680,
-            'fields' => [
-                [
-                    'name' => 'Type',
-                    'value' => $type,
-                    'inline' => true
-                ],
-                [
-                    'name' => 'From',
-                    'value' => $username,
-                    'inline' => true
-                ]
-            ]
+            'fields' => $fields
         ]
     ]
 ]);
