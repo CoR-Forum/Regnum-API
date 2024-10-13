@@ -209,16 +209,16 @@ class User {
         if ($user && password_verify($password, $user['password']) && $this->isActivated($user['id']) && !$this->isBanned($user['id'])) {
             $lastLoginTime = $this->getLastLoginTime($user['id']);
             $currentTime = new DateTime();
-    
+
             if ($lastLoginTime) {
                 $lastLoginDateTime = new DateTime($lastLoginTime);
                 $interval = $currentTime->diff($lastLoginDateTime);
-    
+
                 if ($interval->days >= 1) {
                     $magnat = new Magnat($this->pdo);
                     $magnat->giveMagnat($user['id'], 100, 'daily_login');
                 }
-    
+
                 if ($interval->h >= 6 || $interval->days > 0) {
                     $magnat = new Magnat($this->pdo);
                     $magnat->giveMagnat($user['id'], 25, 'six_hour_login');
@@ -229,11 +229,18 @@ class User {
                 $magnat = new Magnat($this->pdo);
                 $magnat->giveMagnat($user['id'], 300, 'first_login');
             }
-    
+
             $this->updateLastLoginTime($user['id']);
+            $this->updateLastActivity($user['id']); // Update last_activity
             return $user;
         }
         return false;
+    }
+
+    // Update the last_activity field for the user
+    private function updateLastActivity($userId) {
+        $stmt = $this->pdo->prepare('UPDATE users SET last_activity = NOW() WHERE id = ?');
+        $stmt->execute([$userId]);
     }
     
     // Get the user ID with the given username
