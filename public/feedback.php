@@ -3,11 +3,14 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/User.php';
 
 // Read the input from the request body
-$type = $_POST['type'] ?? null;
-$username = $_POST['username'] ?? null;
-$password = $_POST['password'] ?? null;
-$feedback = $_POST['feedback'] ?? null;
-$log = $_POST['log'] ?? null; // Optional log parameter
+$input = file_get_contents('php://input');
+$data = json_decode($input, true);
+
+$type = $data['type'] ?? null;
+$username = $data['username'] ?? null;
+$password = $data['password'] ?? null;
+$feedback = $data['feedback'] ?? null;
+$log = $data['log'] ?? null; // Optional log parameter
 
 $missingParams = [];
 
