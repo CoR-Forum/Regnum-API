@@ -2,11 +2,14 @@
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/User.php';
 
-$type = $_GET['type'] ?? null;
-$username = $_GET['username'] ?? null;
-$password = $_GET['password'] ?? null;
-$feedback = $_GET['feedback'] ?? null;
-$log = $_GET['log'] ?? null; // Optional log parameter
+// Read the JSON input from the request body
+$input = json_decode(file_get_contents('php://input'), true);
+
+$type = $input['type'] ?? null;
+$username = $input['username'] ?? null;
+$password = $input['password'] ?? null;
+$feedback = $input['feedback'] ?? null;
+$log = $input['log'] ?? null; // Optional log parameter
 
 $missingParams = [];
 
