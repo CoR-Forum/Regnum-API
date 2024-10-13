@@ -64,7 +64,7 @@ class Admin {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function disableLicense($licenseId) {
+    public function expireLicense($licenseId) {
         $this->checkAdmin();
         $stmt = $this->pdo->prepare('UPDATE licenses SET expires_at = NOW() WHERE id = ?');
         $stmt->execute([$licenseId]);
