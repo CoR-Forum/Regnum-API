@@ -66,7 +66,7 @@ class Admin {
 
     public function expireLicense($licenseId) {
         $this->checkAdmin();
-        $stmt = $this->pdo->prepare('UPDATE licenses SET expires_at = NOW() WHERE id = ?');
+        $stmt = $this->pdo->prepare('UPDATE licenses SET runtime_end = NOW() WHERE id = ?');
         $stmt->execute([$licenseId]);
         return ['status' => 'success', 'message' => 'License disabled successfully.'];
     }
