@@ -18,7 +18,7 @@ class Admin {
 
     public function getAllUsers() {
         $this->checkAdmin();
-        $stmt = $this->pdo->prepare('SELECT id, username, email, is_active, is_admin, shoutbox_banned, created_at, updated_at, is_banned FROM users');
+        $stmt = $this->pdo->prepare('SELECT id, username, email, is_active, is_admin, shoutbox_banned, created_at, updated_at, is_banned , last_login, last_activity FROM users');
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
