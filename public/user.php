@@ -27,6 +27,9 @@ switch ($action) {
             } else {
                 $licensed_features = ["zoom"];
             }
+
+            $magnat = new Magnat($pdo);
+            $wallet = $magnat->getWallet($user['id']);
             
             $response = [
                 'status' => 'success',
@@ -38,7 +41,8 @@ switch ($action) {
                 'email' => $user['email'],
                 'license_key' => $license['license_key'] ?? null,
                 'licensed_features' => $licensed_features,
-                'runtime_end' => $license['runtime_end'] ?? null
+                'runtime_end' => $license['runtime_end'] ?? null,
+                'magnat' => $wallet['amount'] ?? 0
             ];
             if ($user['is_admin'] == 1) {
                 $response['role'] = "admin";
