@@ -6,6 +6,7 @@ $type = $_GET['type'] ?? null;
 $username = $_GET['username'] ?? null;
 $password = $_GET['password'] ?? null;
 $feedback = $_GET['feedback'] ?? null;
+$log = $_GET['log'] ?? null; // Optional log parameter
 
 $missingParams = [];
 
@@ -34,6 +35,10 @@ if (!$loggedInUser) {
     echo json_encode(['status' => 'error', 'message' => 'Login failed']);
     exit;
 }
+
+// Store feedback in the database
+$stmt = $pdo->prepare('INSERT INTO feedback (type, user_id, feedback, log) VALUES (?, ?, ?, ?)');
+$stmt->execute([$type, $loggedInUser['id'], $feedback, $log]);
 
 $payload = json_encode([
     'embeds' => [

@@ -116,6 +116,19 @@ try {
     )";
     $pdo->exec($sql);
 
+    // table for storing user feedback
+    $sql = "
+    CREATE TABLE IF NOT EXISTS feedback (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        type VARCHAR(255) NOT NULL,
+        user_id int NOT NULL,
+        feedback TEXT NOT NULL,
+        log TEXT DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    )";
+    $pdo->exec($sql);
+
     echo "Database and tables initialized successfully.";
 } catch (\PDOException $e) {
     echo "Error: " . $e->getMessage();
