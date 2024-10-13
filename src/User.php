@@ -206,35 +206,49 @@ class User {
         $stmt = $this->pdo->prepare('SELECT * FROM users WHERE username = ?');
         $stmt->execute([$username]);
         $user = $stmt->fetch();
-        if ($user && password_verify($password, $user['password']) && $this->isActivated($user['id']) && !$this->isBanned($user['id'])) {
-            $lastLoginTime = $this->getLastLoginTime($user['id']);
-            $currentTime = new DateTime();
+        
+        if (!$user) {
+            return ['error' => 'User not found'];
+        }
 
-            if ($lastLoginTime) {
-                $lastLoginDateTime = new DateTime($lastLoginTime);
-                $interval = $currentTime->diff($lastLoginDateTime);
+        if (!password_verify($password, $user['password'])) {
+            return ['error' => 'Invalid password'];
+        }
 
-                if ($interval->days >= 1) {
-                    $magnat = new Magnat($this->pdo);
-                    $magnat->giveMagnat($user['id'], 100, 'daily_login');
-                }
+        if (!$this->isActivated($user['id'])) {
+            return ['error' => 'User account is not activated'];
+        }
 
-                if ($interval->h >= 6 || $interval->days > 0) {
-                    $magnat = new Magnat($this->pdo);
-                    $magnat->giveMagnat($user['id'], 25, 'six_hour_login');
-                }
-            } else {
-                // If last_login is null, initialize it with the current time
-                $this->updateLastLoginTime($user['id']);
+        if ($this->isBanned($user['id'])) {
+            return ['error' => 'User account is banned'];
+        }
+
+        $lastLoginTime = $this->getLastLoginTime($user['id']);
+        $currentTime = new DateTime();
+
+        if ($lastLoginTime) {
+            $lastLoginDateTime = new DateTime($lastLoginTime);
+            $interval = $currentTime->diff($lastLoginDateTime);
+
+            if ($interval->days >= 1) {
                 $magnat = new Magnat($this->pdo);
-                $magnat->giveMagnat($user['id'], 300, 'first_login');
+                $magnat->giveMagnat($user['id'], 100, 'daily_login');
             }
 
+            if ($interval->h >= 6 || $interval->days > 0) {
+                $magnat = new Magnat($this->pdo);
+                $magnat->giveMagnat($user['id'], 25, 'six_hour_login');
+            }
+        } else {
+            // If last_login is null, initialize it with the current time
             $this->updateLastLoginTime($user['id']);
-            $this->updateLastActivity($user['id']); // Update last_activity
-            return $user;
+            $magnat = new Magnat($this->pdo);
+            $magnat->giveMagnat($user['id'], 300, 'first_login');
         }
-        return false;
+
+        $this->updateLastLoginTime($user['id']);
+        $this->updateLastActivity($user['id']); // Update last_activity
+        return $user;
     }
 
     // Update the last_activity field for the user

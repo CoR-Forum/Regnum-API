@@ -15,12 +15,10 @@ $user = new User($pdo);
 
 switch ($action) {
     case 'login':
-        if ($user = $user->login($username, $password)) {
-            if ($user['is_banned']) {
-                echo json_encode(['status' => 'error', 'message' => 'User is banned']);
-                break;
-            }
-
+        $user = $user->login($username, $password);
+        if (is_array($user) && isset($user['error'])) {
+            echo json_encode(['status' => 'error', 'message' => $user['error']]);
+        } elseif ($user) {
             $licenseObj = new License($pdo);
             $license = $licenseObj->getLastActivatedLicense($user['id']);
             
@@ -32,7 +30,7 @@ switch ($action) {
             } else {
                 $licensed_features = ["zoom"];
             }
-
+    
             $magnat = new Magnat($pdo);
             $wallet = $magnat->getWallet($user['id']);
             
@@ -59,6 +57,7 @@ switch ($action) {
             echo json_encode(['status' => 'error', 'message' => 'Login failed']);
         }
         break;
+        
     case 'register':
         if (!$username || !$password || !$email) {
             echo json_encode(['status' => 'error', 'message' => 'Missing required ' . (!$username ? 'username, ' : '') . (!$password ? 'password, ' : '') . (!$email ? 'email' : '')]);
