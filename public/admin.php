@@ -97,10 +97,27 @@ if ($loggedInUser) {
         $admin = new Admin($pdo, $loggedInUser['is_admin']);
         $result = $admin->expireLicense($licenseId);
         echo json_encode($result);
+    } else if ($action === 'modifyGlobalSettings') {
+        if (!$loggedInUser['is_admin']) {
+            echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+            exit;
+        }
+
+        $setting = $_GET['setting'] ?? null;
+        $value = $_GET['value'] ?? null;
+
+        if (!$setting || !$value) {
+            echo json_encode(['status' => 'error', 'message' => 'Missing required setting or value']);
+            exit;
+        } else {
+            $admin = new Admin($pdo, $loggedInUser['is_admin']);
+            $result = $admin->modifyGlobalSettings($setting, $value);
+            echo json_encode($result);
+        }
+
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
     }
 } else {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid username or password']);
+    echo json_encode(['status' => 'error', 'message' => 'Login failed']);
 }
-?>

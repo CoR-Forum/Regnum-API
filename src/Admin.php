@@ -71,4 +71,11 @@ class Admin {
         return ['status' => 'success', 'message' => 'License disabled successfully.'];
     }
 
+    // function to modify global settings
+    public function modifyGlobalSettings($setting, $value) {
+        $this->checkAdmin();
+        $stmt = $this->pdo->prepare('UPDATE settings SET value = :value WHERE name = :name');
+        $stmt->execute([':value' => $value, ':name' => $setting]);
+        return ['status' => 'success', 'message' => 'Setting updated successfully.'];
+    }
 }

@@ -129,6 +129,41 @@ try {
     )";
     $pdo->exec($sql);
 
+    // table for global settings
+    $sql = "
+    CREATE TABLE IF NOT EXISTS settings (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name ENUM('status', 'latest_version') NOT NULL UNIQUE,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )";
+    $pdo->exec($sql);
+
+    // crate settings table if it doesn't exist yet
+    $stmt = $pdo->prepare('SELECT * FROM settings');
+    $stmt->execute();
+    $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (empty($settings)) {
+        $sql = "
+        INSERT INTO settings (name, value) VALUES
+        ('status', 'active'),
+        ('latest_version', '1.0.0')
+        ";
+        $pdo->exec($sql);
+    } else {
+        // add missing settings if they don't exist
+        $stmt = $pdo->prepare('SELECT * FROM settings WHERE name = "latest_version"');
+        $stmt->execute();
+        $latestVersion = $stmt->fetch();
+        if (!$latestVersion) {
+            $sql = "
+            INSERT INTO settings (name, value) VALUES
+            ('latest_version', '1.0.0')
+            ";
+            $pdo->exec($sql);
+        }
+    }
+
     echo "Database and tables initialized successfully.";
 } catch (\PDOException $e) {
     echo "Error: " . $e->getMessage();
