@@ -9,7 +9,7 @@ class Memory {
         $stmt->execute([$userId]);
         $license = $stmt->fetch();
         if (!$license) {
-            return $this->getZoomPointer();
+            return ['status' => 'error', 'message' => 'License not found'];
         }
         if (!is_null($license['runtime_end'])) {
             $currentDate = new DateTime();
@@ -19,7 +19,7 @@ class Memory {
                 return ['status' => 'error', 'message' => 'License expiration date is invalid'];
             }
             if ($currentDate > $expiresAt) {
-                return $this->getZoomPointer();
+                return ['status' => 'error', 'message' => 'License expired'];
             }
         }
         $licensedFeatures = json_decode($license['licensed_features'], true);
@@ -34,16 +34,6 @@ class Memory {
             }
         }
         return ['status' => 'success', 'memory_pointers' => $memoryPointers];
-    }
-
-    private function getZoomPointer() {
-        $stmt = $this->pdo->prepare('SELECT address, offsets FROM memory_pointers WHERE feature = ?');
-        $stmt->execute(['zoom']);
-        $pointer = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($pointer) {
-            return ['status' => 'success', 'memory_pointers' => ['zoom' => $pointer]];
-        }
-        return ['status' => 'error', 'message' => 'Zoom pointer not found'];
     }
 }
 ?>
