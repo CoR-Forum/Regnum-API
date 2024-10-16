@@ -76,7 +76,7 @@ class User {
         $stmt = $this->pdo->prepare('INSERT INTO users (username, password, email, activation_token) VALUES (?, ?, ?, ?)');
         if ($stmt->execute([$username, $hash, $email, $token])) {
             $subject = 'Activate your account';
-            $body = "Click the link to activate your account: {$this->emailLinkDomain}activate.php?token=$token";
+            $body = "Click the link to activate your account: {$this->emailLinkDomain}user.php?action=activate&token=$token";
             $this->sendEmailToUser($email, $subject, $body);
             return true;
         }
@@ -138,7 +138,7 @@ class User {
         $user = $stmt->fetch();
         if ($user) {
             $subject = 'Activate your account';
-            $body = "Click the link to activate your account: {$this->emailLinkDomain}activate.php?token={$user['activation_token']}";
+            $body = "Click the link to activate your account: {$this->emailLinkDomain}user.php?action&activate&token={$user['activation_token']}";
             $this->sendEmailToUser($email, $subject, $body);
             return true;
         }
