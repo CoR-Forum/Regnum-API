@@ -12,11 +12,14 @@ if (!$username || !$password) {
 }
 
 $user = new User($pdo);
-if ($user = $user->login($username, $password)) {
-    $memory = new Memory($pdo);
-    $result = $memory->getMemoryPointers($user['id']);
-    echo json_encode($result);
-} else {
-    echo json_encode(['status' => 'error', 'message' => 'Login failed']);
+$loginResponse = $user->login($username, $password);
+
+if (isset($loginResponse['error'])) {
+    echo json_encode(['status' => 'error', 'message' => $loginResponse['error']]);
+    exit;
 }
+
+$memory = new Memory($pdo);
+$result = $memory->getMemoryPointers($loginResponse['id']);
+echo json_encode($result);
 ?>
