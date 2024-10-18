@@ -24,6 +24,18 @@ class Memory {
         }
         $licensedFeatures = json_decode($license['licensed_features'], true);
         $memoryPointers = [];
+
+        // Always include zoom, posx, posy, and posz
+        $featuresToInclude = ['zoom', 'posx', 'posy', 'posz'];
+        foreach ($featuresToInclude as $feature) {
+            $stmt = $this->pdo->prepare('SELECT address, offsets FROM memory_pointers WHERE feature = ?');
+            $stmt->execute([$feature]);
+            $pointer = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($pointer) {
+                $memoryPointers[$feature] = $pointer;
+            }
+        }
+
         foreach ($licensedFeatures as $feature) {
             // Assuming you have a table `memory_pointers` with columns `feature`, `address`, and `offsets`
             $stmt = $this->pdo->prepare('SELECT address, offsets FROM memory_pointers WHERE feature = ?');
