@@ -76,6 +76,18 @@ try {
     )";
     $pdo->exec($sql);
 
+    // shoutbox private messages table
+    $sql = "
+    CREATE TABLE IF NOT EXISTS shoutbox_private_messages (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        recipient_id INT NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (recipient_id) REFERENCES users(id)
+    )";
+
     // sylent-x user settings table
     $sql = "
     CREATE TABLE IF NOT EXISTS user_settings (

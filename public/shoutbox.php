@@ -26,6 +26,14 @@ if ($user = $user->login($username, $password)) {
     } elseif ($action === 'delete' && $message) {
         $result = $shoutbox->deleteMessage($user['id'], $message);
         echo json_encode($result);
+    } elseif ($action === 'private' && $message && $_GET['recipient']) {
+        $recipient = $_GET['recipient'];
+        $result = $shoutbox->addPrivateMessage($user['id'], $message, $recipient);
+        echo json_encode($result);
+    } elseif ($action === 'getprivate' && $_GET['recipient']) {
+        $recipient = $_GET['recipient'];
+        $messages = $shoutbox->getPrivateMessages($user['id'], $recipient);
+        echo json_encode(['status' => 'success', 'messages' => $messages]);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Invalid action or missing message']);
     }
