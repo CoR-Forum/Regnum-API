@@ -44,10 +44,6 @@ class Shoutbox {
     }
 
     public function addPrivateMessage($userId, $message, $recipient) {
-        if ($this->isUserBanned($userId)) {
-            return ['status' => 'error', 'message' => 'User is banned from the shoutbox'];
-        }
-    
         // Check if recipient is an ID or a name
         if (is_numeric($recipient)) {
             $recipientId = $recipient;
