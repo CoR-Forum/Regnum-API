@@ -16,7 +16,6 @@ if (!$username || !$password) {
 $user = new User($pdo);
 if ($user = $user->login($username, $password)) {
     $shoutbox = new Shoutbox($pdo);
-
     if ($action === 'add' && $message) {
         $result = $shoutbox->addMessage($user['id'], $message);
         echo json_encode($result);
