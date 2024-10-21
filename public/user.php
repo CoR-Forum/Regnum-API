@@ -25,13 +25,13 @@ switch ($action) {
             if ($license) {
                 $licensed_features = json_decode($license['licensed_features'], true);
                 if (is_null($licensed_features)) {
-                    $licensed_features = ["zoom"];
+                    $licensed_features = ['zoom', 'posx', 'posy', 'posz'];
                 }
                 $runtime_end = new DateTime($license['runtime_end']);
                 $current_date = new DateTime();
                 $is_license_expired = $runtime_end < $current_date;
             } else {
-                $licensed_features = ["zoom"];
+                $licensed_features = ['zoom', 'posx', 'posy', 'posz'];
                 $is_license_expired = true;
                 $license = ['license_key' => 'null', 'runtime_end' => 'null'];
             }
