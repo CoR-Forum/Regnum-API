@@ -27,8 +27,13 @@ switch ($action) {
                 if (is_null($licensed_features)) {
                     $licensed_features = ["zoom"];
                 }
+                $runtime_end = new DateTime($license['runtime_end']);
+                $current_date = new DateTime();
+                $is_license_expired = $runtime_end < $current_date;
             } else {
                 $licensed_features = ["zoom"];
+                $is_license_expired = true;
+                $license = ['license_key' => 'null', 'runtime_end' => 'null'];
             }
     
             $magnat = new Magnat($pdo);
@@ -42,9 +47,10 @@ switch ($action) {
                 'created_at' => $user['created_at'],
                 'is_active' => $user['is_active'],
                 'email' => $user['email'],
-                'license_key' => $license['license_key'] ?? null,
+                'license_key' => $license['license_key'],
                 'licensed_features' => $licensed_features,
-                'runtime_end' => $license['runtime_end'] ?? null,
+                'runtime_end' => $license['runtime_end'],
+                'is_license_expired' => $is_license_expired,
                 'magnat' => $wallet['amount'] ?? 0
             ];
             if ($user['is_admin'] == 1) {
