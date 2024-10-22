@@ -67,6 +67,13 @@ class User {
         return $stmt->fetch() !== false;
     }
 
+    // Check if the user is deleted
+    public function isDeleted($userId) {
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = ? AND deleted = 1');
+        $stmt->execute([$userId]);
+        return $stmt->fetch() !== false;
+    }
+
     // Register a new user with the given username, password, and email.
     // The password is hashed before storing it in the database.
     // An activation token is generated and sent to the user's email.
@@ -221,6 +228,10 @@ class User {
 
         if ($this->isBanned($user['id'])) {
             return ['error' => 'User account is banned'];
+        }
+
+        if ($this->isDeleted($user['id'])) {
+            return ['error' => 'User account is deleted'];
         }
 
         $lastLoginTime = $this->getLastLoginTime($user['id']);
