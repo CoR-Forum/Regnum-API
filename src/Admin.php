@@ -4,16 +4,19 @@ class Admin {
 
     private $pdo;
     private $isAdmin;
+    private $adminId;
 
-    public function __construct($pdo, $isAdmin) {
+    public function __construct($pdo, $isAdmin, $adminId) {
         $this->pdo = $pdo;
         $this->isAdmin = $isAdmin;
+        $this->adminId = $adminId;
     }
 
     private function checkAdmin() {
         if (!$this->isAdmin) {
             throw new Exception('Access denied. User is not an admin.');
         }
+        return $this->adminId;
     }
 
     public function getAllUsers() {
@@ -23,11 +26,48 @@ class Admin {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function toggleUserBan($userId) {
-        $this->checkAdmin();
-        $stmt = $this->pdo->prepare('UPDATE users SET banned = NOT banned, updated_at = NOW() WHERE id = ?');
+    public function toggleUserBan($userId, $reason = null, $until = null) {
+        $adminId = $this->checkAdmin();
+        
+        // Get the current ban status
+        $stmt = $this->pdo->prepare('SELECT banned FROM users WHERE id = ?');
         $stmt->execute([$userId]);
-        return ['status' => 'success', 'message' => 'User ' . ($stmt->rowCount() ? 'banned' : 'unbanned ') . 'successfully.'];
+        $currentStatus = $stmt->fetchColumn();
+        
+        // Toggle the ban status
+        $newStatus = !$currentStatus;
+        
+        if ($newStatus) {
+            // Banning the user
+            $stmt = $this->pdo->prepare('
+                UPDATE users 
+                SET 
+                    banned = 1, 
+                    banned_by = ?, 
+                    banned_at = NOW(), 
+                    banned_reason = ?, 
+                    banned_until = ?, 
+                    updated_at = NOW() 
+                WHERE id = ?
+            ');
+            $stmt->execute([$adminId, $reason, $until, $userId]);
+        } else {
+            // Unbanning the user
+            $stmt = $this->pdo->prepare('
+                UPDATE users 
+                SET 
+                    banned = 0, 
+                    banned_by = NULL, 
+                    banned_at = NULL, 
+                    banned_reason = NULL, 
+                    banned_until = NULL, 
+                    updated_at = NOW() 
+                WHERE id = ?
+            ');
+            $stmt->execute([$userId]);
+        }
+        
+        return ['status' => 'success', 'message' => 'User ' . ($newStatus ? 'banned' : 'unbanned') . ' successfully.'];
     }
 
     public function toggleUserAdmin($userId) {

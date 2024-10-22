@@ -22,19 +22,28 @@ $user = new User($pdo);
 $loggedInUser = $user->login($username, $password);
 
 if ($loggedInUser) {
+    $admin = new Admin($pdo, $loggedInUser['is_admin'], $loggedInUser['id']);
+    
     if ($action === 'getUsers') {
-        $admin = new Admin($pdo, $loggedInUser['is_admin']);
         $allUsers = $admin->getAllUsers();
         echo json_encode(['status' => 'success', 'users' => $allUsers]);
     } else if ($action === 'toggleUserBan') {
         $userId = $_GET['userId'] ?? null;
+        $reason = $_GET['reason'] ?? null;
+        $until = $_GET['until'] ?? null;
+        
         if (!$userId) {
             echo json_encode(['status' => 'error', 'message' => 'Missing required user ID']);
             exit;
         }
-
-        $admin = new Admin($pdo, $loggedInUser['is_admin']);
-        $result = $admin->toggleUserBan($userId);
+    
+        // Validate the until parameter if provided
+        if ($until !== null && strtotime($until) === false) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid until timestamp']);
+            exit;
+        }
+    
+        $result = $admin->toggleUserBan($userId, $reason, $until);
         echo json_encode($result);
     } else if ($action === 'toggleUserAdmin') {
         $userId = $_GET['userId'] ?? null;
@@ -43,7 +52,6 @@ if ($loggedInUser) {
             exit;
         }
 
-        $admin = new Admin($pdo, $loggedInUser['is_admin']);
         $result = $admin->toggleUserAdmin($userId);
         echo json_encode($result);
     } else if ($action === 'toggleUserActivation') {
@@ -53,7 +61,6 @@ if ($loggedInUser) {
             exit;
         }
 
-        $admin = new Admin($pdo, $loggedInUser['is_admin']);
         $result = $admin->toggleUserActivation($userId);
         echo json_encode($result);
     } else if ($action === 'generateLicenseKey') {
@@ -79,7 +86,6 @@ if ($loggedInUser) {
         $newLicenseKey = $license->generateNewLicense($licensedFeatures, $_GET['runtime'] ?? null);
         echo json_encode(['status' => 'success', 'licenseKey' => $newLicenseKey]);
     } else if ($action === 'getLicenses') {
-        $admin = new Admin($pdo, $loggedInUser['is_admin']);
         $allLicenses = $admin->getAllLicenses();
         echo json_encode(['status' => 'success', 'licenses' => $allLicenses]);
     } else if ($action === 'expireLicense') {
@@ -94,7 +100,6 @@ if ($loggedInUser) {
             exit;
         }
 
-        $admin = new Admin($pdo, $loggedInUser['is_admin']);
         $result = $admin->expireLicense($licenseId);
         echo json_encode($result);
     } else if ($action === 'modifyGlobalSettings') {
@@ -110,7 +115,6 @@ if ($loggedInUser) {
             echo json_encode(['status' => 'error', 'message' => 'Missing required setting or value']);
             exit;
         } else {
-            $admin = new Admin($pdo, $loggedInUser['is_admin']);
             $result = $admin->modifyGlobalSettings($setting, $value);
             echo json_encode($result);
         }
