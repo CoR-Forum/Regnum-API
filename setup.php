@@ -18,6 +18,10 @@ try {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         last_login TIMESTAMP DEFAULT NULL,
         banned TINYINT(1) DEFAULT 0,
+        banned_at TIMESTAMP DEFAULT NULL,
+        banned_by INT DEFAULT NULL,
+        banned_reason TEXT DEFAULT NULL,
+        banned_until TIMESTAMP DEFAULT NULL,
         last_activity TIMESTAMP DEFAULT NULL
     )";
     $pdo->exec($sql);
@@ -25,6 +29,31 @@ try {
     // rename column 'is_banned' to 'banned' in users table
     $sql = "ALTER TABLE users CHANGE COLUMN is_banned banned TINYINT(1) DEFAULT 0";
     $pdo->exec($sql);
+
+    // create columns banned_at, banned_by, banned_reason, banned_until in users table if they don't exist
+    $stmt = $pdo->prepare('DESCRIBE users');
+    $stmt->execute();
+    $columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $columns = array_column($columns, 'Field');
+    if (!in_array('banned_at', $columns)) {
+        $sql = "ALTER TABLE users ADD COLUMN banned_at TIMESTAMP DEFAULT NULL";
+        $pdo->exec($sql);
+    }
+
+    if (!in_array('banned_by', $columns)) {
+        $sql = "ALTER TABLE users ADD COLUMN banned_by INT DEFAULT NULL";
+        $pdo->exec($sql);
+    }
+
+    if (!in_array('banned_reason', $columns)) {
+        $sql = "ALTER TABLE users ADD COLUMN banned_reason TEXT DEFAULT NULL";
+        $pdo->exec($sql);
+    }
+
+    if (!in_array('banned_until', $columns)) {
+        $sql = "ALTER TABLE users ADD COLUMN banned_until TIMESTAMP DEFAULT NULL";
+        $pdo->exec($sql);
+    }
 
     // Create table for password reset tokens
     $sql = "
