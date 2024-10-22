@@ -14,6 +14,10 @@ try {
         is_active TINYINT(1) DEFAULT 0,
         is_admin TINYINT(1) DEFAULT 0,
         shoutbox_banned TINYINT(1) DEFAULT 0,
+        shoutbox_banned_at TIMESTAMP DEFAULT NULL,
+        shoutbox_banned_by INT DEFAULT NULL,
+        shoutbox_banned_reason TEXT DEFAULT NULL,
+        shoutbox_banned_until TIMESTAMP DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         last_login TIMESTAMP DEFAULT NULL,
@@ -52,6 +56,27 @@ try {
 
     if (!in_array('banned_until', $columns)) {
         $sql = "ALTER TABLE users ADD COLUMN banned_until TIMESTAMP DEFAULT NULL";
+        $pdo->exec($sql);
+    }
+
+    // create columns shoutbox_banned_at, shoutbox_banned_by, shoutbox_banned_reason, shoutbox_banned_until in users table if they don't exist
+    if (!in_array('shoutbox_banned_at', $columns)) {
+        $sql = "ALTER TABLE users ADD COLUMN shoutbox_banned_at TIMESTAMP DEFAULT NULL";
+        $pdo->exec($sql);
+    }
+
+    if (!in_array('shoutbox_banned_by', $columns)) {
+        $sql = "ALTER TABLE users ADD COLUMN shoutbox_banned_by INT DEFAULT NULL";
+        $pdo->exec($sql);
+    }
+
+    if (!in_array('shoutbox_banned_reason', $columns)) {
+        $sql = "ALTER TABLE users ADD COLUMN shoutbox_banned_reason TEXT DEFAULT NULL";
+        $pdo->exec($sql);
+    }
+
+    if (!in_array('shoutbox_banned_until', $columns)) {
+        $sql = "ALTER TABLE users ADD COLUMN shoutbox_banned_until TIMESTAMP DEFAULT NULL";
         $pdo->exec($sql);
     }
 
