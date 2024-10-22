@@ -25,21 +25,21 @@ class Admin {
 
     public function toggleUserBan($userId) {
         $this->checkAdmin();
-        $stmt = $this->pdo->prepare('UPDATE users SET is_banned = NOT is_banned WHERE id = ?');
+        $stmt = $this->pdo->prepare('UPDATE users SET is_banned = NOT is_banned, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$userId]);
         return ['status' => 'success', 'message' => 'User ' . ($stmt->rowCount() ? 'banned' : 'unbanned ') . 'successfully.'];
     }
 
     public function toggleUserAdmin($userId) {
         $this->checkAdmin();
-        $stmt = $this->pdo->prepare('UPDATE users SET is_admin = NOT is_admin WHERE id = ?');
+        $stmt = $this->pdo->prepare('UPDATE users SET is_admin = NOT is_admin, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$userId]);
         return ['status' => 'success', 'message' => 'User ' . ($stmt->rowCount() ? 'promoted' : 'demoted ') . 'successfully.'];
     }
 
     public function toggleUserActivation($userId) {
         $this->checkAdmin();
-        $stmt = $this->pdo->prepare('UPDATE users SET is_active = NOT is_active WHERE id = ?');
+        $stmt = $this->pdo->prepare('UPDATE users SET is_active = NOT is_active, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$userId]);
         return ['status' => 'success', 'message' => 'User ' . ($stmt->rowCount() ? 'activated' : 'deactivated ') . 'successfully.'];
     }
