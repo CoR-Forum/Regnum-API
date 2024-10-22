@@ -62,7 +62,7 @@ class User {
 
       // Check if the user is banned
     public function isBanned($userId) {
-        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = ? AND is_banned = 1');
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = ? AND banned = 1');
         $stmt->execute([$userId]);
         return $stmt->fetch() !== false;
     }

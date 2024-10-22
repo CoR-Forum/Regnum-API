@@ -17,9 +17,13 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         last_login TIMESTAMP DEFAULT NULL,
-        is_banned TINYINT(1) DEFAULT 0,
+        banned TINYINT(1) DEFAULT 0,
         last_activity TIMESTAMP DEFAULT NULL
     )";
+    $pdo->exec($sql);
+
+    // rename column 'is_banned' to 'banned' in users table
+    $sql = "ALTER TABLE users CHANGE COLUMN is_banned banned TINYINT(1) DEFAULT 0";
     $pdo->exec($sql);
 
     // Create table for password reset tokens
