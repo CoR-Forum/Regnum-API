@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/User.php';
+require_once __DIR__ . '/../src/Global.php';
 
 // Read the input from the request body
 $input = file_get_contents('php://input');
@@ -28,16 +29,14 @@ if (!$feedback) {
 }
 
 if (!empty($missingParams)) {
-    echo json_encode(['status' => 'error', 'message' => 'Missing required parameter(s): ' . implode(', ', $missingParams)]);
-    exit;
+    GlobalFunctions::sendJsonResponse('error', 'Missing required parameter(s): ' . implode(', ', $missingParams));
 }
 
 $user = new User($pdo);
 $loggedInUser = $user->login($username, $password);
 
 if (!$loggedInUser) {
-    echo json_encode(['status' => 'error', 'message' => 'Login failed']);
-    exit;
+    GlobalFunctions::sendJsonResponse('error', 'Login failed');
 }
 
 // Store feedback in the database
@@ -88,8 +87,8 @@ $context  = stream_context_create($options);
 $result = file_get_contents($discordFeedbackWebhookUrl, false, $context);
 
 if ($result === FALSE) {
-    echo json_encode(['status' => 'error', 'message' => 'Failed to send feedback']);
+    GlobalFunctions::sendJsonResponse('error', 'Failed to send feedback');
 } else {
-    echo json_encode(['status' => 'success', 'message' => 'Feedback submitted successfully']);
+    GlobalFunctions::sendJsonResponse('success', 'Feedback submitted successfully');
 }
 ?>

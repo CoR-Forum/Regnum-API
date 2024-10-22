@@ -1,30 +1,31 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/License.php';
+require_once __DIR__ . '/../src/Global.php';
+
 $licenseKey = $_GET['key'] ?? null;
 if (!$licenseKey) {
-    echo json_encode(['status' => 'error', 'message' => 'Missing license key']);
-    exit;
+    GlobalFunctions::sendJsonResponse('error', 'Missing license key');
 }
+
 $license = new License($pdo);
 $licenseDetails = $license->checkLicense($licenseKey);
 if (!$licenseDetails) {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid license key']);
-    exit;
+    GlobalFunctions::sendJsonResponse('error', 'Invalid license key');
 }
+
 // Check if the license is expired
 $currentDate = new DateTime();
 if ($licenseDetails['runtime_end'] !== null) {
     $expiresAt = new DateTime($licenseDetails['runtime_end']);
     if ($expiresAt < $currentDate) {
-        echo json_encode(['status' => 'error', 'message' => 'License key expired']);
-        exit;
+        GlobalFunctions::sendJsonResponse('error', 'License key expired');
     }
 }
+
 // Decode licensed_features
 $licensedFeatures = json_decode($licenseDetails['licensed_features'], true);
-echo json_encode([
-    'status' => 'success',
+GlobalFunctions::sendJsonResponse('success', 'License key is valid', [
     'licensed_features' => $licensedFeatures,
     'runtime_end' => $licenseDetails['runtime_end']
 ]);

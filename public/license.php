@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/User.php';
 require_once __DIR__ . '/../src/License.php';
+require_once __DIR__ . '/../src/Global.php';
 
 // Get the action, username, and license key from the URL
 $action = $_GET['action'] ?? null;
@@ -10,32 +11,28 @@ $licenseKey = $_GET['key'] ?? null;
 
 // Check if the action is set to 'activate'
 if ($action !== 'activate') {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
-    exit;
+    GlobalFunctions::sendJsonResponse('error', 'Invalid action');
 }
 
 // Check if the username or license key is missing
 if (!$username || !$licenseKey) {
-    echo json_encode(['status' => 'error', 'message' => 'Missing required ' . (!$username ? 'username, ' : '') . (!$licenseKey ? 'license_key' : '')]);
-    exit;
+    GlobalFunctions::sendJsonResponse('error', 'Missing required ' . (!$username ? 'username, ' : '') . (!$licenseKey ? 'license_key' : ''));
 }
 
 // Check if the username exists and is activated
 $user = new User($pdo);
 $userId = $user->getUserId($username);
 if (!$userId) {
-    echo json_encode(['status' => 'error', 'message' => 'Invalid username']);
-    exit;
+    GlobalFunctions::sendJsonResponse('error', 'Invalid username');
 }
 
 // Check if the user is activated
 if (!$user->isActivated($userId)) {
-    echo json_encode(['status' => 'error', 'message' => 'User is not activated']);
-    exit;
+    GlobalFunctions::sendJsonResponse('error', 'User is not activated');
 }
 
 // Activate the license
 $license = new License($pdo);
 $result = $license->activateLicense($userId, $licenseKey);
-echo json_encode($result);
+GlobalFunctions::sendJsonResponse($result['status'], $result['message'], $result);
 ?>

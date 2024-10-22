@@ -5,6 +5,7 @@ require_once __DIR__ . '/../src/License.php';
 require_once __DIR__ . '/../src/Memory.php';
 require_once __DIR__ . '/../src/Shoutbox.php';
 require_once __DIR__ . '/../src/Admin.php';
+require_once __DIR__ . '/../src/Global.php';
 
 $username = $_GET['username'] ?? null;
 $password = $_GET['password'] ?? null;
@@ -14,8 +15,7 @@ $action = $_GET['action'] ?? null;
 
 // check if the username or password is missing
 if (!$username || !$password) {
-    echo json_encode(['status' => 'error', 'message' => 'Missing required username or password']);
-    exit;
+    GlobalFunctions::sendJsonResponse('error', 'Missing required username or password');
 }
 
 $user = new User($pdo);
@@ -26,102 +26,92 @@ if ($loggedInUser) {
     
     if ($action === 'getUsers') {
         $allUsers = $admin->getAllUsers();
-        echo json_encode(['status' => 'success', 'users' => $allUsers]);
+        GlobalFunctions::sendJsonResponse('success', 'Users fetched successfully', ['users' => $allUsers]);
     } else if ($action === 'toggleUserBan') {
         $userId = $_GET['userId'] ?? null;
         $reason = $_GET['reason'] ?? null;
         $until = $_GET['until'] ?? null;
         
         if (!$userId) {
-            echo json_encode(['status' => 'error', 'message' => 'Missing required user ID']);
-            exit;
+            GlobalFunctions::sendJsonResponse('error', 'Missing required user ID');
         }
     
         // Validate the until parameter if provided
         if ($until !== null && strtotime($until) === false) {
-            echo json_encode(['status' => 'error', 'message' => 'Invalid until timestamp']);
-            exit;
+            GlobalFunctions::sendJsonResponse('error', 'Invalid until timestamp');
         }
     
         $result = $admin->toggleUserBan($userId, $reason, $until);
-        echo json_encode($result);
+        GlobalFunctions::sendJsonResponse($result['status'], $result['message'], $result);
     } else if ($action === 'toggleUserAdmin') {
         $userId = $_GET['userId'] ?? null;
         if (!$userId) {
-            echo json_encode(['status' => 'error', 'message' => 'Missing required user ID']);
-            exit;
+            GlobalFunctions::sendJsonResponse('error', 'Missing required user ID');
         }
 
         $result = $admin->toggleUserAdmin($userId);
-        echo json_encode($result);
+        GlobalFunctions::sendJsonResponse($result['status'], $result['message'], $result);
     } else if ($action === 'toggleUserActivation') {
         $userId = $_GET['userId'] ?? null;
         if (!$userId) {
-            echo json_encode(['status' => 'error', 'message' => 'Missing required user ID']);
-            exit;
+            GlobalFunctions::sendJsonResponse('error', 'Missing required user ID');
         }
 
         $result = $admin->toggleUserActivation($userId);
-        echo json_encode($result);
+        GlobalFunctions::sendJsonResponse($result['status'], $result['message'], $result);
     } else if ($action === 'generateLicenseKey') {
         if (!$loggedInUser['is_admin']) {
-            echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
-            exit;
+            GlobalFunctions::sendJsonResponse('error', 'Unauthorized');
         }
 
         $licensedFeatures = $_GET['licensedFeatures'] ?? null;
         if (!$licensedFeatures) {
-            echo json_encode(['status' => 'error', 'message' => 'Missing required licensed features']);
-            exit;
+            GlobalFunctions::sendJsonResponse('error', 'Missing required licensed features');
         }
 
         // Validate licensedFeatures as a JSON array
         $licensedFeaturesArray = json_decode($licensedFeatures, true);
         if (json_last_error() !== JSON_ERROR_NONE || !is_array($licensedFeaturesArray)) {
-            echo json_encode(['status' => 'error', 'message' => 'Invalid licensed features format']);
-            exit;
+            GlobalFunctions::sendJsonResponse('error', 'Invalid licensed features format');
         }
 
         $license = new License($pdo);
         $newLicenseKey = $license->generateNewLicense($licensedFeatures, $_GET['runtime'] ?? null);
-        echo json_encode(['status' => 'success', 'licenseKey' => $newLicenseKey]);
+        GlobalFunctions::sendJsonResponse('success', 'License key generated successfully', ['licenseKey' => $newLicenseKey]);
     } else if ($action === 'getLicenses') {
         $allLicenses = $admin->getAllLicenses();
-        echo json_encode(['status' => 'success', 'licenses' => $allLicenses]);
+        GlobalFunctions::sendJsonResponse('success', 'Licenses fetched successfully', ['licenses' => $allLicenses]);
     } else if ($action === 'expireLicense') {
         if (!$loggedInUser['is_admin']) {
-            echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
-            exit;
+            GlobalFunctions::sendJsonResponse('error', 'Unauthorized');
         }
 
         $licenseId = $_GET['licenseId'] ?? null;
         if (!$licenseId) {
-            echo json_encode(['status' => 'error', 'message' => 'Missing required license ID']);
-            exit;
+            GlobalFunctions::sendJsonResponse('error', 'Missing required license ID');
         }
 
         $result = $admin->expireLicense($licenseId);
-        echo json_encode($result);
+        GlobalFunctions::sendJsonResponse($result['status'], $result['message'], $result);
     } else if ($action === 'modifyGlobalSettings') {
         if (!$loggedInUser['is_admin']) {
-            echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
-            exit;
+            GlobalFunctions::sendJsonResponse('error', 'Unauthorized');
         }
 
         $setting = $_GET['setting'] ?? null;
         $value = $_GET['value'] ?? null;
 
         if (!$setting || !$value) {
-            echo json_encode(['status' => 'error', 'message' => 'Missing required setting or value']);
-            exit;
+            GlobalFunctions::sendJsonResponse('error', 'Missing required setting or value');
         } else {
             $result = $admin->modifyGlobalSettings($setting, $value);
-            echo json_encode($result);
+            GlobalFunctions::sendJsonResponse($result['status'], $result['message'], $result);
         }
 
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
+        GlobalFunctions::sendJsonResponse('error', 'Invalid action');
     }
 } else {
-    echo json_encode(['status' => 'error', 'message' => 'Login failed']);
+    GlobalFunctions::sendJsonResponse('error', 'Login failed');
 }
+?>
