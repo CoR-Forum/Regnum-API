@@ -18,14 +18,14 @@ class Admin {
 
     public function getAllUsers() {
         $this->checkAdmin();
-        $stmt = $this->pdo->prepare('SELECT id, username, email, is_active, is_admin, shoutbox_banned, created_at, updated_at, is_banned , last_login, last_activity FROM users');
+        $stmt = $this->pdo->prepare('SELECT id, username, email, is_active, is_admin, shoutbox_banned, created_at, updated_at, banned , last_login, last_activity FROM users');
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function toggleUserBan($userId) {
         $this->checkAdmin();
-        $stmt = $this->pdo->prepare('UPDATE users SET is_banned = NOT is_banned, updated_at = NOW() WHERE id = ?');
+        $stmt = $this->pdo->prepare('UPDATE users SET banned = NOT banned, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$userId]);
         return ['status' => 'success', 'message' => 'User ' . ($stmt->rowCount() ? 'banned' : 'unbanned ') . 'successfully.'];
     }
