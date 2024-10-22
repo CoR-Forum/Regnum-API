@@ -1,17 +1,20 @@
 <?php
+class GlobalFunctions {
+    private $pdo;
 
-Class GlobalFunctions {
-    public function getMissingParams($data, $requiredParams) {
-        $missingParams = [];
-        foreach ($requiredParams as $param) {
-            if (!isset($data[$param])) {
-                $missingParams[] = $param;
-            }
-        }
-        return $missingParams;
+    public function __construct($pdo) {
+        $this->pdo = $pdo;
     }
 
     public function getCurrentStatus() {
-        return "Current status: All systems operational.";
+        try {
+            $stmt = $this->pdo->prepare("SELECT value FROM settings WHERE name = 'status'");
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result ? $result['value'] : 'unknown';
+        } catch (\PDOException $e) {
+            return 'error';
+        }
     }
 }
+?>

@@ -3,6 +3,7 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/User.php';
 require_once __DIR__ . '/../src/License.php';
 require_once __DIR__ . '/../src/Magnat.php';
+require_once __DIR__ . '/../src/Global.php'; // Include Global.php for fetching system status
 
 $action = $_GET['action'] ?? null;
 $username = $_GET['username'] ?? null;
@@ -39,6 +40,10 @@ switch ($action) {
             $magnat = new Magnat($pdo);
             $wallet = $magnat->getWallet($user['id']);
             
+            // Fetch system status from settings table
+            $globalFunctions = new GlobalFunctions($pdo); // Pass $pdo to the constructor
+            $systemStatus = $globalFunctions->getCurrentStatus();
+
             $response = [
                 'status' => 'success',
                 'message' => 'Login successful',
@@ -51,7 +56,8 @@ switch ($action) {
                 'licensed_features' => $licensed_features,
                 'runtime_end' => $license['runtime_end'],
                 'is_license_expired' => $is_license_expired,
-                'magnat' => $wallet['amount'] ?? 0
+                'magnat' => $wallet['amount'] ?? 0,
+                'system_status' => $systemStatus // Include system status in the response
             ];
             if ($user['is_admin'] == 1) {
                 $response['role'] = "admin";
@@ -133,6 +139,12 @@ switch ($action) {
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Account activation failed']);
         }
+        break;
+
+    case 'getStatus':
+        $globalFunctions = new GlobalFunctions($pdo); // Pass $pdo to the constructor
+        $systemStatus = $globalFunctions->getCurrentStatus();
+        echo json_encode(['status' => 'success', 'system_status' => $systemStatus]);
         break;
 
     case 'saveSettings':
