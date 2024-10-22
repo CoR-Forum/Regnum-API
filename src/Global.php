@@ -16,5 +16,10 @@ class GlobalFunctions {
             return 'error';
         }
     }
+
+    public static function sendJsonResponse($status, $message, $data = []) {
+        echo json_encode(array_merge(['status' => $status, 'message' => $message], $data));
+        exit;
+    }
 }
 ?>
