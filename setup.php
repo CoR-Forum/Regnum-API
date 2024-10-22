@@ -26,12 +26,9 @@ try {
         banned_by INT DEFAULT NULL,
         banned_reason TEXT DEFAULT NULL,
         banned_until TIMESTAMP DEFAULT NULL,
-        last_activity TIMESTAMP DEFAULT NULL
+        last_activity TIMESTAMP DEFAULT NULL,
+        deleted TINYINT(1) DEFAULT 0
     )";
-    $pdo->exec($sql);
-
-    // rename column 'is_banned' to 'banned' in users table
-    $sql = "ALTER TABLE users CHANGE COLUMN is_banned banned TINYINT(1) DEFAULT 0";
     $pdo->exec($sql);
 
     // create columns banned_at, banned_by, banned_reason, banned_until in users table if they don't exist
@@ -77,6 +74,12 @@ try {
 
     if (!in_array('shoutbox_banned_until', $columns)) {
         $sql = "ALTER TABLE users ADD COLUMN shoutbox_banned_until TIMESTAMP DEFAULT NULL";
+        $pdo->exec($sql);
+    }
+
+    // Create deleted_at and deleted columns in users table if they don't exist
+    if (!in_array('deleted', $columns)) {
+        $sql = "ALTER TABLE users ADD COLUMN deleted TINYINT(1) DEFAULT 0";
         $pdo->exec($sql);
     }
 
