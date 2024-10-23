@@ -48,3 +48,9 @@ module.exports = {
     php: "/opt/homebrew/bin/php"
     }
 ```
+
+## Maintenance
+
+### Users
+
+* **delete users:** the user table contains "deleted"; if you set this to 1, a user will be hidden from everywhere and can't login anymore.
