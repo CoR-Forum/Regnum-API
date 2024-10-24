@@ -56,4 +56,32 @@ class GlobalFunctions {
             // Handle error
         }
     }
+
+    public static function sendEmailToAddress($email, $subject, $body) {
+        global $emailHost, $emailUsername, $emailName, $emailPassword, $emailPort;
+        $mail = new PHPMailer(true);
+        try {
+            // Server settings
+            $mail->isSMTP();
+            $mail->Host = $emailHost;
+            $mail->SMTPAuth = true;
+            $mail->Username = $emailUsername;
+            $mail->Password = $emailPassword;
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port = $emailPort;
+
+            // Recipients
+            $mail->setFrom($emailUsername, $emailName);
+            $mail->addAddress($email);
+
+            // Content
+            $mail->isHTML(true);
+            $mail->Subject = $subject;
+            $mail->Body    = $body;
+
+            $mail->send();
+        } catch (Exception $e) {
+            // Handle error
+        }
+    }
 }
