@@ -31,58 +31,6 @@ try {
     )";
     $pdo->exec($sql);
 
-    // create columns banned_at, banned_by, banned_reason, banned_until in users table if they don't exist
-    $stmt = $pdo->prepare('DESCRIBE users');
-    $stmt->execute();
-    $columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $columns = array_column($columns, 'Field');
-    if (!in_array('banned_at', $columns)) {
-        $sql = "ALTER TABLE users ADD COLUMN banned_at TIMESTAMP DEFAULT NULL";
-        $pdo->exec($sql);
-    }
-
-    if (!in_array('banned_by', $columns)) {
-        $sql = "ALTER TABLE users ADD COLUMN banned_by INT DEFAULT NULL";
-        $pdo->exec($sql);
-    }
-
-    if (!in_array('banned_reason', $columns)) {
-        $sql = "ALTER TABLE users ADD COLUMN banned_reason TEXT DEFAULT NULL";
-        $pdo->exec($sql);
-    }
-
-    if (!in_array('banned_until', $columns)) {
-        $sql = "ALTER TABLE users ADD COLUMN banned_until TIMESTAMP DEFAULT NULL";
-        $pdo->exec($sql);
-    }
-
-    // create columns shoutbox_banned_at, shoutbox_banned_by, shoutbox_banned_reason, shoutbox_banned_until in users table if they don't exist
-    if (!in_array('shoutbox_banned_at', $columns)) {
-        $sql = "ALTER TABLE users ADD COLUMN shoutbox_banned_at TIMESTAMP DEFAULT NULL";
-        $pdo->exec($sql);
-    }
-
-    if (!in_array('shoutbox_banned_by', $columns)) {
-        $sql = "ALTER TABLE users ADD COLUMN shoutbox_banned_by INT DEFAULT NULL";
-        $pdo->exec($sql);
-    }
-
-    if (!in_array('shoutbox_banned_reason', $columns)) {
-        $sql = "ALTER TABLE users ADD COLUMN shoutbox_banned_reason TEXT DEFAULT NULL";
-        $pdo->exec($sql);
-    }
-
-    if (!in_array('shoutbox_banned_until', $columns)) {
-        $sql = "ALTER TABLE users ADD COLUMN shoutbox_banned_until TIMESTAMP DEFAULT NULL";
-        $pdo->exec($sql);
-    }
-
-    // Create deleted_at and deleted columns in users table if they don't exist
-    if (!in_array('deleted', $columns)) {
-        $sql = "ALTER TABLE users ADD COLUMN deleted TINYINT(1) DEFAULT 0";
-        $pdo->exec($sql);
-    }
-
     // Create table for password reset tokens
     $sql = "
     CREATE TABLE IF NOT EXISTS password_reset_tokens (
@@ -199,6 +147,17 @@ try {
         log TEXT DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
+    )";
+    $pdo->exec($sql);
+
+    // table for beta_registrations
+    $sql = "
+    CREATE TABLE IF NOT EXISTS beta_registrations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(50),
+        email VARCHAR(100) NOT NULL UNIQUE,
+        discord_tag VARCHAR(50),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )";
     $pdo->exec($sql);
 
