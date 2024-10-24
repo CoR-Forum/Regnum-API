@@ -157,9 +157,45 @@ try {
         name VARCHAR(50),
         email VARCHAR(100) NOT NULL UNIQUE,
         discord_tag VARCHAR(50),
+        email_verified TINYINT(1) DEFAULT 0,
+        ip_address VARCHAR(50),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )";
     $pdo->exec($sql);
+
+    // add email_verified column if it doesn't exist
+    $stmt = $pdo->prepare('SELECT * FROM beta_registrations');
+    $stmt->execute();
+    $betaRegistrations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (!empty($betaRegistrations)) {
+        $stmt = $pdo->prepare('SELECT * FROM beta_registrations LIMIT 1');
+        $stmt->execute();
+        $betaRegistration = $stmt->fetch();
+        if (!isset($betaRegistration['email_verified'])) {
+            $sql = "
+            ALTER TABLE beta_registrations
+            ADD COLUMN email_verified TINYINT(1) DEFAULT 0
+            ";
+            $pdo->exec($sql);
+        }
+    }
+
+    // add ip_address column if it doesn't exist
+    $stmt = $pdo->prepare('SELECT * FROM beta_registrations');
+    $stmt->execute();
+    $betaRegistrations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (!empty($betaRegistrations)) {
+        $stmt = $pdo->prepare('SELECT * FROM beta_registrations LIMIT 1');
+        $stmt->execute();
+        $betaRegistration = $stmt->fetch();
+        if (!isset($betaRegistration['ip_address'])) {
+            $sql = "
+            ALTER TABLE beta_registrations
+            ADD COLUMN ip_address VARCHAR(50)
+            ";
+            $pdo->exec($sql);
+        }
+    }
 
     // table for global settings
     $sql = "

@@ -84,41 +84,10 @@ class User {
         if ($stmt->execute([$username, $hash, $email, $token])) {
             $subject = 'Activate your account';
             $body = "Click the link to activate your account: {$this->emailLinkDomain}user.php?action=activate&token=$token";
-            $this->sendEmailToUser($email, $subject, $body);
+            GlobalFunctions::sendEmailToUser($email, $subject, $body);
             return true;
         }
         return false;
-    }
-
-    // General function to send an email to the user
-    // using the PHPMailer library
-    // The email host, username, name, password, and port are set in the constructor
-    // The email is sent in HTML format with the given subject and body
-    private function sendEmailToUser($email, $subject, $body) {
-        $mail = new PHPMailer(true);
-        try {
-            // Server settings
-            $mail->isSMTP();
-            $mail->Host = $this->emailHost;
-            $mail->SMTPAuth = true;
-            $mail->Username = $this->emailUsername;
-            $mail->Password = $this->emailPassword;
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port = $this->emailPort;
-
-            // Recipients
-            $mail->setFrom($this->emailUsername, $this->emailName);
-            $mail->addAddress($email);
-
-            // Content
-            $mail->isHTML(true);
-            $mail->Subject = $subject;
-            $mail->Body    = $body;
-
-            $mail->send();
-        } catch (Exception $e) {
-            // Handle error
-        }
     }
 
     // Activate the user account with the given activation token.
@@ -146,7 +115,7 @@ class User {
         if ($user) {
             $subject = 'Activate your account';
             $body = "Click the link to activate your account: {$this->emailLinkDomain}user.php?action&activate&token={$user['activation_token']}";
-            $this->sendEmailToUser($email, $subject, $body);
+            GlobalFunctions::sendEmailToUser($email, $subject, $body);
             return true;
         }
         return false;
@@ -168,7 +137,7 @@ class User {
             if ($stmt->execute([$user['id'], $token, $now])) {
                 $subject = 'Reset your password';
                 $body = "Use this token to reset your password: $token";
-                $this->sendEmailToUser($email, $subject, $body);
+                GlobalFunctions::sendEmailToUser($email, $subject, $body);
                 return true;
             }
         }
@@ -291,4 +260,3 @@ class User {
         return $result ? $result['settings'] : null;
     }
 }
-?>
