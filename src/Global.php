@@ -21,19 +21,4 @@ class GlobalFunctions {
         echo json_encode(array_merge(['status' => $status, 'message' => $message], $data));
         exit;
     }
-
-    public function registerBetaUser($name = null, $email, $discordTag = null) {
-        try {
-            $stmt = $this->pdo->prepare("INSERT INTO beta_registrations (name, email, discord_tag) VALUES (:name, :email, :discord_tag)");
-            $stmt->execute([
-                'name' => $name,
-                'email' => $email,
-                'discord_tag' => $discordTag
-            ]);
-            return true;
-        } catch (\PDOException $e) {
-            return false;
-        }
-    }
 }
-?>
