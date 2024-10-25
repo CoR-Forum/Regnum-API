@@ -18,6 +18,7 @@ try {
     $settings = $_GET['settings'] ?? null;
     $email = $_GET['email'] ?? null;
     $token = $_GET['token'] ?? null;
+    $nickname = $_GET['nickname'] ?? null;
 
     $user = new User($pdo);
 
@@ -49,6 +50,7 @@ try {
 
                 $response = [
                     'username' => $user['username'],
+                    'nickname' => $user['nickname'],
                     'id' => $user['id'],
                     'created_at' => $user['created_at'],
                     'is_active' => $user['is_active'],
@@ -68,23 +70,24 @@ try {
             break;
             
         case 'register':
-            if (!$username || !$password || !$email) {
-                GlobalFunctions::sendJsonResponse('error', 'Missing required fields');
+            if (!$username || !$password || !$email || !$nickname) {
+            GlobalFunctions::sendJsonResponse('error', 'Missing required fields');
             }
             validateInput($username, '/^[a-zA-Z0-9_]{3,20}$/', 'Invalid username');
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                GlobalFunctions::sendJsonResponse('error', 'Invalid email address');
+            GlobalFunctions::sendJsonResponse('error', 'Invalid email address');
             }
+            validateInput($nickname, '/^[a-zA-Z0-9_ ]{3,16}$/', 'Invalid nickname');
             if (strlen($password) < 8) {
-                GlobalFunctions::sendJsonResponse('error', 'Password should be at least 8 characters long');
+            GlobalFunctions::sendJsonResponse('error', 'Password should be at least 8 characters long');
             }
             if ($user->userExists($username, $email)) {
-                GlobalFunctions::sendJsonResponse('error', 'Username or email already exists');
+            GlobalFunctions::sendJsonResponse('error', 'Username or email already exists');
             }
-            if ($user->register($username, $password, $email)) {
-                GlobalFunctions::sendJsonResponse('success', 'User registered successfully. Please check your email to activate your account.');
+            if ($user->register($username, $password, $email, $nickname)) {
+            GlobalFunctions::sendJsonResponse('success', 'User registered successfully. Please check your email to activate your account.');
             } else {
-                GlobalFunctions::sendJsonResponse('error', 'User registration failed');
+            GlobalFunctions::sendJsonResponse('error', 'User registration failed');
             }
             break;
 

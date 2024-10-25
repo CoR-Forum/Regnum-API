@@ -9,6 +9,7 @@ try {
         username VARCHAR(50) NOT NULL UNIQUE,
         password VARCHAR(255) NOT NULL,
         email VARCHAR(100) NOT NULL,
+        nickname VARCHAR(50) DEFAULT NULL,
         activation_token VARCHAR(255) DEFAULT NULL,
         activated_at TIMESTAMP DEFAULT NULL,
         is_active TINYINT(1) DEFAULT 0,

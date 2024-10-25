@@ -77,11 +77,11 @@ class User {
     // Register a new user with the given username, password, and email.
     // The password is hashed before storing it in the database.
     // An activation token is generated and sent to the user's email.
-    public function register($username, $password, $email) {
+    public function register($username, $password, $email, $nickname) {
         $hash = password_hash($password, PASSWORD_BCRYPT);
         $token = bin2hex(random_bytes(16));
-        $stmt = $this->pdo->prepare('INSERT INTO users (username, password, email, activation_token) VALUES (?, ?, ?, ?)');
-        if ($stmt->execute([$username, $hash, $email, $token])) {
+        $stmt = $this->pdo->prepare('INSERT INTO users (username, password, email, nickname, activation_token) VALUES (?, ?, ?, ?, ?)');
+        if ($stmt->execute([$username, $hash, $email, $nickname, $token])) {
             $subject = 'Activate your account';
             $body = "Click the link to activate your account: {$this->emailLinkDomain}user.php?action=activate&token=$token";
             GlobalFunctions::sendEmailToUser($email, $subject, $body);
