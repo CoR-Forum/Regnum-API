@@ -49,7 +49,7 @@ class GlobalFunctions {
             // Content
             $mail->isHTML(true);
             $mail->Subject = $subject;
-            $mail->Body    = $body;
+            $mail->Body    = nl2br($body); // Convert newlines to <br> tags
 
             $mail->send();
         } catch (Exception $e) {
@@ -77,7 +77,7 @@ class GlobalFunctions {
             // Content
             $mail->isHTML(true);
             $mail->Subject = $subject;
-            $mail->Body    = $body;
+            $mail->Body    = nl2br($body); // Convert newlines to <br> tags
 
             $mail->send();
         } catch (Exception $e) {
