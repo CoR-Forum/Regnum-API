@@ -78,6 +78,27 @@ class User {
     // The password is hashed before storing it in the database.
     // An activation token is generated and sent to the user's email.
     public function register($username, $password, $email, $nickname) {
+        // Check if username already exists
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE username = ?');
+        $stmt->execute([$username]);
+        if ($stmt->fetch()) {
+            return ['error' => 'Username already exists'];
+        }
+
+        // Check if email already exists
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE email = ?');
+        $stmt->execute([$email]);
+        if ($stmt->fetch()) {
+            return ['error' => 'Email already exists'];
+        }
+
+        // Check if nickname already exists
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE nickname = ?');
+        $stmt->execute([$nickname]);
+        if ($stmt->fetch()) {
+            return ['error' => 'Nickname already exists'];
+        }
+
         $hash = password_hash($password, PASSWORD_BCRYPT);
         $token = bin2hex(random_bytes(16));
         $stmt = $this->pdo->prepare('INSERT INTO users (username, password, email, nickname, activation_token) VALUES (?, ?, ?, ?, ?)');
