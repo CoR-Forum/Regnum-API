@@ -46,4 +46,3 @@ jobs:
         password: ${{ secrets.FTP_PASSWORD }}
         local-dir: ./
         server-dir: /domains/api.sylent-x.com/public_html/ 
-        git-ftp-args: --insecure # Optional: Use if you have SSL issues
