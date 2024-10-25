@@ -21,7 +21,7 @@ class Shoutbox {
     }
 
     public function getMessages($limit = null) {
-        $sql = 'SELECT s.id, s.created_at, u.username, u.is_admin, s.message FROM shoutbox_messages s JOIN users u ON s.user_id = u.id WHERE s.deleted_at IS NULL ORDER BY s.created_at ASC';
+        $sql = 'SELECT s.id, s.created_at, u.nickname, u.is_admin, s.message FROM shoutbox_messages s JOIN users u ON s.user_id = u.id WHERE s.deleted_at IS NULL ORDER BY s.created_at ASC';
         if ($limit !== null) {
             $sql .= ' LIMIT ?';
         }
@@ -35,7 +35,7 @@ class Shoutbox {
         // Add [A] in front of admin usernames
         foreach ($messages as &$message) {
             if ($message['is_admin']) {
-                $message['username'] = '[A] ' . $message['username'];
+                $message['nickname'] = '[A] ' . $message['nickname'];
             }
             unset($message['is_admin']); // Remove is_admin from the result
         }
@@ -49,7 +49,7 @@ class Shoutbox {
             $recipientId = $recipient;
         } else {
             // Fetch recipient ID by name
-            $stmt = $this->pdo->prepare('SELECT id FROM users WHERE username = ?');
+            $stmt = $this->pdo->prepare('SELECT id FROM users WHERE nickname = ?');
             $stmt->execute([$recipient]);
             $recipientId = $stmt->fetchColumn();
     
@@ -68,7 +68,7 @@ class Shoutbox {
     }
 
     public function getPrivateMessages($userId, $recipientId, $limit = null) {
-        $sql = 'SELECT s.id, s.created_at, u.username, u.is_admin, s.message FROM shoutbox_private_messages s JOIN users u ON s.user_id = u.id WHERE (s.user_id = ? AND s.recipient_id = ?) OR (s.user_id = ? AND s.recipient_id = ?) ORDER BY s.created_at ASC';
+        $sql = 'SELECT s.id, s.created_at, u.nickname, u.is_admin, s.message FROM shoutbox_private_messages s JOIN users u ON s.user_id = u.id WHERE (s.user_id = ? AND s.recipient_id = ?) OR (s.user_id = ? AND s.recipient_id = ?) ORDER BY s.created_at ASC';
         if ($limit !== null) {
             $sql .= ' LIMIT ?';
         }
@@ -83,7 +83,7 @@ class Shoutbox {
         // Add [A] in front of admin usernames
         foreach ($messages as &$message) {
             if ($message['is_admin']) {
-                $message['username'] = '[A] ' . $message['username'];
+                $message['nickname'] = '[A] ' . $message['nickname'];
             }
             unset($message['is_admin']); // Remove is_admin from the result
         }
