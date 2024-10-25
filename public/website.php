@@ -20,13 +20,53 @@ class BetaRegistration {
                 throw new \Exception("Email already registered.");
             }
 
+            // Generate email confirmation token
+            $token = bin2hex(random_bytes(16));
+
             // Insert new beta user
-            $stmt = $this->pdo->prepare("INSERT INTO beta_registrations (name, email, discord_tag) VALUES (:name, :email, :discord_tag)");
+            $stmt = $this->pdo->prepare("INSERT INTO beta_registrations (name, email, discord_tag, email_verification_token) VALUES (:name, :email, :discord_tag, :token)");
             $stmt->execute([
                 'name' => $name,
                 'email' => $email,
-                'discord_tag' => $discordTag
+                'discord_tag' => $discordTag,
+                'token' => $token
             ]);
+
+            // Send confirmation email
+            $subject = 'Confirm your beta registration';
+            $body = "Hi!\n\nThank you for signing up for the Beta Phase of Sylent-X.\n\nClick the link to confirm your registration: {$GLOBALS['emailLinkDomain']}website.php?action=confirmBetaRegistration&token=$token";
+            GlobalFunctions::sendEmailToAddress($email, $subject, $body);
+
+            return true;
+        } catch (\PDOException $e) {
+            throw new \Exception($e->getMessage());
+        }
+    }
+
+    public function confirmBetaRegistration($token) {
+        try {
+            // Check if token exists
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM beta_registrations WHERE email_verification_token = :token");
+            $stmt->execute(['token' => $token]);
+            $tokenExists = $stmt->fetchColumn();
+
+            if (!$tokenExists) {
+                throw new \Exception("Invalid or expired token.");
+            }
+
+            // Confirm registration
+            $stmt = $this->pdo->prepare("UPDATE beta_registrations SET email_verified = 1, email_verification_token = NULL WHERE email_verification_token = :token");
+            $stmt->execute(['token' => $token]);
+
+            // Send confirmation email
+            $stmt = $this->pdo->prepare("SELECT email FROM beta_registrations WHERE email_verification_token = :token");
+            $stmt->execute(['token' => $token]);
+            $email = $stmt->fetchColumn();
+
+            $subject = 'Beta registration confirmed';
+            $body = "Hi!\n\nYour registration for the Beta Phase of Sylent-X has been successfully confirmed.\n\nWe will get in touch with you soon.\n\nThank you for joining us!";
+            GlobalFunctions::sendEmailToAddress($email, $subject, $body);
+
             return true;
         } catch (\PDOException $e) {
             throw new \Exception($e->getMessage());
@@ -47,6 +87,7 @@ try {
     $name = $_GET['name'] ?? null;
     $email = $_GET['email'] ?? null;
     $discord_tag = $_GET['discord_tag'] ?? null;
+    $token = $_GET['token'] ?? null;
 
     switch ($action) {
         case 'registerForBeta':
@@ -61,10 +102,21 @@ try {
             }
             break;
 
+        case 'confirmBetaRegistration':
+            if (empty($token)) {
+                GlobalFunctions::sendJsonResponse('error', 'Token is required.');
+            }
+
+            $result = $betaRegistration->confirmBetaRegistration($token);
+
+            if ($result) {
+                GlobalFunctions::sendJsonResponse('success', 'Beta registration confirmed successfully!');
+            }
+            break;
+
         default:
             GlobalFunctions::sendJsonResponse('error', 'Invalid action');
             break;
-
     }
 } catch (\Throwable $e) {
     GlobalFunctions::sendJsonResponse('error', 'An error occurred: ' . $e->getMessage());

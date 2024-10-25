@@ -158,44 +158,11 @@ try {
         email VARCHAR(100) NOT NULL UNIQUE,
         discord_tag VARCHAR(50),
         email_verified TINYINT(1) DEFAULT 0,
+        email_verification_token VARCHAR(255) DEFAULT NULL,
         ip_address VARCHAR(50),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )";
     $pdo->exec($sql);
-
-    // add email_verified column if it doesn't exist
-    $stmt = $pdo->prepare('SELECT * FROM beta_registrations');
-    $stmt->execute();
-    $betaRegistrations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if (!empty($betaRegistrations)) {
-        $stmt = $pdo->prepare('SELECT * FROM beta_registrations LIMIT 1');
-        $stmt->execute();
-        $betaRegistration = $stmt->fetch();
-        if (!isset($betaRegistration['email_verified'])) {
-            $sql = "
-            ALTER TABLE beta_registrations
-            ADD COLUMN email_verified TINYINT(1) DEFAULT 0
-            ";
-            $pdo->exec($sql);
-        }
-    }
-
-    // add ip_address column if it doesn't exist
-    $stmt = $pdo->prepare('SELECT * FROM beta_registrations');
-    $stmt->execute();
-    $betaRegistrations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if (!empty($betaRegistrations)) {
-        $stmt = $pdo->prepare('SELECT * FROM beta_registrations LIMIT 1');
-        $stmt->execute();
-        $betaRegistration = $stmt->fetch();
-        if (!isset($betaRegistration['ip_address'])) {
-            $sql = "
-            ALTER TABLE beta_registrations
-            ADD COLUMN ip_address VARCHAR(50)
-            ";
-            $pdo->exec($sql);
-        }
-    }
 
     // table for global settings
     $sql = "
@@ -206,31 +173,6 @@ try {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )";
     $pdo->exec($sql);
-
-    // crate settings table if it doesn't exist yet
-    $stmt = $pdo->prepare('SELECT * FROM settings');
-    $stmt->execute();
-    $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    if (empty($settings)) {
-        $sql = "
-        INSERT INTO settings (name, value) VALUES
-        ('status', 'active'),
-        ('latest_version', '1.0.0')
-        ";
-        $pdo->exec($sql);
-    } else {
-        // add missing settings if they don't exist
-        $stmt = $pdo->prepare('SELECT * FROM settings WHERE name = "latest_version"');
-        $stmt->execute();
-        $latestVersion = $stmt->fetch();
-        if (!$latestVersion) {
-            $sql = "
-            INSERT INTO settings (name, value) VALUES
-            ('latest_version', '1.0.0')
-            ";
-            $pdo->exec($sql);
-        }
-    }
 
     echo "Database and tables initialized successfully.";
 } catch (\PDOException $e) {
