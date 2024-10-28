@@ -49,15 +49,15 @@ async function sendEmail(to, subject, text) {
 
 // Function to get user email by ID
 async function getUserEmailById(userId) {
-  const connection = await pool.getConnection();
+  const db = await pool.getConnection();
   try {
-    const [rows] = await connection.query('SELECT email FROM users WHERE id = ?', [userId]);
+    const [rows] = await db.query('SELECT email FROM users WHERE id = ?', [userId]);
     return rows.length > 0 ? rows[0].email : null;
   } catch (error) {
     console.error("Error fetching user email:", error);
     return null;
   } finally {
-    connection.release();
+    db.release();
   }
 }
 
@@ -71,7 +71,7 @@ async function sendEmailToUser(userId, subject, text) {
 
 // Database initialization
 async function initializeDatabase() {
-  const connection = await pool.getConnection();
+  const db = await pool.getConnection();
   try {
     const queries = [
       `CREATE TABLE IF NOT EXISTS users (
@@ -82,6 +82,7 @@ async function initializeDatabase() {
         nickname VARCHAR(50) DEFAULT NULL,
         activation_token VARCHAR(255) DEFAULT NULL,
         activated_at TIMESTAMP DEFAULT NULL,
+        pw_reset_token VARCHAR(255) DEFAULT NULL,
         is_admin TINYINT(1) DEFAULT 0,
         shoutbox_banned TINYINT(1) DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -90,14 +91,6 @@ async function initializeDatabase() {
         banned TINYINT(1) DEFAULT 0,
         last_activity TIMESTAMP DEFAULT NULL,
         deleted TINYINT(1) DEFAULT 0
-      );`,
-      `CREATE TABLE IF NOT EXISTS password_reset_tokens (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        token VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        used_at TIMESTAMP DEFAULT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id)
       );`,
       `CREATE TABLE IF NOT EXISTS licenses (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -178,14 +171,14 @@ async function initializeDatabase() {
     ];
 
     for (const query of queries) {
-      await connection.query(query);
+      await db.query(query);
     }
 
     console.log("Database and tables initialized successfully.");
   } catch (error) {
     console.error("Error initializing database:", error);
   } finally {
-    connection.release();
+    db.release();
   }
 }
 
@@ -194,67 +187,106 @@ app.get('/api', (req, res) => {
   res.send('API is running');
 });
 
-// Register user and send activation email
+// Register new user with email verification
 app.post('/api/register', async (req, res) => {
-  const { username, email, password } = req.body;
-
-  if (!username || !email || !password) {
-    return res.status(400).json({ message: "Username, email, and password are required" });
-  }
-
-  const connection = await pool.getConnection();
+  const { username, password, email } = req.body;
+  const db = await pool.getConnection();
   try {
-    const [rows] = await connection.query('SELECT COUNT(*) as count FROM users WHERE username = ? OR email = ?', [username, email]);
-    if (rows[0].count > 0) {
-      return res.status(400).json({ message: "User already exists" });
+    const [rows] = await db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email]);
+    if (rows.length > 0) {
+      return res.status(400).json({ message: "Username or email already exists" });
     }
 
-    const activationToken = Math.random().toString(36).substr(2, 10);
-    await connection.query('INSERT INTO users (username, email, password, activation_token) VALUES (?, ?, ?, ?)', [username, email, password, activationToken]);
+    const activationToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    await db.query('INSERT INTO users (username, password, email, activation_token) VALUES (?, ?, ?, ?)', [username, password, email, activationToken]);
 
-    await sendEmail(email, 'Activate your account', `Please click on the following link to activate your account: http://localhost:${PORT}/api/activate/${activationToken}`);
+    const activationLink = `http://localhost:${PORT}/api/activate/${activationToken}`;
+    await sendEmail(email, 'Activate your account', `Click here to activate your account: ${activationLink}`);
+
     res.json({ message: "User registered successfully" });
   } catch (error) {
     console.error("Error registering user:", error);
     res.status(500).json({ message: "Internal server error" });
   } finally {
-    connection.release();
+    db.release();
   }
 });
 
 // Activate user account
 app.get('/api/activate/:token', async (req, res) => {
-  const { token } = req.params;
-
-  const connection = await pool.getConnection();
+  const db = await pool.getConnection();
   try {
-    const [rows] = await connection.query('SELECT * FROM users WHERE activation_token = ?', [token]);
+    const [rows] = await db.query('SELECT * FROM users WHERE activation_token = ?', [req.params.token]);
     if (rows.length === 0) {
-      return res.status(404).json({ message: "Invalid activation token" });
+      return res.status(404).json({ message: "Activation token not found" });
     }
 
-    await connection.query('UPDATE users SET activation_token = NULL, activated_at = CURRENT_TIMESTAMP, is_active = 1 WHERE activation_token = ?', [token]);
-    await sendEmailToUser(rows[0].id, 'Account activated', 'Your account has been activated successfully');
+    await db.query('UPDATE users SET activation_token = NULL, activated_at = CURRENT_TIMESTAMP WHERE activation_token = ?', [req.params.token]);
     res.json({ message: "Account activated successfully" });
   } catch (error) {
     console.error("Error activating account:", error);
     res.status(500).json({ message: "Internal server error" });
   } finally {
-    connection.release();
+    db.release();
+  }
+});
+
+// Request password reset
+app.post('/api/reset-password', async (req, res) => {
+  const { email } = req.body;
+  const db = await pool.getConnection();
+  try {
+    const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Email not found" });
+    }
+
+    const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    await db.query('UPDATE users SET pw_reset_token = ? WHERE email = ?', [resetToken, email]);
+
+    const resetLink = `http://localhost:${PORT}/api/reset-password/${resetToken}`;
+    await sendEmail(email, 'Reset your password', `Click here to reset your password: ${resetLink}`);
+
+    res.json({ message: "Password reset link sent successfully" });
+  } catch (error) {
+    console.error("Error requesting password reset:", error);
+    res.status(500).json({ message: "Internal server error" });
+  } finally {
+    db.release();
+  }
+});
+
+// Reset password
+app.post('/api/reset-password/:token', async (req, res) => {
+  const { password } = req.body;
+  const db = await pool.getConnection();
+  try {
+    const [rows] = await db.query('SELECT * FROM users WHERE pw_reset_token = ?', [req.params.token]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Reset token not found" });
+    }
+
+    await db.query('UPDATE users SET password = ?, pw_reset_token = NULL WHERE pw_reset_token = ?', [password, req.params.token]);
+    res.json({ message: "Password reset successfully" });
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    res.status(500).json({ message: "Internal server error" });
+  } finally {
+    db.release();
   }
 });
 
 // Retrieve current system status
 app.get('/api/status', async (req, res) => {
-  const connection = await pool.getConnection();
+  const db = await pool.getConnection();
   try {
-    const [rows] = await connection.query('SELECT * FROM settings WHERE name = "status"');
+    const [rows] = await db.query('SELECT * FROM settings WHERE name = "status"');
     res.json(rows[0]);
   } catch (error) {
     console.error("Error fetching system status:", error);
     res.status(500).json({ message: "Internal server error" });
   } finally {
-    connection.release();
+    db.release();
   }
 });
 
