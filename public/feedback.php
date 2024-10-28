@@ -29,14 +29,14 @@ if (!$feedback) {
 }
 
 if (!empty($missingParams)) {
-    GlobalFunctions::sendJsonResponse('error', 'Missing required parameter(s): ' . implode(', ', $missingParams));
+    GF::sendJsonResponse('error', 'Missing required parameter(s): ' . implode(', ', $missingParams));
 }
 
 $user = new User($pdo);
 $loggedInUser = $user->login($username, $password);
 
 if (!$loggedInUser) {
-    GlobalFunctions::sendJsonResponse('error', 'Login failed');
+    GF::sendJsonResponse('error', 'Login failed');
 }
 
 // Store feedback in the database
@@ -87,8 +87,8 @@ $context  = stream_context_create($options);
 $result = file_get_contents($discordFeedbackWebhookUrl, false, $context);
 
 if ($result === FALSE) {
-    GlobalFunctions::sendJsonResponse('error', 'Failed to send feedback');
+    GF::sendJsonResponse('error', 'Failed to send feedback');
 } else {
-    GlobalFunctions::sendJsonResponse('success', 'Feedback submitted successfully');
+    GF::sendJsonResponse('success', 'Feedback submitted successfully');
 }
 ?>

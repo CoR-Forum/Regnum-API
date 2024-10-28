@@ -105,7 +105,7 @@ class User {
         if ($stmt->execute([$username, $hash, $email, $nickname, $token])) {
             $subject = 'Activate your account';
             $body = "Click the link to activate your account: {$this->emailLinkDomain}user.php?action=activate&token=$token";
-            GlobalFunctions::sendEmailToUser($email, $subject, $body);
+            GF::sendEmailToUser($email, $subject, $body);
             return true;
         }
         return false;
@@ -136,7 +136,7 @@ class User {
         if ($user) {
             $subject = 'Activate your account';
             $body = "Click the link to activate your account: {$this->emailLinkDomain}user.php?action&activate&token={$user['activation_token']}";
-            GlobalFunctions::sendEmailToUser($email, $subject, $body);
+            GF::sendEmailToUser($email, $subject, $body);
             return true;
         }
         return false;
@@ -158,7 +158,7 @@ class User {
             if ($stmt->execute([$user['id'], $token, $now])) {
                 $subject = 'Reset your password';
                 $body = "Use this token to reset your password: $token";
-                GlobalFunctions::sendEmailToUser($email, $subject, $body);
+                GF::sendEmailToUser($email, $subject, $body);
                 return true;
             }
         }

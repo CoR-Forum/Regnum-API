@@ -45,7 +45,7 @@ class BetaRegistration {
             // Send confirmation email
             $subject = 'Confirm your beta registration';
             $body = "Hi!\n\nThank you for signing up for the Beta Phase of Sylent-X.\n\nClick the link to confirm your registration: {$GLOBALS['emailLinkDomain']}website.php?action=confirmBetaRegistration&token=$token";
-            GlobalFunctions::sendEmailToAddress($email, $subject, $body);
+            GF::sendEmailToAddress($email, $subject, $body);
 
             return true;
         } catch (\PDOException $e) {
@@ -75,7 +75,7 @@ class BetaRegistration {
 
             $subject = 'Beta registration confirmed';
             $body = "Hi!\n\nYour registration for the Beta Phase of Sylent-X has been successfully confirmed.\n\nWe will get in touch with you soon.\n\nThank you for joining us!";
-            GlobalFunctions::sendEmailToAddress($email, $subject, $body);
+            GF::sendEmailToAddress($email, $subject, $body);
 
             return true;
         } catch (\PDOException $e) {
@@ -88,7 +88,7 @@ $betaRegistration = new BetaRegistration($pdo);
 
 function validateInput($input, $pattern, $errorMessage) {
     if ($input !== null && !preg_match($pattern, $input)) {
-        GlobalFunctions::sendJsonResponse('error', $errorMessage);
+        GF::sendJsonResponse('error', $errorMessage);
     }
 }
 
@@ -109,26 +109,26 @@ try {
             $result = $betaRegistration->registerBetaUser($email, $ipAddress, $name, $discord_tag);
 
             if ($result) {
-                GlobalFunctions::sendJsonResponse('success', 'Successfully registered! Please check your email for further instructions.');
+                GF::sendJsonResponse('success', 'Successfully registered! Please check your email for further instructions.');
             }
             break;
 
         case 'confirmBetaRegistration':
             if (empty($token)) {
-                GlobalFunctions::sendJsonResponse('error', 'Token is required.');
+                GF::sendJsonResponse('error', 'Token is required.');
             }
 
             $result = $betaRegistration->confirmBetaRegistration($token);
 
             if ($result) {
-                GlobalFunctions::sendJsonResponse('success', 'Beta registration confirmed successfully!');
+                GF::sendJsonResponse('success', 'Beta registration confirmed successfully!');
             }
             break;
 
         default:
-            GlobalFunctions::sendJsonResponse('error', 'Invalid action');
+            GF::sendJsonResponse('error', 'Invalid action');
             break;
     }
 } catch (\Throwable $e) {
-    GlobalFunctions::sendJsonResponse('error', 'An error occurred: ' . $e->getMessage());
+    GF::sendJsonResponse('error', 'An error occurred: ' . $e->getMessage());
 }

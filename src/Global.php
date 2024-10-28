@@ -5,7 +5,7 @@ require_once __DIR__ . '/../config/config.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 
-class GlobalFunctions {
+class GF {
     private $pdo;
     public function __construct($pdo) {
         $this->pdo = $pdo;

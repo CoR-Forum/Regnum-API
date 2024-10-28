@@ -7,7 +7,7 @@ require_once __DIR__ . '/../src/Global.php';
 
 function validateInput($input, $pattern, $errorMessage) {
     if (!preg_match($pattern, $input)) {
-        GlobalFunctions::sendJsonResponse('error', $errorMessage);
+        GF::sendJsonResponse('error', $errorMessage);
     }
 }
 
@@ -26,7 +26,7 @@ try {
         case 'login':
             $user = $user->login($username, $password);
             if (is_array($user) && isset($user['error'])) {
-                GlobalFunctions::sendJsonResponse('error', $user['error']);
+                GF::sendJsonResponse('error', $user['error']);
             } elseif ($user) {
                 $licenseObj = new License($pdo);
                 $license = $licenseObj->getLastActivatedLicense($user['id']);
@@ -45,8 +45,8 @@ try {
                 $magnat = new Magnat($pdo);
                 $wallet = $magnat->getWallet($user['id']);
                 
-                $globalFunctions = new GlobalFunctions($pdo);
-                $systemStatus = $globalFunctions->getCurrentStatus();
+                $GF = new GF($pdo);
+                $systemStatus = $GF->getCurrentStatus();
 
                 $response = [
                     'username' => $user['username'],
@@ -63,31 +63,31 @@ try {
                     'system_status' => $systemStatus,
                     'role' => $user['is_admin'] == 1 ? 'admin' : 'user'
                 ];
-                GlobalFunctions::sendJsonResponse('success', 'Login successful', $response);
+                GF::sendJsonResponse('success', 'Login successful', $response);
             } else {
-                GlobalFunctions::sendJsonResponse('error', 'Login failed');
+                GF::sendJsonResponse('error', 'Login failed');
             }
             break;
             
         case 'register':
             if (!$username || !$password || !$email || !$nickname) {
-            GlobalFunctions::sendJsonResponse('error', 'Missing required fields');
+            GF::sendJsonResponse('error', 'Missing required fields');
             }
             validateInput($username, '/^[a-zA-Z0-9_]{3,20}$/', 'Invalid username');
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            GlobalFunctions::sendJsonResponse('error', 'Invalid email address');
+            GF::sendJsonResponse('error', 'Invalid email address');
             }
             validateInput($nickname, '/^[a-zA-Z0-9_ ]{3,16}$/', 'Invalid nickname');
             if (strlen($password) < 8) {
-            GlobalFunctions::sendJsonResponse('error', 'Password should be at least 8 characters long');
+            GF::sendJsonResponse('error', 'Password should be at least 8 characters long');
             }
             if ($user->userExists($username, $email)) {
-            GlobalFunctions::sendJsonResponse('error', 'Username or email already exists');
+            GF::sendJsonResponse('error', 'Username or email already exists');
             }
             if ($user->register($username, $password, $email, $nickname)) {
-            GlobalFunctions::sendJsonResponse('success', 'User registered successfully. Please check your email to activate your account.');
+            GF::sendJsonResponse('success', 'User registered successfully. Please check your email to activate your account.');
             } else {
-            GlobalFunctions::sendJsonResponse('error', 'User registration failed');
+            GF::sendJsonResponse('error', 'User registration failed');
             }
             break;
 
@@ -95,81 +95,81 @@ try {
             $resetAction = $_GET['resetAction'] ?? null;
             if ($resetAction === 'init') {
                 if (!$email) {
-                    GlobalFunctions::sendJsonResponse('error', 'Missing required email');
+                    GF::sendJsonResponse('error', 'Missing required email');
                 }
                 if ($user->initiatePasswordReset($email)) {
-                    GlobalFunctions::sendJsonResponse('success', 'Password reset initiated successfully. Check your email for the reset code');
+                    GF::sendJsonResponse('success', 'Password reset initiated successfully. Check your email for the reset code');
                 } else {
-                    GlobalFunctions::sendJsonResponse('error', 'Password reset initiation failed');
+                    GF::sendJsonResponse('error', 'Password reset initiation failed');
                 }
             } elseif ($resetAction === 'reset') {
                 if (!$token || !$password) {
-                    GlobalFunctions::sendJsonResponse('error', 'Missing required fields');
+                    GF::sendJsonResponse('error', 'Missing required fields');
                 }
                 if (strlen($password) < 8) {
-                    GlobalFunctions::sendJsonResponse('error', 'Password should be at least 8 characters long');
+                    GF::sendJsonResponse('error', 'Password should be at least 8 characters long');
                 }
                 if ($user->resetPassword($token, $password)) {
-                    GlobalFunctions::sendJsonResponse('success', 'Password reset successfully');
+                    GF::sendJsonResponse('success', 'Password reset successfully');
                 } else {
-                    GlobalFunctions::sendJsonResponse('error', 'Password reset failed');
+                    GF::sendJsonResponse('error', 'Password reset failed');
                 }
             } else {
-                GlobalFunctions::sendJsonResponse('error', 'Invalid reset action');
+                GF::sendJsonResponse('error', 'Invalid reset action');
             }
             break;
 
         case 'activate':
             if (!$token) {
-                GlobalFunctions::sendJsonResponse('error', 'Invalid activation token');
+                GF::sendJsonResponse('error', 'Invalid activation token');
             }
             if ($user->activate($token)) {
-                GlobalFunctions::sendJsonResponse('success', 'Account activated successfully');
+                GF::sendJsonResponse('success', 'Account activated successfully');
             } else {
-                GlobalFunctions::sendJsonResponse('error', 'Account activation failed');
+                GF::sendJsonResponse('error', 'Account activation failed');
             }
             break;
 
         case 'getStatus':
-            $globalFunctions = new GlobalFunctions($pdo);
-            $systemStatus = $globalFunctions->getCurrentStatus();
-            GlobalFunctions::sendJsonResponse('success', 'System status fetched successfully', ['system_status' => $systemStatus]);
+            $GF = new GF($pdo);
+            $systemStatus = $GF->getCurrentStatus();
+            GF::sendJsonResponse('success', 'System status fetched successfully', ['system_status' => $systemStatus]);
             break;
 
         case 'saveSettings':
             if (!$username || !$password || !$settings) {
-                GlobalFunctions::sendJsonResponse('error', 'Missing required fields');
+                GF::sendJsonResponse('error', 'Missing required fields');
             }
             $loggedInUser = $user->login($username, $password);
             if ($loggedInUser) {
                 if ($user->saveSettings($loggedInUser['id'], $settings)) {
-                    GlobalFunctions::sendJsonResponse('success', 'Settings saved successfully');
+                    GF::sendJsonResponse('success', 'Settings saved successfully');
                 } else {
-                    GlobalFunctions::sendJsonResponse('error', 'Settings save failed');
+                    GF::sendJsonResponse('error', 'Settings save failed');
                 }
             } else {
-                GlobalFunctions::sendJsonResponse('error', 'Invalid username or password');
+                GF::sendJsonResponse('error', 'Invalid username or password');
             }
             break;
 
         case 'loadSettings':
             if (!$username || !$password) {
-                GlobalFunctions::sendJsonResponse('error', 'Missing required fields');
+                GF::sendJsonResponse('error', 'Missing required fields');
             }
             $loggedInUser = $user->login($username, $password);
             if ($loggedInUser) {
                 $settings = $user->loadSettings($loggedInUser['id']);
                 $settingsArray = json_decode($settings, true);
-                GlobalFunctions::sendJsonResponse('success', 'Settings loaded successfully', ['settings' => $settingsArray]);
+                GF::sendJsonResponse('success', 'Settings loaded successfully', ['settings' => $settingsArray]);
             } else {
-                GlobalFunctions::sendJsonResponse('error', 'Invalid username or password');
+                GF::sendJsonResponse('error', 'Invalid username or password');
             }
             break;
 
         default:
-            GlobalFunctions::sendJsonResponse('error', 'Invalid action');
+            GF::sendJsonResponse('error', 'Invalid action');
             break;
     }
 } catch (Exception $e) {
-    GlobalFunctions::sendJsonResponse('error', 'An error occurred: ' . $e->getMessage());
+    GF::sendJsonResponse('error', 'An error occurred: ' . $e->getMessage());
 }

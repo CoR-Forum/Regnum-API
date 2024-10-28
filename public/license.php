@@ -11,28 +11,28 @@ $licenseKey = $_GET['key'] ?? null;
 
 // Check if the action is set to 'activate'
 if ($action !== 'activate') {
-    GlobalFunctions::sendJsonResponse('error', 'Invalid action');
+    GF::sendJsonResponse('error', 'Invalid action');
 }
 
 // Check if the username or license key is missing
 if (!$username || !$licenseKey) {
-    GlobalFunctions::sendJsonResponse('error', 'Missing required ' . (!$username ? 'username, ' : '') . (!$licenseKey ? 'license_key' : ''));
+    GF::sendJsonResponse('error', 'Missing required ' . (!$username ? 'username, ' : '') . (!$licenseKey ? 'license_key' : ''));
 }
 
 // Check if the username exists and is activated
 $user = new User($pdo);
 $userId = $user->getUserId($username);
 if (!$userId) {
-    GlobalFunctions::sendJsonResponse('error', 'Invalid username');
+    GF::sendJsonResponse('error', 'Invalid username');
 }
 
 // Check if the user is activated
 if (!$user->isActivated($userId)) {
-    GlobalFunctions::sendJsonResponse('error', 'User is not activated');
+    GF::sendJsonResponse('error', 'User is not activated');
 }
 
 // Activate the license
 $license = new License($pdo);
 $result = $license->activateLicense($userId, $licenseKey);
-GlobalFunctions::sendJsonResponse($result['status'], $result['message'], $result);
+GF::sendJsonResponse($result['status'], $result['message'], $result);
 ?>

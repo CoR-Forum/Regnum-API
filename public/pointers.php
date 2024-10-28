@@ -8,7 +8,7 @@ $username = $_GET['username'] ?? null;
 $password = $_GET['password'] ?? null;
 
 if (!$username || !$password) {
-    GlobalFunctions::sendJsonResponse('error', 'Missing required username or password');
+    GF::sendJsonResponse('error', 'Missing required username or password');
     exit;
 }
 
@@ -16,7 +16,7 @@ $user = new User($pdo);
 $loginResponse = $user->login($username, $password);
 
 if (isset($loginResponse['error'])) {
-    GlobalFunctions::sendJsonResponse('error', $loginResponse['error']);
+    GF::sendJsonResponse('error', $loginResponse['error']);
     exit;
 }
 
@@ -24,7 +24,7 @@ $memory = new Memory($pdo);
 $result = $memory->getMemoryPointers($loginResponse['id']);
 
 if ($result['status'] === 'error') {
-    GlobalFunctions::sendJsonResponse('error', $result['message']);
+    GF::sendJsonResponse('error', $result['message']);
 } else {
-    GlobalFunctions::sendJsonResponse('success', 'Memory pointers fetched successfully', $result);
+    GF::sendJsonResponse('success', 'Memory pointers fetched successfully', $result);
 }
