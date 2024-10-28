@@ -23,28 +23,28 @@ const pool = mysql.createPool({
 
 // Email configuration
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: process.env.EMAIL_PORT,
-  secure: process.env.EMAIL_SECURE === 'true',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
+    secure: process.env.EMAIL_SECURE === 'true',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
 });
 
 // Function to send email
 async function sendEmail(to, subject, text) {
-  try {
-    let info = await transporter.sendMail({
-      from: `"Your App Name" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      text
-    });
-    console.log("Message sent: %s", info.messageId);
-  } catch (error) {
-    console.error("Error sending email:", error);
-  }
+    try {
+        let info = await transporter.sendMail({
+            from: `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_USER}>`,
+            to,
+            subject,
+            text
+        });
+        console.log("Message sent: %s", info.messageId);
+    } catch (error) {
+        console.error("Error sending email:", error);
+    }
 }
 
 // Function to get user email by ID
@@ -92,6 +92,16 @@ async function initializeDatabase() {
         last_activity TIMESTAMP DEFAULT NULL,
         deleted TINYINT(1) DEFAULT 0
       );`,
+        `CREATE TABLE IF NOT EXISTS user_sessions (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            session_token VARCHAR(255) NOT NULL UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_ip VARCHAR(50) DEFAULT NULL,
+            last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            last_ip VARCHAR(50) DEFAULT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );`,
       `CREATE TABLE IF NOT EXISTS licenses (
         id INT AUTO_INCREMENT PRIMARY KEY,
         license_key VARCHAR(255) NOT NULL UNIQUE,
@@ -189,16 +199,16 @@ app.get('/api', (req, res) => {
 
 // Register new user with email verification
 app.post('/api/register', async (req, res) => {
-  const { username, password, email } = req.body;
+  const { username, nickname, password, email } = req.body;
   const db = await pool.getConnection();
   try {
-    const [rows] = await db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email]);
+    const [rows] = await db.query('SELECT * FROM users WHERE username = ? OR email = ? OR nickname = ?', [username, email, nickname]);
     if (rows.length > 0) {
-      return res.status(400).json({ message: "Username or email already exists" });
+      return res.status(400).json({ message: "Username, nickname or email already exists" });
     }
 
     const activationToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    await db.query('INSERT INTO users (username, password, email, activation_token) VALUES (?, ?, ?, ?)', [username, password, email, activationToken]);
+    await db.query('INSERT INTO users (username, nickname, password, email, activation_token) VALUES (?, ?, ?, ?, ?)', [username, nickname, password, email, activationToken]);
 
     const activationLink = `http://localhost:${PORT}/api/activate/${activationToken}`;
     await sendEmail(email, 'Activate your account', `Click here to activate your account: ${activationLink}`);
