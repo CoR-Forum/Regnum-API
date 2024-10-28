@@ -82,21 +82,12 @@ async function initializeDatabase() {
         nickname VARCHAR(50) DEFAULT NULL,
         activation_token VARCHAR(255) DEFAULT NULL,
         activated_at TIMESTAMP DEFAULT NULL,
-        is_active TINYINT(1) DEFAULT 0,
         is_admin TINYINT(1) DEFAULT 0,
         shoutbox_banned TINYINT(1) DEFAULT 0,
-        shoutbox_banned_at TIMESTAMP DEFAULT NULL,
-        shoutbox_banned_by INT DEFAULT NULL,
-        shoutbox_banned_reason TEXT DEFAULT NULL,
-        shoutbox_banned_until TIMESTAMP DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         last_login TIMESTAMP DEFAULT NULL,
         banned TINYINT(1) DEFAULT 0,
-        banned_at TIMESTAMP DEFAULT NULL,
-        banned_by INT DEFAULT NULL,
-        banned_reason TEXT DEFAULT NULL,
-        banned_until TIMESTAMP DEFAULT NULL,
         last_activity TIMESTAMP DEFAULT NULL,
         deleted TINYINT(1) DEFAULT 0
       );`,
@@ -106,7 +97,6 @@ async function initializeDatabase() {
         token VARCHAR(255) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         used_at TIMESTAMP DEFAULT NULL,
-        disabled_at TIMESTAMP DEFAULT NULL,
         FOREIGN KEY (user_id) REFERENCES users(id)
       );`,
       `CREATE TABLE IF NOT EXISTS licenses (
@@ -132,20 +122,7 @@ async function initializeDatabase() {
         user_id INT NOT NULL,
         message TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        deleted_at TIMESTAMP DEFAULT NULL,
-        deleted_by INT DEFAULT NULL,
-        seen_by TEXT DEFAULT NULL,
         FOREIGN KEY (user_id) REFERENCES users(id)
-      );`,
-      `CREATE TABLE IF NOT EXISTS shoutbox_private_messages (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        recipient_id INT NOT NULL,
-        message TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id),
-        FOREIGN KEY (recipient_id) REFERENCES users(id)
       );`,
       `CREATE TABLE IF NOT EXISTS user_settings (
         id INT AUTO_INCREMENT PRIMARY KEY,
