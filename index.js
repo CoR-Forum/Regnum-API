@@ -1,12 +1,19 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const nodemailer = require('nodemailer');
+const session = require('express-session');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false } // Set to true if using HTTPS
+}));
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
@@ -180,6 +187,42 @@ async function initializeDatabase() {
     db.release();
   }
 }
+
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body;
+  const db = await pool.getConnection();
+  try {
+    const [rows] = await db.query('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
+    if (rows.length === 0) return res.status(401).json({ message: "Invalid username or password" });
+
+    const user = rows[0];
+    req.session.userId = user.id;
+    req.session.username = user.username;
+
+    res.json({ message: "Login successful" });
+  } catch (error) {
+    console.error("Error logging in:", error);
+    res.status(500).json({ message: "Internal server error" });
+  } finally {
+    db.release();
+  }
+});
+
+app.get('/api/profile', (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  res.json({ userId: req.session.userId, username: req.session.username });
+});
+
+app.get('/api/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      return res.status(500).json({ message: "Error logging out" });
+    }
+    res.json({ message: "Logout successful" });
+  });
+});
 
 app.get('/api', (req, res) => res.send('API is running'));
 
