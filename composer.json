@@ -1,8 +1,0 @@
-{
-    "name": "sylent-x/sylent-x-api",
-    "description": "Sylent-X API",
-    "license": "proprietary",
-    "require": {
-        "phpmailer/phpmailer": "^6.9"
-    }
-}
