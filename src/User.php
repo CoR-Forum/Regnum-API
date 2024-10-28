@@ -233,18 +233,18 @@ class User {
 
             if ($interval->days >= 1) {
                 $magnat = new Magnat($this->pdo);
-                $magnat->giveMagnat($user['id'], 100, 'daily_login');
+                $magnat->giveMagnat($user['id'], 5, 'daily_login');
             }
 
             if ($interval->h >= 6 || $interval->days > 0) {
                 $magnat = new Magnat($this->pdo);
-                $magnat->giveMagnat($user['id'], 25, 'six_hour_login');
+                $magnat->giveMagnat($user['id'], 2, 'six_hour_login');
             }
         } else {
             // If last_login is null, initialize it with the current time
             $this->updateLastLoginTime($user['id']);
             $magnat = new Magnat($this->pdo);
-            $magnat->giveMagnat($user['id'], 300, 'first_login');
+            $magnat->giveMagnat($user['id'],25, 'first_login');
         }
 
         $this->updateLastLoginTime($user['id']);
