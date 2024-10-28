@@ -23,31 +23,30 @@ const pool = mysql.createPool({
 
 // Email configuration
 const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: process.env.EMAIL_SECURE === 'true',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
+  host: process.env.EMAIL_HOST,
+  port: process.env.EMAIL_PORT,
+  secure: process.env.EMAIL_SECURE === 'true',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
 });
 
-// Function to send email
+// Utility functions
 async function sendEmail(to, subject, text) {
-    try {
-        let info = await transporter.sendMail({
-            from: `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_USER}>`,
-            to,
-            subject,
-            text
-        });
-        console.log("Message sent: %s", info.messageId);
-    } catch (error) {
-        console.error("Error sending email:", error);
-    }
+  try {
+    let info = await transporter.sendMail({
+      from: `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      text
+    });
+    console.log("Message sent: %s", info.messageId);
+  } catch (error) {
+    console.error("Error sending email:", error);
+  }
 }
 
-// Function to get user email by ID
 async function getUserEmailById(userId) {
   const db = await pool.getConnection();
   try {
@@ -61,7 +60,6 @@ async function getUserEmailById(userId) {
   }
 }
 
-// Function to send email to user by ID
 async function sendEmailToUser(userId, subject, text) {
   const email = await getUserEmailById(userId);
   if (email) {
@@ -92,16 +90,16 @@ async function initializeDatabase() {
         last_activity TIMESTAMP DEFAULT NULL,
         deleted TINYINT(1) DEFAULT 0
       );`,
-        `CREATE TABLE IF NOT EXISTS user_sessions (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
-            session_token VARCHAR(255) NOT NULL UNIQUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            created_ip VARCHAR(50) DEFAULT NULL,
-            last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            last_ip VARCHAR(50) DEFAULT NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        );`,
+      `CREATE TABLE IF NOT EXISTS user_sessions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        session_token VARCHAR(255) NOT NULL UNIQUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_ip VARCHAR(50) DEFAULT NULL,
+        last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        last_ip VARCHAR(50) DEFAULT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      );`,
       `CREATE TABLE IF NOT EXISTS licenses (
         id INT AUTO_INCREMENT PRIMARY KEY,
         license_key VARCHAR(255) NOT NULL UNIQUE,
@@ -197,7 +195,6 @@ app.get('/api', (req, res) => {
   res.send('API is running');
 });
 
-// Register new user with email verification
 app.post('/api/register', async (req, res) => {
   const { username, nickname, password, email } = req.body;
   const db = await pool.getConnection();
@@ -222,7 +219,6 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Activate user account
 app.get('/api/activate/:token', async (req, res) => {
   const db = await pool.getConnection();
   try {
@@ -241,7 +237,6 @@ app.get('/api/activate/:token', async (req, res) => {
   }
 });
 
-// Request password reset
 app.post('/api/reset-password', async (req, res) => {
   const { email } = req.body;
   const db = await pool.getConnection();
@@ -266,7 +261,6 @@ app.post('/api/reset-password', async (req, res) => {
   }
 });
 
-// Reset password
 app.post('/api/reset-password/:token', async (req, res) => {
   const { password } = req.body;
   const db = await pool.getConnection();
@@ -286,7 +280,6 @@ app.post('/api/reset-password/:token', async (req, res) => {
   }
 });
 
-// Retrieve current system status
 app.get('/api/status', async (req, res) => {
   const db = await pool.getConnection();
   try {
