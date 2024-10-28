@@ -6,10 +6,8 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(express.json());
 
-// Database configuration
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -21,7 +19,6 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// Email configuration
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: process.env.EMAIL_PORT,
@@ -32,7 +29,6 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Utility functions
 async function sendEmail(to, subject, text) {
   try {
     let info = await transporter.sendMail({
@@ -62,12 +58,9 @@ async function getUserEmailById(userId) {
 
 async function sendEmailToUser(userId, subject, text) {
   const email = await getUserEmailById(userId);
-  if (email) {
-    await sendEmail(email, subject, text);
-  }
+  if (email) await sendEmail(email, subject, text);
 }
 
-// Database initialization
 async function initializeDatabase() {
   const db = await pool.getConnection();
   try {
@@ -178,9 +171,7 @@ async function initializeDatabase() {
       );`
     ];
 
-    for (const query of queries) {
-      await db.query(query);
-    }
+    for (const query of queries) await db.query(query);
 
     console.log("Database and tables initialized successfully.");
   } catch (error) {
@@ -190,19 +181,14 @@ async function initializeDatabase() {
   }
 }
 
-// Routes
-app.get('/api', (req, res) => {
-  res.send('API is running');
-});
+app.get('/api', (req, res) => res.send('API is running'));
 
 app.post('/api/register', async (req, res) => {
   const { username, nickname, password, email } = req.body;
   const db = await pool.getConnection();
   try {
     const [rows] = await db.query('SELECT * FROM users WHERE username = ? OR email = ? OR nickname = ?', [username, email, nickname]);
-    if (rows.length > 0) {
-      return res.status(400).json({ message: "Username, nickname or email already exists" });
-    }
+    if (rows.length > 0) return res.status(400).json({ message: "Username, nickname or email already exists" });
 
     const activationToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     await db.query('INSERT INTO users (username, nickname, password, email, activation_token) VALUES (?, ?, ?, ?, ?)', [username, nickname, password, email, activationToken]);
@@ -223,9 +209,7 @@ app.get('/api/activate/:token', async (req, res) => {
   const db = await pool.getConnection();
   try {
     const [rows] = await db.query('SELECT * FROM users WHERE activation_token = ?', [req.params.token]);
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "Activation token not found" });
-    }
+    if (rows.length === 0) return res.status(404).json({ message: "Activation token not found" });
 
     await db.query('UPDATE users SET activation_token = NULL, activated_at = CURRENT_TIMESTAMP WHERE activation_token = ?', [req.params.token]);
     res.json({ message: "Account activated successfully" });
@@ -242,9 +226,7 @@ app.post('/api/reset-password', async (req, res) => {
   const db = await pool.getConnection();
   try {
     const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "Email not found" });
-    }
+    if (rows.length === 0) return res.status(404).json({ message: "Email not found" });
 
     const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     await db.query('UPDATE users SET pw_reset_token = ? WHERE email = ?', [resetToken, email]);
@@ -266,9 +248,7 @@ app.post('/api/reset-password/:token', async (req, res) => {
   const db = await pool.getConnection();
   try {
     const [rows] = await db.query('SELECT * FROM users WHERE pw_reset_token = ?', [req.params.token]);
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "Reset token not found" });
-    }
+    if (rows.length === 0) return res.status(404).json({ message: "Reset token not found" });
 
     await db.query('UPDATE users SET password = ?, pw_reset_token = NULL WHERE pw_reset_token = ?', [password, req.params.token]);
     res.json({ message: "Password reset successfully" });
@@ -293,7 +273,6 @@ app.get('/api/status', async (req, res) => {
   }
 });
 
-// Initialize database and start server
 initializeDatabase().then(() => {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}: http://localhost:${PORT}`);
