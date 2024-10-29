@@ -1,9 +1,9 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
-const nodemailer = require('nodemailer');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 const crypto = require('crypto');
+const { sendEmail } = require('./email');
 require('dotenv').config();
 
 const app = express();
@@ -30,30 +30,6 @@ app.use(session({
     store: sessionStore,
     cookie: { secure: false }
 }));
-
-const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: process.env.EMAIL_SECURE === 'true',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
-
-const sendEmail = async (to, subject, text) => {
-    try {
-        let info = await transporter.sendMail({
-            from: `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_USER}>`,
-            to,
-            subject,
-            text
-        });
-        console.log("Message sent: %s", info.messageId);
-    } catch (error) {
-        console.error("Error sending email:", error);
-    }
-};
 
 const queryDb = async (query, params) => {
     const db = await pool.getConnection();
