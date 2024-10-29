@@ -81,6 +81,6 @@ const processEmailQueue = async () => {
 };
 
 // Periodically check the queue for new jobs
-setInterval(processEmailQueue, 3000); // Check every 60 seconds
+setInterval(processEmailQueue, 5000); // Check every 3 seconds
 
 module.exports = { mail };
