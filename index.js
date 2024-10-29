@@ -2,18 +2,11 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const nodemailer = require('nodemailer');
 const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-app.use(express.json());
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false } // Set to true if using HTTPS
-}));
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
@@ -25,6 +18,17 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0
 });
+
+const sessionStore = new MySQLStore({}, pool);
+
+app.use(express.json());
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  store: sessionStore,
+  cookie: { secure: false } // Set to true if using HTTPS
+}));
 
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
@@ -170,6 +174,8 @@ async function initializeDatabase() {
   }
 }
 
+const crypto = require('crypto');
+
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   const db = await pool.getConnection();
@@ -181,7 +187,18 @@ app.post('/api/login', async (req, res) => {
     req.session.userId = user.id;
     req.session.username = user.username;
 
-    res.json({ message: "Login successful" });
+    const sessionToken = crypto.randomBytes(64).toString('hex');
+    const createdIp = req.ip;
+
+    await db.query('INSERT INTO user_sessions (user_id, session_token, created_ip, last_ip) VALUES (?, ?, ?, ?)', [user.id, sessionToken, createdIp, createdIp]);
+
+    req.session.save(err => {
+      if (err) {
+        console.error("Error saving session:", err);
+        return res.status(500).json({ message: "Internal server error" });
+      }
+      res.json({ message: "Login successful" });
+    });
   } catch (error) {
     console.error("Error logging in:", error);
     res.status(500).json({ message: "Internal server error" });
