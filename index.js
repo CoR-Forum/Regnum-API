@@ -123,17 +123,7 @@ const initializeDatabase = async () => {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
         );`,
-        `CREATE TABLE IF NOT EXISTS beta_registrations (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(50),
-            email VARCHAR(100) NOT NULL UNIQUE,
-            discord_tag VARCHAR(50),
-            email_verified TINYINT(1) DEFAULT 0,
-            email_verification_token VARCHAR(255) DEFAULT NULL,
-            ip_address VARCHAR(50),
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );`,
-        `CREATE TABLE IF NOT EXISTS settings (
+        `CREATE TABLE IF NOT EXISTS system (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name ENUM('status', 'latest_version') NOT NULL UNIQUE,
             value TEXT NOT NULL,
@@ -253,15 +243,6 @@ app.post('/api/reset-password/:token', async (req, res) => {
 
         await queryDb('UPDATE users SET password = ?, pw_reset_token = NULL WHERE pw_reset_token = ?', [password, req.params.token]);
         res.json({ message: "Password reset successfully" });
-    } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
-    }
-});
-
-app.get('/api/status', async (req, res) => {
-    try {
-        const rows = await queryDb('SELECT * FROM settings WHERE name = "status"');
-        res.json(rows[0]);
     } catch (error) {
         res.status(500).json({ message: "Internal server error" });
     }
