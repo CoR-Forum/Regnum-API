@@ -20,8 +20,34 @@ const dbConfig = {
     connectTimeout: 5000 // 5 seconds timeout
 };
 
+let connection;
+let isDbConnected = false;
+
+const initializeDbConnection = async () => {
+    try {
+        connection = await mysql.createConnection(dbConfig);
+        isDbConnected = true;
+        console.log('MAILER: Database connection established');
+    } catch (error) {
+        isDbConnected = false;
+        console.error(`MAILER: Error establishing database connection: ${error.message}`, error);
+    }
+};
+
+const closeDbConnection = async () => {
+    if (connection) {
+        try {
+            await connection.end();
+            isDbConnected = false;
+            console.log('MAILER: Database connection closed');
+        } catch (error) {
+            console.error(`MAILER: Error closing database connection: ${error.message}`, error);
+        }
+    }
+};
+
 const sendEmail = async (to, subject, text) => {
-    console.log(`sendEmail called with to: ${to}, subject: ${subject}, text: ${text}`);
+    console.log(`MAILER: sendEmail called with to: ${to}, subject: ${subject}, text: ${text}`);
     try {
         let info = await transporter.sendMail({
             from: `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_USER}>`,
@@ -29,48 +55,45 @@ const sendEmail = async (to, subject, text) => {
             subject,
             text
         });
-        console.log(`Message sent: ${info.messageId}`);
+        console.log(`MAILER: Message sent: ${info.messageId}`);
     } catch (error) {
-        console.error(`Error sending email: ${error.message}`, error);
+        console.error(`MAILER: Error sending email: ${error.message}`, error);
     }
-    console.log('sendEmail finished');
+    console.log('MAILER: sendEmail finished');
 };
 
 const mail = async (to, subject, text) => {
-    console.log(`mail called with to: ${to}, subject: ${subject}, text: ${text}`);
-    let connection;
+    console.log(`MAILER: mail called with to: ${to}, subject: ${subject}, text: ${text}`);
+    if (!isDbConnected) {
+        console.error('MAILER: Database is not connected. Email not queued.');
+        return;
+    }
     try {
-        connection = await mysql.createConnection(dbConfig);
-        console.log('Database connection established');
         await connection.execute(
             'INSERT INTO email_queue (to_email, subject, body) VALUES (?, ?, ?)',
             [to, subject, text]
         );
-        console.log('Email queued successfully');
+        console.log('MAILER: Email queued successfully');
     } catch (error) {
-        console.error(`Error queuing email: ${error.message}`, error);
-    } finally {
-        if (connection) {
-            await connection.end();
-            console.log('Database connection closed');
-        }
+        console.error(`MAILER: Error queuing email: ${error.message}`, error);
     }
-    console.log('mail finished');
+    console.log('MAILER: mail finished');
 };
 
 const processEmailQueue = async () => {
-    console.log('processEmailQueue started');
-    let connection;
+    console.log('MAILER: processEmailQueue started');
+    if (!isDbConnected) {
+        console.error('MAILER: Database is not connected. Skipping email processing.');
+        return;
+    }
     try {
-        connection = await mysql.createConnection(dbConfig);
-        console.log('Database connection established');
         const [rows] = await connection.execute(
             'SELECT * FROM email_queue WHERE status = "pending" LIMIT 1'
         );
-        console.log(`Fetched ${rows.length} pending emails`);
+        console.log(`MAILER: Fetched ${rows.length} pending emails`);
 
         for (const job of rows) {
-            console.log(`Processing job id: ${job.id}`);
+            console.log(`MAILER: Processing job id: ${job.id}`);
             await connection.execute(
                 'UPDATE email_queue SET status = "processing" WHERE id = ?',
                 [job.id]
@@ -82,27 +105,44 @@ const processEmailQueue = async () => {
                     'UPDATE email_queue SET status = "completed" WHERE id = ?',
                     [job.id]
                 );
-                console.log(`Job id: ${job.id} completed`);
+                console.log(`MAILER: Job id: ${job.id} completed`);
             } catch (error) {
                 await connection.execute(
                     'UPDATE email_queue SET status = "failed" WHERE id = ?',
                     [job.id]
                 );
-                console.error(`Job id: ${job.id} failed: ${error.message}`, error);
+                console.error(`MAILER: Job id: ${job.id} failed: ${error.message}`, error);
             }
         }
     } catch (error) {
-        console.error(`Error processing email queue: ${error.message}`, error);
-    } finally {
-        if (connection) {
-            await connection.end();
-            console.log('Database connection closed');
-        }
+        console.error(`MAILER: Error processing email queue: ${error.message}`, error);
     }
-    console.log('processEmailQueue finished');
+    console.log('MAILER: processEmailQueue finished');
 };
+
+const checkDbConnection = async () => {
+    console.log('MAILER: checkDbConnection called');
+    if (!isDbConnected) {
+        console.log('MAILER: Database is not connected. Attempting to reconnect...');
+        await initializeDbConnection();
+    } else {
+        console.log('MAILER: Database is already connected.');
+    }
+    console.log('MAILER: checkDbConnection finished');
+};
+
+// Initialize the database connection when the application starts
+initializeDbConnection();
 
 // Periodically check the queue for new jobs
 setInterval(processEmailQueue, 5000); // Check every 5 seconds
+
+// Periodically check the database connection
+setInterval(checkDbConnection, 10000); // Check every 10 seconds
+
+// Ensure the database connection is closed when the application exits
+process.on('exit', closeDbConnection);
+process.on('SIGINT', closeDbConnection);
+process.on('SIGTERM', closeDbConnection);
 
 module.exports = { mail };
