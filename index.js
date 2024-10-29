@@ -177,7 +177,6 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
             const loginNotificationText = `Hello ${user.username},\n\nYou have successfully logged in from IP address: ${req.ip}.\n\nIf this wasn't you, please contact support immediately.`;
             await mail(user.email, 'Login Notification', loginNotificationText);
 
-            // Log the login in the activity_logs table
             logActivity(user.id, 'login', 'User logged in', req.ip);
 
             res.json({
@@ -250,6 +249,9 @@ app.post(`${BASE_PATH}/register`, async (req, res) => {
         const activationLink = `${process.env.BASE_URL}:${PORT}${BASE_PATH}/activate/${activationToken}`;
         await mail(email, 'Activate your account', `Click here to activate your account: ${activationLink}`);
 
+        const rows = await queryDb('SELECT * FROM users WHERE username = ?', [username]);
+        logActivity(rows[0].id, 'registration', 'User registered', req.ip);
+
         res.json({ message: "User registered successfully" });
     } catch (error) {
         res.status(500).json({ message: "Internal server error" });
@@ -286,7 +288,6 @@ app.post(`${BASE_PATH}/reset-password`, async (req, res) => {
         const resetLink = `${process.env.BASE_URL}:${PORT}${BASE_PATH}/reset-password/${resetToken}`;
         await mail(email, 'Reset your password', `Click here to reset your password: ${resetLink}`);
 
-        // Log the password reset request in the activity_logs table
         logActivity(rows[0].id, 'password_reset_request', 'Password reset requested', req.ip);
 
         res.json({ message: "Password reset link sent successfully" });
@@ -309,7 +310,6 @@ app.post(`${BASE_PATH}/reset-password/:token`, async (req, res) => {
 
         await queryDb('UPDATE users SET password = ?, pw_reset_token = NULL WHERE pw_reset_token = ?', [password, req.params.token]);
 
-        // Log the password reset in the activity_logs table
         logActivity(rows[0].id, 'password_reset', 'Password reset', req.ip);
 
         res.json({ message: "Password reset successfully" });
@@ -335,7 +335,6 @@ app.post(`${BASE_PATH}/feedback`, validateSession, async (req, res) => {
     try {
         await queryDb('INSERT INTO feedback (type, user_id, feedback, log) VALUES (?, ?, ?, ?)', [type, req.session.userId, feedback, log]);
 
-        // Log the feedback submission in the activity_logs table
         logActivity(req.session.userId, 'feedback', 'Feedback submitted', req.ip);
 
         res.json({ message: "Feedback submitted successfully" });
