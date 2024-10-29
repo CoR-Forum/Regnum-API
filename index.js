@@ -115,6 +115,14 @@ const initializeDatabase = async () => {
     console.log("Database and tables initialized successfully.");
 };
 
+const logActivity = async (userId, activityType, description, ipAddress) => {
+    try {
+        await queryDb('INSERT INTO activity_logs (user_id, activity_type, description, ip_address) VALUES (?, ?, ?, ?)', [userId, activityType, description, ipAddress]);
+    } catch (error) {
+        console.error("Error logging activity:", error);
+    }
+};
+
 const updateLastActivity = async (req, res, next) => {
     if (req.session.userId) {
         await queryDb('UPDATE users SET last_activity = CURRENT_TIMESTAMP WHERE id = ?', [req.session.userId]);
@@ -170,7 +178,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
             await mail(user.email, 'Login Notification', loginNotificationText);
 
             // Log the login in the activity_logs table
-            await queryDb('INSERT INTO activity_logs (user_id, activity_type, description, ip_address) VALUES (?, ?, ?, ?)', [user.id, 'login', 'User logged in', req.ip]);
+            logActivity(user.id, 'login', 'User logged in', req.ip);
 
             res.json({
                 message: "Login successful",
@@ -279,7 +287,7 @@ app.post(`${BASE_PATH}/reset-password`, async (req, res) => {
         await mail(email, 'Reset your password', `Click here to reset your password: ${resetLink}`);
 
         // Log the password reset request in the activity_logs table
-        await queryDb('INSERT INTO activity_logs (user_id, activity_type, description, ip_address) VALUES (?, ?, ?, ?)', [rows[0].id, 'password_reset_request', 'Password reset requested', req.ip]);
+        logActivity(rows[0].id, 'password_reset_request', 'Password reset requested', req.ip);
 
         res.json({ message: "Password reset link sent successfully" });
     } catch (error) {
@@ -302,7 +310,7 @@ app.post(`${BASE_PATH}/reset-password/:token`, async (req, res) => {
         await queryDb('UPDATE users SET password = ?, pw_reset_token = NULL WHERE pw_reset_token = ?', [password, req.params.token]);
 
         // Log the password reset in the activity_logs table
-        await queryDb('INSERT INTO activity_logs (user_id, activity_type, description, ip_address) VALUES (?, ?, ?, ?)', [rows[0].id, 'password_reset', 'Password reset', req.ip]);
+        logActivity(rows[0].id, 'password_reset', 'Password reset', req.ip);
 
         res.json({ message: "Password reset successfully" });
     } catch (error) {
@@ -328,7 +336,7 @@ app.post(`${BASE_PATH}/feedback`, validateSession, async (req, res) => {
         await queryDb('INSERT INTO feedback (type, user_id, feedback, log) VALUES (?, ?, ?, ?)', [type, req.session.userId, feedback, log]);
 
         // Log the feedback submission in the activity_logs table
-        await queryDb('INSERT INTO activity_logs (user_id, activity_type, description, ip_address) VALUES (?, ?, ?, ?)', [req.session.userId, 'feedback', 'Feedback submitted', req.ip]);
+        logActivity(req.session.userId, 'feedback', 'Feedback submitted', req.ip);
 
         res.json({ message: "Feedback submitted successfully" });
     } catch (error) {
