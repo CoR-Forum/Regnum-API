@@ -122,6 +122,22 @@ const updateLastActivity = async (req, res, next) => {
 
 app.use(updateLastActivity);
 
+const validateSession = async (req, res, next) => {
+    if (!req.session.userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+        const rows = await queryDb('SELECT * FROM sessions WHERE session_id = ?', [req.sessionID]);
+        if (rows.length === 0) {
+            return res.status(401).json({ message: "Invalid session" });
+        }
+        next();
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
@@ -145,12 +161,11 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-app.get('/api/profile', (req, res) => {
-    if (!req.session.userId) return res.status(401).json({ message: "Unauthorized" });
+app.get('/api/profile', validateSession, (req, res) => {
     res.json({ userId: req.session.userId, username: req.session.username, nickname: req.session.nickname });
 });
 
-app.get('/api/logout', (req, res) => {
+app.get('/api/logout', validateSession, (req, res) => {
     req.session.destroy(err => {
         if (err) return res.status(500).json({ message: "Error logging out" });
         res.json({ message: "Logout successful" });
