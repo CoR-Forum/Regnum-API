@@ -63,19 +63,8 @@ const initializeDatabase = async () => {
             banned TINYINT(1) DEFAULT 0,
             last_activity TIMESTAMP DEFAULT NULL,
             sylentx_settings TEXT DEFAULT NULL,
+            sylentx_features TEXT DEFAULT NULL,
             deleted TINYINT(1) DEFAULT 0
-        );`,
-        `CREATE TABLE IF NOT EXISTS licenses (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            license_key VARCHAR(255) NOT NULL UNIQUE,
-            activated_by INT DEFAULT NULL,
-            activated_at TIMESTAMP DEFAULT NULL,
-            runtime VARCHAR(10) DEFAULT NULL,
-            runtime_end TIMESTAMP DEFAULT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            expires_at TIMESTAMP DEFAULT NULL,
-            licensed_features TEXT,
-            FOREIGN KEY (activated_by) REFERENCES users(id)
         );`,
         `CREATE TABLE IF NOT EXISTS memory_pointers (
             id INT AUTO_INCREMENT PRIMARY KEY,
