@@ -3,6 +3,7 @@ const mysql = require('mysql2/promise');
 const nodemailer = require('nodemailer');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
+const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
@@ -27,7 +28,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     store: sessionStore,
-    cookie: { secure: false } // Set to true if using HTTPS
+    cookie: { secure: false }
 }));
 
 const transporter = nodemailer.createTransport({
@@ -40,7 +41,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-async function sendEmail(to, subject, text) {
+const sendEmail = async (to, subject, text) => {
     try {
         let info = await transporter.sendMail({
             from: `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_USER}>`,
@@ -52,9 +53,9 @@ async function sendEmail(to, subject, text) {
     } catch (error) {
         console.error("Error sending email:", error);
     }
-}
+};
 
-async function getUserEmailById(userId) {
+const getUserEmailById = async (userId) => {
     const db = await pool.getConnection();
     try {
         const [rows] = await db.query('SELECT email FROM users WHERE id = ?', [userId]);
@@ -65,14 +66,14 @@ async function getUserEmailById(userId) {
     } finally {
         db.release();
     }
-}
+};
 
-async function sendEmailToUser(userId, subject, text) {
+const sendEmailToUser = async (userId, subject, text) => {
     const email = await getUserEmailById(userId);
     if (email) await sendEmail(email, subject, text);
-}
+};
 
-async function initializeDatabase() {
+const initializeDatabase = async () => {
     const db = await pool.getConnection();
     try {
         const queries = [
@@ -165,18 +166,15 @@ async function initializeDatabase() {
         ];
 
         for (const query of queries) await db.query(query);
-
         console.log("Database and tables initialized successfully.");
     } catch (error) {
         console.error("Error initializing database:", error);
     } finally {
         db.release();
     }
-}
+};
 
-const crypto = require('crypto');
-
-async function updateLastActivity(req, res, next) {
+const updateLastActivity = async (req, res, next) => {
     if (req.session.userId) {
         const db = await pool.getConnection();
         try {
@@ -189,7 +187,7 @@ async function updateLastActivity(req, res, next) {
         }
     }
     next();
-}
+};
 
 app.use(updateLastActivity);
 
@@ -201,13 +199,7 @@ app.post('/api/login', async (req, res) => {
         if (rows.length === 0) return res.status(401).json({ message: "Invalid username or password" });
 
         const user = rows[0];
-
-        // Check if the user already has an active session
-        const [sessionRows] = await db.query('SELECT * FROM user_sessions WHERE user_id = ?', [user.id]);
-        if (sessionRows.length > 0) {
-            // Delete the existing session
-            await db.query('DELETE FROM user_sessions WHERE user_id = ?', [user.id]);
-        }
+        await db.query('DELETE FROM user_sessions WHERE user_id = ?', [user.id]);
 
         req.session.userId = user.id;
         req.session.username = user.username;
@@ -223,7 +215,6 @@ app.post('/api/login', async (req, res) => {
                 return res.status(500).json({ message: "Internal server error" });
             }
 
-            // Send login notification email
             const loginNotificationText = `Hello ${user.username},\n\nYou have successfully logged in from IP address: ${createdIp}.\n\nIf this wasn't you, please contact support immediately.`;
             await sendEmail(user.email, 'Login Notification', loginNotificationText);
 
@@ -262,7 +253,7 @@ app.post('/api/register', async (req, res) => {
         const [rows] = await db.query('SELECT * FROM users WHERE username = ? OR email = ? OR nickname = ?', [username, email, nickname]);
         if (rows.length > 0) return res.status(400).json({ message: "Username, nickname or email already exists" });
 
-        const activationToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        const activationToken = crypto.randomBytes(64).toString('hex');
         await db.query('INSERT INTO users (username, nickname, password, email, activation_token) VALUES (?, ?, ?, ?, ?)', [username, nickname, password, email, activationToken]);
 
         const activationLink = `${process.env.BASE_URL}:${PORT}/api/activate/${activationToken}`;
@@ -300,7 +291,7 @@ app.post('/api/reset-password', async (req, res) => {
         const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
         if (rows.length === 0) return res.status(404).json({ message: "Email not found" });
 
-        const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        const resetToken = crypto.randomBytes(64).toString('hex');
         await db.query('UPDATE users SET pw_reset_token = ? WHERE email = ?', [resetToken, email]);
 
         const resetLink = `${process.env.BASE_URL}:${PORT}/api/reset-password/${resetToken}`;
