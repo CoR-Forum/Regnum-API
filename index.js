@@ -3,7 +3,7 @@ const mysql = require('mysql2/promise');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 const crypto = require('crypto');
-const { sendEmail } = require('./email');
+const { mail } = require('./email');
 require('dotenv').config();
 
 const app = express();
@@ -109,6 +109,14 @@ const initializeDatabase = async () => {
             session_id VARCHAR(128) NOT NULL PRIMARY KEY,
             expires INT(11) UNSIGNED NOT NULL,
             data TEXT
+        );`,
+        `CREATE TABLE IF NOT EXISTS email_queue (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            to_email VARCHAR(100) NOT NULL,
+            subject VARCHAR(255) NOT NULL,
+            body TEXT NOT NULL,
+            status ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );`
     ];
 
@@ -139,7 +147,7 @@ app.post('/api/login', async (req, res) => {
             if (err) return res.status(500).json({ message: "Internal server error" });
 
             const loginNotificationText = `Hello ${user.username},\n\nYou have successfully logged in from IP address: ${req.ip}.\n\nIf this wasn't you, please contact support immediately.`;
-            await sendEmail(user.email, 'Login Notification', loginNotificationText);
+            await mail(user.email, 'Login Notification', loginNotificationText);
 
             res.json({ message: "Login successful", user: { id: user.id, username: user.username, nickname: user.nickname } });
         });
@@ -172,7 +180,7 @@ app.post('/api/register', async (req, res) => {
         await queryDb('INSERT INTO users (username, nickname, password, email, activation_token) VALUES (?, ?, ?, ?, ?)', [username, nickname, password, email, activationToken]);
 
         const activationLink = `${process.env.BASE_URL}:${PORT}/api/activate/${activationToken}`;
-        await sendEmail(email, 'Activate your account', `Click here to activate your account: ${activationLink}`);
+        await mail(email, 'Activate your account', `Click here to activate your account: ${activationLink}`);
 
         res.json({ message: "User registered successfully" });
     } catch (error) {
@@ -202,7 +210,7 @@ app.post('/api/reset-password', async (req, res) => {
         await queryDb('UPDATE users SET pw_reset_token = ? WHERE email = ?', [resetToken, email]);
 
         const resetLink = `${process.env.BASE_URL}:${PORT}/api/reset-password/${resetToken}`;
-        await sendEmail(email, 'Reset your password', `Click here to reset your password: ${resetLink}`);
+        await mail(email, 'Reset your password', `Click here to reset your password: ${resetLink}`);
 
         res.json({ message: "Password reset link sent successfully" });
     } catch (error) {
