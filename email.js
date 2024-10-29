@@ -17,7 +17,7 @@ const dbConfig = {
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
-    connectTimeout: 10000 // 10 seconds timeout
+    connectTimeout: 5000 // 5 seconds timeout
 };
 
 const sendEmail = async (to, subject, text) => {
@@ -48,7 +48,7 @@ const processEmailQueue = async () => {
     try {
         connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute(
-            'SELECT * FROM email_queue WHERE status = "pending" LIMIT 2'
+            'SELECT * FROM email_queue WHERE status = "pending" LIMIT 1'
         );
 
         for (const job of rows) {
