@@ -15,8 +15,8 @@ const pool = mysql.createPool({
     database: process.env.DB_NAME,
     charset: process.env.DB_CHARSET,
     waitForConnections: true,
-    connectionLimit: 30,
-    queueLimit: 100
+    connectionLimit: process.env.DB_CONN_LIMIT || 10,
+    queueLimit: process.env.DB_QUE_LIMIT || 0
 });
 
 const sessionStore = new MySQLStore({}, pool);
