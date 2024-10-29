@@ -56,7 +56,6 @@ const initializeDatabase = async () => {
             email VARCHAR(100) NOT NULL,
             nickname VARCHAR(50) DEFAULT NULL,
             activation_token VARCHAR(255) DEFAULT NULL,
-            activated_at TIMESTAMP DEFAULT NULL,
             pw_reset_token VARCHAR(255) DEFAULT NULL,
             is_admin TINYINT(1) DEFAULT 0,
             shoutbox_banned TINYINT(1) DEFAULT 0,
@@ -124,7 +123,7 @@ const validateSession = async (req, res, next) => {
         if (rows.length === 0) return res.status(401).json({ message: "Invalid session" });
 
         const user = rows[0];
-        if (!user.activated_at) return res.status(403).json({ message: "Account not activated" });
+        if (user.activation_token) return res.status(403).json({ message: "Account not activated" });
 
         next();
     } catch (error) {
@@ -150,7 +149,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
         if (rows.length === 0) return res.status(401).json({ message: "Invalid username or password" });
 
         const user = rows[0];
-        if (!user.activated_at) return res.status(403).json({ message: "Account not activated" });
+        if (user.activation_token) return res.status(403).json({ message: "Account not activated" });
 
         req.session.userId = user.id;
         req.session.username = user.username;
@@ -234,7 +233,7 @@ app.get(`${BASE_PATH}/activate/:token`, async (req, res) => {
         const rows = await queryDb('SELECT * FROM users WHERE activation_token = ?', [req.params.token]);
         if (rows.length === 0) return res.status(404).json({ message: "Activation token not found" });
 
-        await queryDb('UPDATE users SET activation_token = NULL, activated_at = CURRENT_TIMESTAMP WHERE activation_token = ?', [req.params.token]);
+        await queryDb('UPDATE users SET activation_token = NULL WHERE activation_token = ?', [req.params.token]);
         res.json({ message: "Account activated successfully" });
     } catch (error) {
         res.status(500).json({ message: "Internal server error" });
