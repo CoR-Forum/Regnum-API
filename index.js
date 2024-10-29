@@ -100,11 +100,13 @@ const initializeDatabase = async () => {
             expires INT(11) UNSIGNED NOT NULL,
             data TEXT
         );`,
-        `CREATE TABLE IF NOT EXISTS login_logs (
+        `CREATE TABLE IF NOT EXISTS activity_logs (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
-            ip_address VARCHAR(45) NOT NULL,
-            login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            activity_type VARCHAR(50) NOT NULL,
+            description TEXT,
+            ip_address VARCHAR(45),
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
         );`,
     ];
@@ -167,8 +169,8 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
             const loginNotificationText = `Hello ${user.username},\n\nYou have successfully logged in from IP address: ${req.ip}.\n\nIf this wasn't you, please contact support immediately.`;
             await mail(user.email, 'Login Notification', loginNotificationText);
 
-            // Log the login in the database
-            await queryDb('INSERT INTO login_logs (user_id, ip_address) VALUES (?, ?)', [user.id, req.ip]);
+            // Log the login in the activity_logs table
+            await queryDb('INSERT INTO activity_logs (user_id, activity_type, description, ip_address) VALUES (?, ?, ?, ?)', [user.id, 'login', 'User logged in', req.ip]);
 
             res.json({
                 message: "Login successful",
@@ -276,6 +278,9 @@ app.post(`${BASE_PATH}/reset-password`, async (req, res) => {
         const resetLink = `${process.env.BASE_URL}:${PORT}${BASE_PATH}/reset-password/${resetToken}`;
         await mail(email, 'Reset your password', `Click here to reset your password: ${resetLink}`);
 
+        // Log the password reset request in the activity_logs table
+        await queryDb('INSERT INTO activity_logs (user_id, activity_type, description, ip_address) VALUES (?, ?, ?, ?)', [rows[0].id, 'password_reset_request', 'Password reset requested', req.ip]);
+
         res.json({ message: "Password reset link sent successfully" });
     } catch (error) {
         res.status(500).json({ message: "Internal server error" });
@@ -295,6 +300,10 @@ app.post(`${BASE_PATH}/reset-password/:token`, async (req, res) => {
         if (rows.length === 0) return res.status(404).json({ message: "Reset token not found" });
 
         await queryDb('UPDATE users SET password = ?, pw_reset_token = NULL WHERE pw_reset_token = ?', [password, req.params.token]);
+
+        // Log the password reset in the activity_logs table
+        await queryDb('INSERT INTO activity_logs (user_id, activity_type, description, ip_address) VALUES (?, ?, ?, ?)', [rows[0].id, 'password_reset', 'Password reset', req.ip]);
+
         res.json({ message: "Password reset successfully" });
     } catch (error) {
         res.status(500).json({ message: "Internal server error" });
@@ -317,6 +326,10 @@ app.post(`${BASE_PATH}/feedback`, validateSession, async (req, res) => {
 
     try {
         await queryDb('INSERT INTO feedback (type, user_id, feedback, log) VALUES (?, ?, ?, ?)', [type, req.session.userId, feedback, log]);
+
+        // Log the feedback submission in the activity_logs table
+        await queryDb('INSERT INTO activity_logs (user_id, activity_type, description, ip_address) VALUES (?, ?, ?, ?)', [req.session.userId, 'feedback', 'Feedback submitted', req.ip]);
+
         res.json({ message: "Feedback submitted successfully" });
     } catch (error) {
         res.status(500).json({ message: "Internal server error" });
