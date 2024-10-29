@@ -22,10 +22,27 @@ const dbConfig = {
 
 let connection;
 let isDbConnected = false;
+let emailQueueInterval;
+let dbConnectionCheckInterval;
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+const retry = async (fn, delay = 2000) => {
+    while (true) {
+        try {
+            return await fn();
+        } catch (error) {
+            console.error(`Retry attempt failed: ${error.message}`);
+            await sleep(delay);
+        }
+    }
+};
 
 const initializeDbConnection = async () => {
     try {
-        connection = await mysql.createConnection(dbConfig);
+        await retry(async () => {
+            connection = await mysql.createConnection(dbConfig);
+        });
         isDbConnected = true;
         console.log('MAILER: Database connection established');
     } catch (error) {
@@ -43,6 +60,14 @@ const closeDbConnection = async () => {
         } catch (error) {
             console.error(`MAILER: Error closing database connection: ${error.message}`, error);
         }
+    }
+    if (emailQueueInterval) {
+        clearInterval(emailQueueInterval);
+        console.log('MAILER: Email queue interval cleared');
+    }
+    if (dbConnectionCheckInterval) {
+        clearInterval(dbConnectionCheckInterval);
+        console.log('MAILER: Database connection check interval cleared');
     }
 };
 
@@ -132,13 +157,13 @@ const checkDbConnection = async () => {
 };
 
 // Initialize the database connection when the application starts
-initializeDbConnection();
+initializeDbConnection().then(() => {
+    // Periodically check the queue for new jobs
+    emailQueueInterval = setInterval(processEmailQueue, 5000); // Check every 5 seconds
 
-// Periodically check the queue for new jobs
-setInterval(processEmailQueue, 5000); // Check every 5 seconds
-
-// Periodically check the database connection
-setInterval(checkDbConnection, 10000); // Check every 10 seconds
+    // Periodically check the database connection
+    dbConnectionCheckInterval = setInterval(checkDbConnection, 10000); // Check every 10 seconds
+});
 
 // Ensure the database connection is closed when the application exits
 process.on('exit', closeDbConnection);
