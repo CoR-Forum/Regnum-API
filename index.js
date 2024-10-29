@@ -123,15 +123,11 @@ const updateLastActivity = async (req, res, next) => {
 app.use(updateLastActivity);
 
 const validateSession = async (req, res, next) => {
-    if (!req.session.userId) {
-        return res.status(401).json({ message: "Unauthorized" });
-    }
+    if (!req.session.userId) return res.status(401).json({ message: "Unauthorized" });
 
     try {
         const rows = await queryDb('SELECT * FROM sessions WHERE session_id = ?', [req.sessionID]);
-        if (rows.length === 0) {
-            return res.status(401).json({ message: "Invalid session" });
-        }
+        if (rows.length === 0) return res.status(401).json({ message: "Invalid session" });
         next();
     } catch (error) {
         res.status(500).json({ message: "Internal server error" });
