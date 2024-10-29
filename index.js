@@ -232,7 +232,20 @@ app.post('/api/reset-password/:token', async (req, res) => {
 });
 
 initializeDatabase().then(() => {
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
         console.log(`Server is running at http://localhost:${PORT}`);
     });
+
+    const gracefulShutdown = () => {
+        console.log('Shutting down gracefully...');
+        server.close(async () => {
+            console.log('HTTP server closed.');
+            await pool.end();
+            console.log('Database connection pool closed.');
+            process.exit(0);
+        });
+    };
+
+    process.on('SIGINT', gracefulShutdown);
+    process.on('SIGTERM', gracefulShutdown);
 });
