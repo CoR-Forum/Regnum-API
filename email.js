@@ -17,36 +17,31 @@ const dbConfig = {
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
-    connectTimeout: 5000 // 5 seconds timeout
+    connectTimeout: 5000
 };
 
 let connection;
-let isDbConnected = false;
-let emailQueueInterval;
-let dbConnectionCheckInterval;
+let interval;
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-const retry = async (fn, delay = 2000) => {
-    while (true) {
+const retry = async (fn, delay = 2000, attempts = 5) => {
+    for (let i = 0; i < attempts; i++) {
         try {
             return await fn();
         } catch (error) {
-            console.error(`Retry attempt failed: ${error.message}`);
+            console.error(`MAILER: Retry attempt ${i + 1} failed: ${error.message}`);
             await sleep(delay);
         }
     }
+    throw new Error('MAILER: Max retry attempts reached');
 };
 
 const initializeDbConnection = async () => {
     try {
-        await retry(async () => {
-            connection = await mysql.createConnection(dbConfig);
-        });
-        isDbConnected = true;
+        connection = await retry(() => mysql.createConnection(dbConfig));
         console.log('MAILER: Database connection established');
     } catch (error) {
-        isDbConnected = false;
         console.error(`MAILER: Error establishing database connection: ${error.message}`, error);
     }
 };
@@ -55,24 +50,19 @@ const closeDbConnection = async () => {
     if (connection) {
         try {
             await connection.end();
-            isDbConnected = false;
             console.log('MAILER: Database connection closed');
         } catch (error) {
             console.error(`MAILER: Error closing database connection: ${error.message}`, error);
         }
     }
-    if (emailQueueInterval) {
-        clearInterval(emailQueueInterval);
-        console.log('MAILER: Email queue interval cleared');
-    }
-    if (dbConnectionCheckInterval) {
-        clearInterval(dbConnectionCheckInterval);
-        console.log('MAILER: Database connection check interval cleared');
+    if (interval) {
+        clearInterval(interval);
+        console.log('MAILER: Interval cleared');
     }
 };
 
 const sendEmail = async (to, subject, text) => {
-    console.log(`MAILER: sendEmail called with to: ${to}, subject: ${subject}, text: ${text}`);
+    console.log(`MAILER: sendEmail called with to: ${to}, subject: ${subject}`);
     try {
         let info = await transporter.sendMail({
             from: `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_USER}>`,
@@ -84,12 +74,11 @@ const sendEmail = async (to, subject, text) => {
     } catch (error) {
         console.error(`MAILER: Error sending email: ${error.message}`, error);
     }
-    console.log('MAILER: sendEmail finished');
 };
 
 const mail = async (to, subject, text) => {
-    console.log(`MAILER: mail called with to: ${to}, subject: ${subject}, text: ${text}`);
-    if (!isDbConnected) {
+    console.log(`MAILER: mail called with to: ${to}, subject: ${subject}`);
+    if (!connection) {
         console.error('MAILER: Database is not connected. Email not queued.');
         return;
     }
@@ -102,12 +91,11 @@ const mail = async (to, subject, text) => {
     } catch (error) {
         console.error(`MAILER: Error queuing email: ${error.message}`, error);
     }
-    console.log('MAILER: mail finished');
 };
 
 const processEmailQueue = async () => {
     console.log('MAILER: processEmailQueue started');
-    if (!isDbConnected) {
+    if (!connection) {
         console.error('MAILER: Database is not connected. Skipping email processing.');
         return;
     }
@@ -142,27 +130,25 @@ const processEmailQueue = async () => {
     } catch (error) {
         console.error(`MAILER: Error processing email queue: ${error.message}`, error);
     }
-    console.log('MAILER: processEmailQueue finished');
 };
 
 const checkDbConnection = async () => {
     console.log('MAILER: checkDbConnection called');
-    if (!isDbConnected) {
+    if (!connection) {
         console.log('MAILER: Database is not connected. Attempting to reconnect...');
         await initializeDbConnection();
     } else {
         console.log('MAILER: Database is already connected.');
     }
-    console.log('MAILER: checkDbConnection finished');
 };
 
 // Initialize the database connection when the application starts
 initializeDbConnection().then(() => {
-    // Periodically check the queue for new jobs
-    emailQueueInterval = setInterval(processEmailQueue, 5000); // Check every 5 seconds
-
-    // Periodically check the database connection
-    dbConnectionCheckInterval = setInterval(checkDbConnection, 10000); // Check every 10 seconds
+    // Periodically check the queue for new jobs and the database connection
+    interval = setInterval(async () => {
+        await checkDbConnection();
+        await processEmailQueue();
+    }, 5000); // Check every 5 seconds
 });
 
 // Ensure the database connection is closed when the application exits
