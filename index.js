@@ -100,6 +100,13 @@ const initializeDatabase = async () => {
             expires INT(11) UNSIGNED NOT NULL,
             data TEXT
         );`,
+        `CREATE TABLE IF NOT EXISTS login_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            ip_address VARCHAR(45) NOT NULL,
+            login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );`,
     ];
 
     for (const query of queries) await queryDb(query);
@@ -159,6 +166,9 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
             const loginNotificationText = `Hello ${user.username},\n\nYou have successfully logged in from IP address: ${req.ip}.\n\nIf this wasn't you, please contact support immediately.`;
             await mail(user.email, 'Login Notification', loginNotificationText);
+
+            // Log the login in the database
+            await queryDb('INSERT INTO login_logs (user_id, ip_address) VALUES (?, ?)', [user.id, req.ip]);
 
             res.json({
                 message: "Login successful",
