@@ -196,13 +196,25 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
             logActivity(user.id, 'login', 'User logged in', req.ip);
 
+            // Fetch memory pointers for available sylentx_features
+            const features = user.sylentx_features ? user.sylentx_features.split(',') : [];
+            const memoryPointers = {};
+            for (const feature of features) {
+                const pointerRows = await queryDb('SELECT * FROM memory_pointers WHERE feature = ?', [feature]);
+                if (pointerRows.length > 0) {
+                    memoryPointers[feature] = pointerRows[0];
+                }
+            }
+
             res.json({
                 message: "Login successful",
                 user: {
                     id: user.id,
                     username: user.username,
                     nickname: user.nickname,
-                    settings: user.sylentx_settings
+                    settings: user.sylentx_settings,
+                    features: user.sylentx_features, // Added sylentx_features here
+                    pointers: memoryPointers
                 }
             });
         });
