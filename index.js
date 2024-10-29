@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const mysql = require('mysql2/promise');
 const session = require('express-session');
@@ -5,10 +7,10 @@ const MySQLStore = require('express-mysql-session')(session);
 const crypto = require('crypto');
 const { mail } = require('./email');
 const { validateUsername, validatePassword, validateEmail, validateNickname, checkUsernameExists, checkEmailExists, checkNicknameExists } = require('./validation');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const BASE_PATH = process.env.BASE_PATH || '/api';
 
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
@@ -135,7 +137,7 @@ const validateSession = async (req, res, next) => {
     }
 };
 
-app.post('/api/login', async (req, res) => {
+app.post(`${BASE_PATH}/login`, async (req, res) => {
     const { username, password } = req.body;
 
     const usernameValidation = validateUsername(username);
@@ -169,20 +171,20 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-app.get('/api/profile', validateSession, (req, res) => {
+app.get(`${BASE_PATH}/profile`, validateSession, (req, res) => {
     res.json({ userId: req.session.userId, username: req.session.username, nickname: req.session.nickname });
 });
 
-app.get('/api/logout', validateSession, (req, res) => {
+app.get(`${BASE_PATH}/logout`, validateSession, (req, res) => {
     req.session.destroy(err => {
         if (err) return res.status(500).json({ message: "Error logging out" });
         res.json({ message: "Logout successful" });
     });
 });
 
-app.get('/api', (req, res) => res.send('API is running'));
+app.get(`${BASE_PATH}`, (req, res) => res.send('API is running'));
 
-app.post('/api/register', async (req, res) => {
+app.post(`${BASE_PATH}/register`, async (req, res) => {
     const { username, nickname, password, email } = req.body;
 
     const usernameValidation = validateUsername(username);
@@ -221,7 +223,7 @@ app.post('/api/register', async (req, res) => {
         const activationToken = crypto.randomBytes(64).toString('hex');
         await queryDb('INSERT INTO users (username, nickname, password, email, activation_token) VALUES (?, ?, ?, ?, ?)', [username, nickname, password, email, activationToken]);
 
-        const activationLink = `${process.env.BASE_URL}:${PORT}/api/activate/${activationToken}`;
+        const activationLink = `${process.env.BASE_URL}:${PORT}${BASE_PATH}/activate/${activationToken}`;
         await mail(email, 'Activate your account', `Click here to activate your account: ${activationLink}`);
 
         res.json({ message: "User registered successfully" });
@@ -230,7 +232,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-app.get('/api/activate/:token', async (req, res) => {
+app.get(`${BASE_PATH}/activate/:token`, async (req, res) => {
     try {
         const rows = await queryDb('SELECT * FROM users WHERE activation_token = ?', [req.params.token]);
         if (rows.length === 0) return res.status(404).json({ message: "Activation token not found" });
@@ -242,7 +244,7 @@ app.get('/api/activate/:token', async (req, res) => {
     }
 });
 
-app.post('/api/reset-password', async (req, res) => {
+app.post(`${BASE_PATH}/reset-password`, async (req, res) => {
     const { email } = req.body;
 
     const emailValidation = validateEmail(email);
@@ -257,7 +259,7 @@ app.post('/api/reset-password', async (req, res) => {
         const resetToken = crypto.randomBytes(64).toString('hex');
         await queryDb('UPDATE users SET pw_reset_token = ? WHERE email = ?', [resetToken, email]);
 
-        const resetLink = `${process.env.BASE_URL}:${PORT}/api/reset-password/${resetToken}`;
+        const resetLink = `${process.env.BASE_URL}:${PORT}${BASE_PATH}/reset-password/${resetToken}`;
         await mail(email, 'Reset your password', `Click here to reset your password: ${resetLink}`);
 
         res.json({ message: "Password reset link sent successfully" });
@@ -266,7 +268,7 @@ app.post('/api/reset-password', async (req, res) => {
     }
 });
 
-app.post('/api/reset-password/:token', async (req, res) => {
+app.post(`${BASE_PATH}/reset-password/:token`, async (req, res) => {
     const { password } = req.body;
 
     const passwordValidation = validatePassword(password);
