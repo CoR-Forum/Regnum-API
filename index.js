@@ -176,6 +176,23 @@ async function initializeDatabase() {
 
 const crypto = require('crypto');
 
+async function updateLastActivity(req, res, next) {
+    if (req.session.userId) {
+        const db = await pool.getConnection();
+        try {
+            await db.query('UPDATE users SET last_activity = CURRENT_TIMESTAMP WHERE id = ?', [req.session.userId]);
+            await db.query('UPDATE user_sessions SET last_activity = CURRENT_TIMESTAMP WHERE user_id = ?', [req.session.userId]);
+        } catch (error) {
+            console.error("Error updating last activity:", error);
+        } finally {
+            db.release();
+        }
+    }
+    next();
+}
+
+app.use(updateLastActivity);
+
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     const db = await pool.getConnection();
@@ -184,6 +201,14 @@ app.post('/api/login', async (req, res) => {
         if (rows.length === 0) return res.status(401).json({ message: "Invalid username or password" });
 
         const user = rows[0];
+
+        // Check if the user already has an active session
+        const [sessionRows] = await db.query('SELECT * FROM user_sessions WHERE user_id = ?', [user.id]);
+        if (sessionRows.length > 0) {
+            // Delete the existing session
+            await db.query('DELETE FROM user_sessions WHERE user_id = ?', [user.id]);
+        }
+
         req.session.userId = user.id;
         req.session.username = user.username;
 
