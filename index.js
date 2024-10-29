@@ -46,7 +46,6 @@ const queryDb = async (query, params) => {
         db.release();
     }
 };
-
 const initializeDatabase = async () => {
     const queries = [
         `CREATE TABLE IF NOT EXISTS users (
@@ -113,6 +112,24 @@ const initializeDatabase = async () => {
 
     for (const query of queries) await queryDb(query);
     console.log("Database and tables initialized successfully.");
+
+    // Insert or update default memory pointers
+    const defaultMemoryPointers = [
+        { feature: 'zoom', address: '0x123455', offsets: '0x10,0x20' },
+        { feature: 'posx', address: '0x654321', offsets: '0x30,0x40' },
+        { feature: 'posy', address: '0x654322', offsets: '0x50,0x60' },
+        { feature: 'posz', address: '0x654323', offsets: '0x70,0x80' }
+    ];
+
+    for (const pointer of defaultMemoryPointers) {
+        const rows = await queryDb('SELECT * FROM memory_pointers WHERE feature = ?', [pointer.feature]);
+        if (rows.length === 0) {
+            await queryDb('INSERT INTO memory_pointers (feature, address, offsets) VALUES (?, ?, ?)', [pointer.feature, pointer.address, pointer.offsets]);
+        } else {
+            await queryDb('UPDATE memory_pointers SET address = ?, offsets = ? WHERE feature = ?', [pointer.address, pointer.offsets, pointer.feature]);
+        }
+    }
+    console.log("Default memory pointers inserted successfully.");
 };
 
 const logActivity = async (userId, activityType, description, ipAddress) => {
