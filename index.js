@@ -283,6 +283,17 @@ app.post(`${BASE_PATH}/reset-password/:token`, async (req, res) => {
     }
 });
 
+app.post(`${BASE_PATH}/feedback`, validateSession, async (req, res) => {
+    const { type, feedback, log } = req.body;
+
+    try {
+        await queryDb('INSERT INTO feedback (type, user_id, feedback, log) VALUES (?, ?, ?, ?)', [type, req.session.userId, feedback, log]);
+        res.json({ message: "Feedback submitted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 initializeDatabase().then(() => {
     const server = app.listen(PORT, () => {
         console.log(`Server is running at http://localhost:${PORT}`);
