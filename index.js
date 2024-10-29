@@ -160,7 +160,15 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
             const loginNotificationText = `Hello ${user.username},\n\nYou have successfully logged in from IP address: ${req.ip}.\n\nIf this wasn't you, please contact support immediately.`;
             await mail(user.email, 'Login Notification', loginNotificationText);
 
-            res.json({ message: "Login successful", user: { id: user.id, username: user.username, nickname: user.nickname } });
+            res.json({
+                message: "Login successful",
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    nickname: user.nickname,
+                    settings: user.sylentx_settings
+                }
+            });
         });
     } catch (error) {
         res.status(500).json({ message: "Internal server error" });
@@ -278,6 +286,17 @@ app.post(`${BASE_PATH}/reset-password/:token`, async (req, res) => {
 
         await queryDb('UPDATE users SET password = ?, pw_reset_token = NULL WHERE pw_reset_token = ?', [password, req.params.token]);
         res.json({ message: "Password reset successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
+    const { settings } = req.body;
+
+    try {
+        await queryDb('UPDATE users SET sylentx_settings = ? WHERE id = ?', [settings, req.session.userId]);
+        res.json({ message: "Settings saved successfully" });
     } catch (error) {
         res.status(500).json({ message: "Internal server error" });
     }
