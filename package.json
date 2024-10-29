@@ -16,6 +16,7 @@
     "express-session": "^1.18.1",
     "mysql-express-session": "^0.5.2",
     "mysql2": "^3.11.3",
-    "nodemailer": "^6.9.16"
+    "nodemailer": "^6.9.16",
+    "validator": "^13.12.0"
   }
 }
