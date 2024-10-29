@@ -62,7 +62,6 @@ const initializeDatabase = async () => {
             shoutbox_banned TINYINT(1) DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            last_login TIMESTAMP DEFAULT NULL,
             banned TINYINT(1) DEFAULT 0,
             last_activity TIMESTAMP DEFAULT NULL,
             sylentx_settings TEXT DEFAULT NULL,
@@ -102,14 +101,6 @@ const initializeDatabase = async () => {
             expires INT(11) UNSIGNED NOT NULL,
             data TEXT
         );`,
-        `CREATE TABLE IF NOT EXISTS email_queue (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            to_email VARCHAR(100) NOT NULL,
-            subject VARCHAR(255) NOT NULL,
-            body TEXT NOT NULL,
-            status ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );`
     ];
 
     for (const query of queries) await queryDb(query);

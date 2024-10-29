@@ -46,10 +46,30 @@ const log = (message, error = null) => {
     }
 };
 
+const createEmailQueueTable = async () => {
+    const createTableSQL = `
+        CREATE TABLE IF NOT EXISTS email_queue (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            to_email VARCHAR(255) NOT NULL,
+            subject VARCHAR(255) NOT NULL,
+            body TEXT NOT NULL,
+            status ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `;
+    try {
+        await connection.execute(createTableSQL);
+        log('MAILER: email_queue table ensured');
+    } catch (error) {
+        log(`MAILER: Error creating email_queue table: ${error.message}`, error);
+    }
+};
+
 const initializeDbConnection = async () => {
     try {
         connection = await retry(() => mysql.createConnection(dbConfig));
         log('MAILER: Database connection established');
+        await createEmailQueueTable();
     } catch (error) {
         log(`MAILER: Error establishing database connection: ${error.message}`, error);
     }
@@ -92,6 +112,7 @@ const mail = async (to, subject, text) => {
         return;
     }
     try {
+        await createEmailQueueTable();
         await connection.execute(
             'INSERT INTO email_queue (to_email, subject, body) VALUES (?, ?, ?)',
             [to, subject, text]
@@ -109,6 +130,7 @@ const processEmailQueue = async () => {
         return;
     }
     try {
+        await createEmailQueueTable();
         const [rows] = await connection.execute(
             'SELECT * FROM email_queue WHERE status = "pending" LIMIT 1'
         );
