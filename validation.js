@@ -1,4 +1,3 @@
-// validation.js
 const validator = require('validator');
 const mysql = require('mysql2/promise');
 
@@ -14,8 +13,9 @@ const pool = mysql.createPool({
 });
 
 const validateUsername = (username) => {
-    if (!username || typeof username !== 'string' || username.length < 3 || username.length > 50) {
-        return { valid: false, message: 'Username must be a string between 3 and 50 characters.' };
+    const usernameRegex = /^[a-zA-Z0-9]{3,20}$/;
+    if (!username || typeof username !== 'string' || !usernameRegex.test(username)) {
+        return { valid: false, message: 'Username must be a string between 3 and 20 characters, containing only letters and numbers.' };
     }
     return { valid: true };
 };
@@ -35,8 +35,10 @@ const validateEmail = (email) => {
 };
 
 const validateNickname = (nickname) => {
-    if (nickname && (typeof nickname !== 'string' || nickname.length > 50)) {
-        return { valid: false, message: 'Nickname must be a string up to 50 characters.' };
+    const nicknameRegex = /^[a-zA-Z0-9 ]{3,30}$/;
+    const spaceCount = (nickname.match(/ /g) || []).length;
+    if (nickname && (typeof nickname !== 'string' || !nicknameRegex.test(nickname) || spaceCount > 2)) {
+        return { valid: false, message: 'Nickname must be a string between 3 and 30 characters, containing only letters, numbers, and up to 2 spaces.' };
     }
     return { valid: true };
 };
