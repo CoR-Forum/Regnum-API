@@ -329,6 +329,15 @@ app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
     }
 });
 
+app.get(`${BASE_PATH}/load-settings`, validateSession, async (req, res) => {
+    try {
+        const rows = await queryDb('SELECT sylentx_settings FROM users WHERE id = ?', [req.session.userId]);
+        res.json({ settings: rows[0].sylentx_settings });
+    } catch (error) {
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 app.post(`${BASE_PATH}/feedback`, validateSession, async (req, res) => {
     const { type, feedback, log } = req.body;
 
