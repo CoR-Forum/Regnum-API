@@ -93,6 +93,7 @@ const initializeDatabase = async () => {
                 last_login TIMESTAMP DEFAULT NULL,
                 banned TINYINT(1) DEFAULT 0,
                 last_activity TIMESTAMP DEFAULT NULL,
+                sylentx_settings TEXT DEFAULT NULL,
                 deleted TINYINT(1) DEFAULT 0
             );`,
             `CREATE TABLE IF NOT EXISTS user_sessions (
@@ -129,14 +130,6 @@ const initializeDatabase = async () => {
                 message TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id)
-            );`,
-            `CREATE TABLE IF NOT EXISTS user_settings (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT NOT NULL,
-                settings TEXT NOT NULL,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id),
-                CONSTRAINT user_settings_user_id_unique UNIQUE (user_id)
             );`,
             `CREATE TABLE IF NOT EXISTS feedback (
                 id INT AUTO_INCREMENT PRIMARY KEY,
