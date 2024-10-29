@@ -48,11 +48,10 @@ const processEmailQueue = async () => {
     try {
         connection = await mysql.createConnection(dbConfig);
         const [rows] = await connection.execute(
-            'SELECT * FROM email_queue WHERE status = "pending" LIMIT 1'
+            'SELECT * FROM email_queue WHERE status = "pending" LIMIT 2'
         );
 
-        if (rows.length > 0) {
-            const job = rows[0];
+        for (const job of rows) {
             await connection.execute(
                 'UPDATE email_queue SET status = "processing" WHERE id = ?',
                 [job.id]
