@@ -3,12 +3,12 @@
 
 # VSCode
 .vscode
-fiveserver.config.js
-
-# php
-composer.phar
-vendor/
-composer.lock
 
 # config
-config/config.php
+config/config.js
+
+# nodejs
+node_modules
+
+# .env
+.env

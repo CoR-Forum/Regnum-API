@@ -1,56 +1,25 @@
-# Sylent-X API
-
-This is the server side of Sylent-X.
-
-It provides user registration and login, Sylent-X licensing and also serves the memory addresses and offsets.
-
-## Installation
-
-### Requirements
-
-- php
-- MySQL database (mariadb)
-- composer (e.g. ``bew install composer``)
-
-### Process
-
-1. Copy ``config/config.php.example`` to ``config/config.php`` and change the variables.
-2. Run the setup script to initialize the database, e.g. ``php setup.php``
-3. Optional: Setup a ``.htaccess`` file for routing:
+# Sylent-X Node.js API
 
 ```
-RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ public/$1 [L]
+npm install
 ```
 
-4. Install required modules:
+Example .env
 
 ```
-composer install
+DB_HOST=************
+DB_NAME=****
+DB_USER=***************
+DB_PASS=**************************************************
+DB_CHARSET=utf8mb4
+DB_CONN_LIMIT=10
+DB_QUE_LIMIT=0
+EMAIL_LINK_DOMAIN=http://localhost:5500/
+EMAIL_HOST=**************
+EMAIL_USER=*******************
+EMAIL_NAME=Sylent-X Support (DEV)
+EMAIL_PASS=**************************************************
+EMAIL_PORT=587
+EMAIL_SURE=true
+DISCORD_FEEDBACK_WEBHOOK_URL=************************************************************
 ```
-
-5. Run PHP
-
-```
-php -S 127.0.0.1:5500 -t .
-```
-
-### Optional
-
-Optional for FiveServer (macOS example)
-
-``fiveserver.config.js``
-
-```
-module.exports = {
-    php: "/opt/homebrew/bin/php"
-    }
-```
-
-## Maintenance
-
-### Users
-
-* **delete users:** the user table contains "deleted"; if you set this to 1, a user will be hidden from everywhere and can't login anymore.
