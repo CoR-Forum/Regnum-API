@@ -24,6 +24,9 @@ jobs:
     - name: Run tests
       run: npm test
 
+    - name: Debug SERVER_PORT
+      run: echo "SERVER_PORT=${{ vars.SERVER_PORT }}"
+
     - name: Add server to known hosts
       run: |
         mkdir -p ~/.ssh
