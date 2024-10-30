@@ -5,7 +5,7 @@ const mysql = require('mysql2/promise');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 const crypto = require('crypto');
-const { mail } = require('./email');
+const { mail, notifyAdmins } = require('./email');
 const { validateUsername, validatePassword, validateEmail, validateNickname, checkUsernameExists, checkEmailExists, checkNicknameExists } = require('./validation');
 
 const app = express();
@@ -197,6 +197,8 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
             logActivity(user.id, 'login', 'User logged in', req.ip);
 
+            notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`);
+
             // Fetch memory pointers for available sylentx_features
             const features = user.sylentx_features ? user.sylentx_features.split(',') : [];
             const memoryPointers = {};
@@ -282,6 +284,8 @@ app.post(`${BASE_PATH}/register`, async (req, res) => {
 
         const rows = await queryDb('SELECT * FROM users WHERE username = ?', [username]);
         logActivity(rows[0].id, 'registration', 'User registered', req.ip);
+
+        notifyAdmins(`New user registered: ${username}, email: ${email}, nickname: ${nickname}, IP: ${req.ip}`);
 
         res.json({ status: "success", message: "User registered successfully" });
     } catch (error) {
@@ -376,6 +380,7 @@ app.post(`${BASE_PATH}/feedback`, validateSession, async (req, res) => {
         await queryDb('INSERT INTO feedback (type, user_id, feedback, log) VALUES (?, ?, ?, ?)', [type, req.session.userId, feedback, log]);
 
         logActivity(req.session.userId, 'feedback', 'Feedback submitted', req.ip);
+        await notifyAdmins(`New feedback received from user: ${req.session.username}`);
 
         res.json({ status: "success", message: "Feedback submitted successfully" });
     } catch (error) {
