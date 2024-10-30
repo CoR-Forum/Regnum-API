@@ -377,9 +377,9 @@ app.post(`${BASE_PATH}/feedback`, validateSession, async (req, res) => {
 
         logActivity(req.session.userId, 'feedback', 'Feedback submitted', req.ip);
 
-        res.json({ message: "Feedback submitted successfully" });
+        res.json({ status: "success", message: "Feedback submitted successfully" });
     } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ status: "error", message: "Internal server error" });
     }
 });
 
