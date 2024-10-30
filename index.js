@@ -166,30 +166,31 @@ const validateSession = async (req, res, next) => {
 };
 
 app.post(`${BASE_PATH}/login`, async (req, res) => {
+    console.log("Login request from:", req.ip);
     const { username, password } = req.body;
 
     const usernameValidation = validateUsername(username);
     const passwordValidation = validatePassword(password);
 
     if (!usernameValidation.valid) {
-        return res.status(400).json({ message: usernameValidation.message });
+        return res.status(400).json({ status: "error", message: usernameValidation.message });
     }
     if (!passwordValidation.valid) {
-        return res.status(400).json({ message: passwordValidation.message });
+        return res.status(400).json({ status: "error", message: passwordValidation.message });
     }
 
     try {
         const rows = await queryDb('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
-        if (rows.length === 0) return res.status(401).json({ message: "Invalid username or password" });
+        if (rows.length === 0) return res.status(401).json({ status: "error", message: "Invalid username or password" });
 
         const user = rows[0];
-        if (user.activation_token) return res.status(403).json({ message: "Account not activated" });
+        if (user.activation_token) return res.status(403).json({ status: "error", message: "Account not activated" });
 
         req.session.userId = user.id;
         req.session.username = user.username;
 
         req.session.save(async err => {
-            if (err) return res.status(500).json({ message: "Internal server error" });
+            if (err) return res.status(500).json({ status: "error", message: "Internal server error" });
 
             const loginNotificationText = `Hello ${user.username},\n\nYou have successfully logged in from IP address: ${req.ip}.\n\nIf this wasn't you, please contact support immediately.`;
             await mail(user.email, 'Login Notification', loginNotificationText);
@@ -207,6 +208,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
             }
 
             res.json({
+                status: "success",
                 message: "Login successful",
                 user: {
                     id: user.id,
@@ -219,7 +221,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
             });
         });
     } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ status: "error", message: "Internal server error" });
     }
 });
 
@@ -352,9 +354,9 @@ app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
 
     try {
         await queryDb('UPDATE users SET sylentx_settings = ? WHERE id = ?', [settings, req.session.userId]);
-        res.json({ message: "Settings saved successfully" });
+        res.json({ status: "success", message: "Settings saved successfully" });
     } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ status: "error", message: "Internal server error" });
     }
 });
 
