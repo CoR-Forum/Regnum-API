@@ -107,11 +107,11 @@ const sendEmail = async (to, subject, text) => {
     }
 };
 
-const sendDiscordNotification = async (message) => {
+const sendDiscordNotification = async (id, message, createdAt) => {
     const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
     log(`NOTIFIER: sendDiscordNotification called with webhookUrl: ${webhookUrl}`);
     try {
-        await axios.post(webhookUrl, { content: message });
+        await axios.post(webhookUrl, { content: `Notification ID: ${id}\nCreated At: ${createdAt}\n${message}` });
         log('NOTIFIER: Discord notification sent');
     } catch (error) {
         log(`NOTIFIER: Error sending Discord notification: ${error.message}`, error);
@@ -177,8 +177,9 @@ const processNotificationQueue = async () => {
             try {
                 if (job.type === 'email') {
                     await sendEmail(job.to_email, job.subject, job.body);
+                    await notifyAdmins(`[Notification ID: ${job.id} (E-Mail)] Email sent to: ${job.to_email}: ${job.subject}`);
                 } else if (job.type === 'discord') {
-                    await sendDiscordNotification(job.body);
+                    await sendDiscordNotification(job.id, job.body, job.created_at);
                 }
                 await connection.execute(
                     'UPDATE notification_queue SET status = "completed" WHERE id = ?',
