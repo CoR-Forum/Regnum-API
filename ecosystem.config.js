@@ -3,8 +3,8 @@ module.exports = {
       {
         name: 'sylentx-api',
         script: 'index.js', // Change this to your main application file
-        instances: 'max',
-        exec_mode: 'cluster',
+        instances: '1',
+        // exec_mode: 'cluster',
         env: {
           NODE_ENV: 'production',
         },
