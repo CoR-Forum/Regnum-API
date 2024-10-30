@@ -3,7 +3,7 @@ name: Deploy to Server
 on:
   push:
     branches:
-      - nodejs-rewrite  # Change this to your default branch if it's not 'main'
+      - main
 
 jobs:
   build:
@@ -16,7 +16,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v2
       with:
-        node-version: '18'  # Use the Node.js version your project requires
+        node-version: '18'
 
     - name: Install dependencies
       run: npm install
