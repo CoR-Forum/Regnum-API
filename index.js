@@ -72,13 +72,6 @@ const initializeDatabase = async () => {
             address VARCHAR(255) NOT NULL,
             offsets TEXT
         );`,
-        `CREATE TABLE IF NOT EXISTS shoutbox_messages (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
-            message TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        );`,
         `CREATE TABLE IF NOT EXISTS feedback (
             id INT AUTO_INCREMENT PRIMARY KEY,
             type VARCHAR(255) NOT NULL,
