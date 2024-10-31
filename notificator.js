@@ -135,11 +135,11 @@ const processNotificationQueue = async () => {
         const connection = await pool.getConnection();
         await createNotificationQueueTable(connection);
         const [rows] = await connection.execute(
-            'SELECT * FROM notification_queue WHERE status = "pending" LIMIT 1'
+            'SELECT * FROM notification_queue WHERE status = "pending" OR status = "failed" LIMIT 3'
         );
         log(`NOTIFIER: Fetched ${rows.length} pending notifications`);
 
-        for (const job of rows) {
+        const processJob = async (job) => {
             log(`NOTIFIER: Processing job id: ${job.id}`);
             await connection.execute(
                 'UPDATE notification_queue SET status = "processing" WHERE id = ?',
@@ -169,7 +169,9 @@ const processNotificationQueue = async () => {
                 );
                 log(`NOTIFIER: Job id: ${job.id} failed: ${error.message}`, error);
             }
-        }
+        };
+
+        await Promise.all(rows.map(processJob));
         connection.release();
     } catch (error) {
         log(`NOTIFIER: Error processing notification queue: ${error.message}`, error);
