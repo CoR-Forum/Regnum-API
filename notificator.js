@@ -23,20 +23,6 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-const retry = async (fn, delay = 2000, attempts = 5) => {
-    for (let i = 0; i < attempts; i++) {
-        try {
-            return await fn();
-        } catch (error) {
-            log(`NOTIFIER: Retry attempt ${i + 1} failed: ${error.message}`, error);
-            await sleep(delay);
-        }
-    }
-    throw new Error('NOTIFIER: Max retry attempts reached');
-};
-
 const log = (message, error = null) => {
     const timestamp = new Date().toISOString();
     if (error) {
