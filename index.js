@@ -227,10 +227,6 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
     }
 });
 
-app.get(`${BASE_PATH}/profile`, validateSession, (req, res) => {
-    res.json({ userId: req.session.userId, username: req.session.username, nickname: req.session.nickname });
-});
-
 app.get(`${BASE_PATH}/logout`, validateSession, (req, res) => {
     req.session.destroy(err => {
         if (err) return res.status(500).json({ message: "Error logging out" });
@@ -361,15 +357,6 @@ app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
         res.json({ status: "success", message: "Settings saved successfully" });
     } catch (error) {
         res.status(500).json({ status: "error", message: "Internal server error" });
-    }
-});
-
-app.get(`${BASE_PATH}/load-settings`, validateSession, async (req, res) => {
-    try {
-        const rows = await queryDb('SELECT sylentx_settings FROM users WHERE id = ?', [req.session.userId]);
-        res.json({ settings: rows[0].sylentx_settings });
-    } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
     }
 });
 
