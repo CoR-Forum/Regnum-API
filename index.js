@@ -224,10 +224,10 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
     }
 });
 
-app.get(`${BASE_PATH}/logout`, validateSession, (req, res) => {
+app.post(`${BASE_PATH}/logout`, validateSession, (req, res) => {
     req.session.destroy(err => {
-        if (err) return res.status(500).json({ message: "Error logging out" });
-        res.json({ message: "Logout successful" });
+        if (err) return res.status(500).json({ status: "error", message: "Error logging out" });
+        res.json({ status: "success", message: "Logout successful" });
     });
 });
 
