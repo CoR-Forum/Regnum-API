@@ -115,10 +115,7 @@ const initializeDatabase = async () => {
 
     // Insert or update default memory pointers
     const defaultMemoryPointers = [
-        { feature: 'zoom', address: '0x68FC54', offsets: '' },
-        { feature: 'posx', address: '0x654321', offsets: '0x30,0x40' },
-        { feature: 'posy', address: '0x654322', offsets: '0x50,0x60' },
-        { feature: 'posz', address: '0x654323', offsets: '0x70,0x80' }
+        { feature: 'zoom', address: '0x68FC54', offsets: '' }
     ];
 
     for (const pointer of defaultMemoryPointers) {
