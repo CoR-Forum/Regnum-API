@@ -85,7 +85,16 @@ const sendDiscordNotification = async (id, message, createdAt) => {
     const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
     log(`NOTIFIER: sendDiscordNotification called with webhookUrl: ${webhookUrl}`);
     try {
-        await axios.post(webhookUrl, { content: `Notification ID: ${id}\nCreated At: ${createdAt}\n${message}` });
+        const embed = {
+            title: `Notification ID: ${id}`,
+            description: message,
+            timestamp: createdAt,
+            color: 3447003 // Blue color
+        };
+
+        await axios.post(webhookUrl, {
+            embeds: [embed]
+        });
         log('NOTIFIER: Discord notification sent');
     } catch (error) {
         log(`NOTIFIER: Error sending Discord notification: ${error.message}`, error);
