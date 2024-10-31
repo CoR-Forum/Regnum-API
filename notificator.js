@@ -39,7 +39,7 @@ const createNotificationQueueTable = async (connection) => {
             to_email VARCHAR(255),
             subject VARCHAR(255),
             body TEXT,
-            type ENUM('email', 'discord') NOT NULL,
+            type ENUM('email', 'admin_email', 'discord_log', 'discord_feedback', 'discord_login') NOT NULL,
             status ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -48,7 +48,7 @@ const createNotificationQueueTable = async (connection) => {
         await connection.execute(createTableSQL);
         log('NOTIFIER: notification_queue table ensured');
     } catch (error) {
-        log(`NOTIFIER: Error creating notification_queue table: ${error.message}`, error);
+        log(`NOTIFIER: Error creating or updating notification_queue table: ${error.message}`, error);
     }
 };
 
@@ -67,8 +67,23 @@ const sendEmail = async (to, subject, text) => {
     }
 };
 
-const sendDiscordNotification = async (id, message, createdAt) => {
-    const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
+const sendDiscordNotification = async (id, message, createdAt, type) => {
+    let webhookUrl;
+    switch (type) {
+        case 'discord_feedback':
+            webhookUrl = process.env.DISCORD_FEEDBACK_WEBHOOK_URL;
+            break;
+        case 'discord_login':
+            webhookUrl = process.env.DISCORD_LOGIN_WEBHOOK_URL;
+            break;
+        case 'discord_log':
+            webhookUrl = process.env.DISCORD_LOG_WEBHOOK_URL;
+            break;
+        default:
+            log(`NOTIFIER: Unknown Discord notification type: ${type}`);
+            return;
+    }
+
     log(`NOTIFIER: sendDiscordNotification called with webhookUrl: ${webhookUrl}`);
     try {
         const embed = {
@@ -107,9 +122,10 @@ const mail = async (to, subject, text) => {
     await queueNotification(to, subject, text, 'email');
 };
 
-const notifyAdmins = async (message) => {
-    await queueNotification(null, null, message, 'discord');
+const notifyAdmins = async (message, type) => {
+    await queueNotification(null, null, message, type || 'discord_log');
 };
+
 
 const processNotificationQueue = async () => {
     log('NOTIFIER: processNotificationQueue started');
@@ -132,8 +148,8 @@ const processNotificationQueue = async () => {
                 if (job.type === 'email') {
                     await sendEmail(job.to_email, job.subject, job.body);
                     await notifyAdmins(`[Notification ID: ${job.id} (E-Mail)] Email sent to: ${job.to_email}: ${job.subject}`);
-                } else if (job.type === 'discord') {
-                    await sendDiscordNotification(job.id, job.body, job.created_at);
+                } else if (job.type.startsWith('discord')) {
+                    await sendDiscordNotification(job.id, job.body, job.created_at, job.type);
                 }
                 await connection.execute(
                     'UPDATE notification_queue SET status = "completed" WHERE id = ?',

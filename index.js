@@ -194,7 +194,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
             logActivity(user.id, 'login', 'User logged in', req.ip);
 
-            notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`);
+            notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`, 'discord_login');
 
             // Fetch memory pointers for available sylentx_features
             const features = user.sylentx_features ? user.sylentx_features.split(',') : [];
