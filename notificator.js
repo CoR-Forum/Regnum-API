@@ -64,6 +64,7 @@ const sendEmail = async (to, subject, text) => {
         log(`NOTIFIER: Message sent: ${info.messageId}`);
     } catch (error) {
         log(`NOTIFIER: Error sending email: ${error.message}`, error);
+        throw new Error(`Failed to send email: ${error.message}`);
     }
 };
 
@@ -81,7 +82,7 @@ const sendDiscordNotification = async (id, message, createdAt, type) => {
             break;
         default:
             log(`NOTIFIER: Unknown Discord notification type: ${type}`);
-            return;
+            throw new Error(`Unknown Discord notification type: ${type}`);
     }
 
     log(`NOTIFIER: sendDiscordNotification called with webhookUrl: ${webhookUrl}`);
@@ -99,6 +100,7 @@ const sendDiscordNotification = async (id, message, createdAt, type) => {
         log('NOTIFIER: Discord notification sent');
     } catch (error) {
         log(`NOTIFIER: Error sending Discord notification: ${error.message}`, error);
+        throw new Error(`Failed to send Discord notification: ${error.message}`);
     }
 };
 
@@ -148,13 +150,17 @@ const processNotificationQueue = async () => {
                 if (job.type === 'email') {
                     await sendEmail(job.to_email, job.subject, job.body);
                     await notifyAdmins(`[Notification ID: ${job.id} (E-Mail)] Email sent to: ${job.to_email}: ${job.subject}`);
+                    await connection.execute(
+                        'UPDATE notification_queue SET status = "completed" WHERE id = ?',
+                        [job.id]
+                    );
                 } else if (job.type.startsWith('discord')) {
                     await sendDiscordNotification(job.id, job.body, job.created_at, job.type);
+                    await connection.execute(
+                        'UPDATE notification_queue SET status = "completed" WHERE id = ?',
+                        [job.id]
+                    );
                 }
-                await connection.execute(
-                    'UPDATE notification_queue SET status = "completed" WHERE id = ?',
-                    [job.id]
-                );
                 log(`NOTIFIER: Job id: ${job.id} completed`);
             } catch (error) {
                 await connection.execute(
