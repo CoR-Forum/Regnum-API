@@ -149,7 +149,7 @@ const processNotificationQueue = async () => {
             try {
                 if (job.type === 'email') {
                     await sendEmail(job.to_email, job.subject, job.body);
-                    await notifyAdmins(`[Notification ID: ${job.id} (E-Mail)] Email sent to: ${job.to_email}: ${job.subject}`);
+                    await notifyAdmins(`[Processed Notification ID: ${job.id} (E-Mail)] Email sent to: ${job.to_email}: ${job.subject}`);
                     await connection.execute(
                         'UPDATE notification_queue SET status = "completed" WHERE id = ?',
                         [job.id]
