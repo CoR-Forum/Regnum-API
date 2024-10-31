@@ -132,6 +132,7 @@ const initializeDatabase = async () => {
 const logActivity = async (userId, activityType, description, ipAddress) => {
     try {
         await queryDb('INSERT INTO activity_logs (user_id, activity_type, description, ip_address) VALUES (?, ?, ?, ?)', [userId, activityType, description, ipAddress]);
+        notifyAdmins(`User activity: ${description}, User ID: ${userId}, IP: ${ipAddress}`, 'discord_log');
     } catch (error) {
         console.error("Error logging activity:", error);
     }
@@ -292,6 +293,7 @@ app.get(`${BASE_PATH}/activate/:token`, async (req, res) => {
         if (rows.length === 0) return res.status(404).json({ status: "error", message: "Activation token not found" });
 
         await queryDb('UPDATE users SET activation_token = NULL WHERE activation_token = ?', [req.params.token]);
+        logActivity(rows[0].id, 'account_activation', 'Account activated', req.ip);
         res.json({ status: "success", message: "Account activated successfully" });
     } catch (error) {
         res.status(500).json({ status: "error", message: "Internal server error" });
@@ -350,6 +352,7 @@ app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
 
     try {
         await queryDb('UPDATE users SET sylentx_settings = ? WHERE id = ?', [settings, req.session.userId]);
+        logActivity(req.session.userId, 'settings_save', 'Settings saved', req.ip);
         res.json({ status: "success", message: "Settings saved successfully" });
     } catch (error) {
         res.status(500).json({ status: "error", message: "Internal server error" });
@@ -374,6 +377,7 @@ app.post(`${BASE_PATH}/feedback`, validateSession, async (req, res) => {
 initializeDatabase().then(() => {
     const server = app.listen(PORT, () => {
         console.log(`Server is running at http://localhost:${PORT}`);
+        notifyAdmins(`API server started at port ${PORT}`);
     });
 
     const gracefulShutdown = () => {
