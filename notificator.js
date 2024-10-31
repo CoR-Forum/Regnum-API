@@ -193,11 +193,10 @@ const initializeDbConnection = async () => {
 };
 
 initializeDbConnection().then(() => {
-    // Periodically check the queue for new jobs and the database connection
     interval = setInterval(async () => {
         await checkDbConnection();
         await processNotificationQueue();
-    }, 5000); // Check every 5 seconds
+    }, 2000);
 });
 
 // Ensure the database connection is closed when the application exits

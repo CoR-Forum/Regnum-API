@@ -5,7 +5,7 @@ const mysql = require('mysql2/promise');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 const crypto = require('crypto');
-const { mail, notifyAdmins } = require('./email');
+const { mail, notifyAdmins } = require('./notificator');
 const { validateUsername, validatePassword, validateEmail, validateNickname, checkUsernameExists, checkEmailExists, checkNicknameExists } = require('./validation');
 
 const app = express();
