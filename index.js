@@ -228,6 +228,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 app.post(`${BASE_PATH}/logout`, validateSession, (req, res) => {
     req.session.destroy(err => {
         if (err) return res.status(500).json({ status: "error", message: "Error logging out" });
+        notifyAdmins(`User logged out: ${req.session.username}, IP: ${req.ip}`);
         res.json({ status: "success", message: "Logout successful" });
     });
 });
