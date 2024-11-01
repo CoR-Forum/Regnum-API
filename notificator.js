@@ -190,7 +190,6 @@ const checkDbConnection = async () => {
     }
 };
 
-// Initialize the database connection when the application starts
 const initializeDbConnection = async () => {
     try {
         const connection = await pool.getConnection();
@@ -209,7 +208,6 @@ initializeDbConnection().then(() => {
     }, 2000);
 });
 
-// Ensure the database connection is closed when the application exits
 process.on('exit', async () => {
     if (interval) {
         clearInterval(interval);
