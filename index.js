@@ -5,6 +5,7 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
+const bcrypt = require('bcrypt');
 const { mail, notifyAdmins } = require('./notificator');
 const { validateUsername, validatePassword, validateEmail, validateNickname, checkUsernameExists, checkEmailExists, checkNicknameExists } = require('./validation');
 const { queryDb, logActivity } = require('./utils');
@@ -146,10 +147,13 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
     }
 
     try {
-        const rows = await queryDb('SELECT * FROM users WHERE username = ? AND password = ?', [username, password]);
+        const rows = await queryDb('SELECT * FROM users WHERE username = ?', [username]);
         if (rows.length === 0) return res.status(401).json({ status: "error", message: "Invalid username or password" });
 
         const user = rows[0];
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        if (!passwordMatch) return res.status(401).json({ status: "error", message: "Invalid username or password" });
+
         if (user.activation_token) return res.status(403).json({ status: "error", message: "Account not activated" });
 
         req.session.userId = user.id;
