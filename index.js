@@ -1,27 +1,19 @@
+// FILE: index.js
+
 require('dotenv').config();
 
 const express = require('express');
-const mysql = require('mysql2/promise');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 const crypto = require('crypto');
 const { mail, notifyAdmins } = require('./notificator');
 const { validateUsername, validatePassword, validateEmail, validateNickname, checkUsernameExists, checkEmailExists, checkNicknameExists } = require('./validation');
+const { queryDb, logActivity } = require('./utils');
+const { pool } = require('./db'); // Import pool from db.js
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BASE_PATH = process.env.BASE_PATH || '/api';
-
-const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-    charset: process.env.DB_CHARSET,
-    waitForConnections: true,
-    connectionLimit: process.env.DB_CONN_LIMIT || 10,
-    queueLimit: process.env.DB_QUE_LIMIT || 0
-});
 
 const sessionStore = new MySQLStore({}, pool);
 
@@ -34,18 +26,6 @@ app.use(session({
     cookie: { secure: false }
 }));
 
-const queryDb = async (query, params) => {
-    const db = await pool.getConnection();
-    try {
-        const [rows] = await db.query(query, params);
-        return rows;
-    } catch (error) {
-        console.error("Database error:", error);
-        throw error;
-    } finally {
-        db.release();
-    }
-};
 const initializeDatabase = async () => {
     const queries = [
         `CREATE TABLE IF NOT EXISTS users (
@@ -120,15 +100,6 @@ const initializeDatabase = async () => {
         }
     }
     console.log("Default memory pointers inserted successfully.");
-};
-
-const logActivity = async (userId, activityType, description, ipAddress) => {
-    try {
-        await queryDb('INSERT INTO activity_logs (user_id, activity_type, description, ip_address) VALUES (?, ?, ?, ?)', [userId, activityType, description, ipAddress]);
-        notifyAdmins(`User activity: ${description}, User ID: ${userId}, IP: ${ipAddress}`, 'discord_log');
-    } catch (error) {
-        console.error("Error logging activity:", error);
-    }
 };
 
 const updateLastActivity = async (req, res, next) => {
