@@ -133,7 +133,6 @@ app.use(`${BASE_PATH}`, registerRoutes); // Use register routes
 app.use(`${BASE_PATH}`, passwordResetRoutes); // Use password reset routes
 
 app.post(`${BASE_PATH}/login`, async (req, res) => {
-    console.log("Login request from:", req.ip);
     const { username, password } = req.body;
 
     const usernameValidation = validateUsername(username);
