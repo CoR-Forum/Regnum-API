@@ -5,11 +5,11 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
-const crypto = require('crypto');
 const { mail, notifyAdmins } = require('./notificator');
 const { validateUsername, validatePassword, validateEmail, validateNickname, checkUsernameExists, checkEmailExists, checkNicknameExists } = require('./validation');
 const { queryDb, logActivity } = require('./utils');
 const { pool } = require('./db'); // Import pool from db.js
+const registerRoutes = require('./register'); // Import register routes
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -127,6 +127,8 @@ const validateSession = async (req, res, next) => {
     }
 };
 
+app.use(`${BASE_PATH}`, registerRoutes); // Use register routes
+
 app.post(`${BASE_PATH}/login`, async (req, res) => {
     console.log("Login request from:", req.ip);
     const { username, password } = req.body;
@@ -198,72 +200,6 @@ app.post(`${BASE_PATH}/logout`, validateSession, (req, res) => {
 });
 
 app.get(`${BASE_PATH}`, (req, res) => res.send('API is running'));
-
-app.post(`${BASE_PATH}/register`, async (req, res) => {
-    const { username, nickname, password, email } = req.body;
-
-    const usernameValidation = validateUsername(username);
-    const passwordValidation = validatePassword(password);
-    const emailValidation = validateEmail(email);
-    const nicknameValidation = validateNickname(nickname);
-
-    if (!usernameValidation.valid) {
-        return res.status(400).json({ status: "error", message: usernameValidation.message });
-    }
-    if (!passwordValidation.valid) {
-        return res.status(400).json({ status: "error", message: passwordValidation.message });
-    }
-    if (!emailValidation.valid) {
-        return res.status(400).json({ status: "error", message: emailValidation.message });
-    }
-    if (!nicknameValidation.valid) {
-        return res.status(400).json({ status: "error", message: nicknameValidation.message });
-    }
-
-    try {
-        const usernameExists = await checkUsernameExists(username);
-        const emailExists = await checkEmailExists(email);
-        const nicknameExists = await checkNicknameExists(nickname);
-
-        if (usernameExists.exists) {
-            return res.status(400).json({ status: "error", message: usernameExists.message });
-        }
-        if (emailExists.exists) {
-            return res.status(400).json({ status: "error", message: emailExists.message });
-        }
-        if (nicknameExists.exists) {
-            return res.status(400).json({ status: "error", message: nicknameExists.message });
-        }
-
-        const activationToken = crypto.randomBytes(64).toString('hex');
-        await queryDb('INSERT INTO users (username, nickname, password, email, activation_token) VALUES (?, ?, ?, ?, ?)', [username, nickname, password, email, activationToken]);
-
-        const activationLink = `${process.env.BASE_URL}:${PORT}${BASE_PATH}/activate/${activationToken}`;
-        await mail(email, 'Activate your account', `Click here to activate your account: ${activationLink}`);
-
-        const rows = await queryDb('SELECT * FROM users WHERE username = ?', [username]);
-        logActivity(rows[0].id, 'registration', 'User registered', req.ip);
-
-        notifyAdmins(`New user registered: ${username}, email: ${email}, nickname: ${nickname}, IP: ${req.ip}`);
-
-        res.json({ status: "success", message: "User registered successfully" });
-    } catch (error) {
-        res.status(500).json({ status: "error", message: "Internal server error" });
-    }
-});
-
-app.get(`${BASE_PATH}/activate/:token`, async (req, res) => {
-    try {
-        const rows = await queryDb('SELECT * FROM users WHERE activation_token = ?', [req.params.token]);
-        if (rows.length === 0) return res.status(404).json({ status: "error", message: "Activation token not found" });
-
-        await queryDb('UPDATE users SET activation_token = NULL WHERE activation_token = ?', [req.params.token]);
-        logActivity(rows[0].id, 'account_activation', 'Account activated', req.ip);
-        res.json({ status: "success", message: "Account activated successfully" });
-    } catch (error) {
-        res.status(500).json({ status: "error", message: "Internal server error" });
-    }
-});
 
 app.post(`${BASE_PATH}/reset-password`, async (req, res) => {
     const { email } = req.body;
