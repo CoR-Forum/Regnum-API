@@ -222,7 +222,7 @@ app.post(`${BASE_PATH}/feedback`, validateSession, async (req, res) => {
         await queryDb('INSERT INTO feedback (type, user_id, feedback, log) VALUES (?, ?, ?, ?)', [type, req.session.userId, feedback, log]);
 
         logActivity(req.session.userId, 'feedback', 'Feedback submitted', req.ip);
-        await notifyAdmins(`New feedback received from user: ${req.session.username}`);
+        await notifyAdmins(`New feedback received from user: ${req.session.username}, "discord_feedback"`);
 
         res.json({ status: "success", message: "Feedback submitted successfully" });
     } catch (error) {
