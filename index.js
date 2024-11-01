@@ -10,6 +10,7 @@ const { validateUsername, validatePassword, validateEmail, validateNickname, che
 const { queryDb, logActivity } = require('./utils');
 const { pool } = require('./db'); // Import pool from db.js
 const registerRoutes = require('./register'); // Import register routes
+const passwordResetRoutes = require('./passwordReset'); // Import password reset routes
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -128,6 +129,7 @@ const validateSession = async (req, res, next) => {
 };
 
 app.use(`${BASE_PATH}`, registerRoutes); // Use register routes
+app.use(`${BASE_PATH}`, passwordResetRoutes); // Use password reset routes
 
 app.post(`${BASE_PATH}/login`, async (req, res) => {
     console.log("Login request from:", req.ip);
@@ -200,53 +202,6 @@ app.post(`${BASE_PATH}/logout`, validateSession, (req, res) => {
 });
 
 app.get(`${BASE_PATH}`, (req, res) => res.send('API is running'));
-
-app.post(`${BASE_PATH}/reset-password`, async (req, res) => {
-    const { email } = req.body;
-
-    const emailValidation = validateEmail(email);
-    if (!emailValidation.valid) {
-        return res.status(400).json({ status: "error", message: emailValidation.message });
-    }
-
-    try {
-        const rows = await queryDb('SELECT * FROM users WHERE email = ?', [email]);
-        if (rows.length === 0) return res.status(404).json({ status: "error", message: "Email not found" });
-
-        const resetToken = crypto.randomBytes(64).toString('hex');
-        await queryDb('UPDATE users SET pw_reset_token = ? WHERE email = ?', [resetToken, email]);
-
-        await mail(email, 'Reset your password', `Use the following token to reset your password: ${resetToken}`);
-
-        logActivity(rows[0].id, 'password_reset_request', 'Password reset requested', req.ip);
-
-        res.json({ status: "success", message: "Password reset token sent successfully" });
-    } catch (error) {
-        res.status(500).json({ status: "error", message: "Internal server error" });
-    }
-});
-
-app.post(`${BASE_PATH}/reset-password/:token`, async (req, res) => {
-    const { password } = req.body;
-
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.valid) {
-        return res.status(400).json({ status: "error", message: passwordValidation.message });
-    }
-
-    try {
-        const rows = await queryDb('SELECT * FROM users WHERE pw_reset_token = ?', [req.params.token]);
-        if (rows.length === 0) return res.status(404).json({ status: "error", message: "Reset token not found" });
-
-        await queryDb('UPDATE users SET password = ?, pw_reset_token = NULL WHERE pw_reset_token = ?', [password, req.params.token]);
-
-        logActivity(rows[0].id, 'password_reset', 'Password reset', req.ip);
-
-        res.json({ status: "success", message: "Password reset successfully" });
-    } catch (error) {
-        res.status(500).json({ status: "error", message: "Internal server error" });
-    }
-});
 
 app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
     const { settings } = req.body;
