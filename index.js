@@ -9,9 +9,9 @@ const bcrypt = require('bcrypt');
 const { mail, notifyAdmins } = require('./notificator');
 const { validateUsername, validatePassword } = require('./validation');
 const { queryDb, logActivity } = require('./utils');
-const { pool } = require('./db'); // Import pool from db.js
-const registerRoutes = require('./register'); // Import register routes
-const passwordResetRoutes = require('./passwordReset'); // Import password reset routes
+const { pool } = require('./db');
+const registerRoutes = require('./register');
+const passwordResetRoutes = require('./passwordReset');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -101,7 +101,7 @@ const initializeDatabase = async () => {
             await queryDb('UPDATE memory_pointers SET address = ?, offsets = ? WHERE feature = ?', [pointer.address, pointer.offsets, pointer.feature]);
         }
     }
-    console.log("Default memory pointers inserted successfully.");
+    console.log("Default memory pointers inserted or updated successfully.");
 };
 
 const updateLastActivity = async (req, res, next) => {
@@ -129,8 +129,8 @@ const validateSession = async (req, res, next) => {
     }
 };
 
-app.use(`${BASE_PATH}`, registerRoutes); // Use register routes
-app.use(`${BASE_PATH}`, passwordResetRoutes); // Use password reset routes
+app.use(`${BASE_PATH}`, registerRoutes);
+app.use(`${BASE_PATH}`, passwordResetRoutes);
 
 app.post(`${BASE_PATH}/login`, async (req, res) => {
     const { username, password } = req.body;
@@ -186,7 +186,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
                     username: user.username,
                     nickname: user.nickname,
                     settings: user.sylentx_settings,
-                    features: user.sylentx_features, // Added sylentx_features here
+                    features: user.sylentx_features,
                     pointers: memoryPointers
                 }
             });
