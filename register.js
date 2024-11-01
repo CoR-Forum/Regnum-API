@@ -2,6 +2,7 @@
 
 const express = require('express');
 const crypto = require('crypto');
+const argon2 = require('argon2'); // Import the argon2 module
 const { validateUsername, validatePassword, validateEmail, validateNickname, checkUsernameExists, checkEmailExists, checkNicknameExists } = require('./validation');
 const { queryDb, logActivity } = require('./utils');
 const { mail, notifyAdmins } = require('./notificator');
@@ -45,7 +46,8 @@ router.post('/register', async (req, res) => {
         }
 
         const activationToken = crypto.randomBytes(64).toString('hex');
-        await queryDb('INSERT INTO users (username, nickname, password, email, activation_token) VALUES (?, ?, ?, ?, ?)', [username, nickname, password, email, activationToken]);
+        const hashedPassword = await argon2.hash(password); // Hash the password using argon2
+        await queryDb('INSERT INTO users (username, nickname, password, email, activation_token) VALUES (?, ?, ?, ?, ?)', [username, nickname, hashedPassword, email, activationToken]);
 
         const activationLink = `${process.env.BASE_URL}:${process.env.PORT}${process.env.BASE_PATH}/activate/${activationToken}`;
         await mail(email, 'Activate your account', `Click here to activate your account: ${activationLink}`);

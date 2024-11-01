@@ -2,6 +2,7 @@
 
 const express = require('express');
 const crypto = require('crypto');
+const argon2 = require('argon2'); // Import the argon2 module
 const { validateEmail, validatePassword } = require('./validation');
 const { queryDb, logActivity } = require('./utils');
 const { mail } = require('./notificator');
@@ -45,7 +46,8 @@ router.post('/reset-password/:token', async (req, res) => {
         const rows = await queryDb('SELECT * FROM users WHERE pw_reset_token = ?', [req.params.token]);
         if (rows.length === 0) return res.status(404).json({ status: "error", message: "Reset token not found" });
 
-        await queryDb('UPDATE users SET password = ?, pw_reset_token = NULL WHERE pw_reset_token = ?', [password, req.params.token]);
+        const hashedPassword = await argon2.hash(password); // Hash the password using argon2
+        await queryDb('UPDATE users SET password = ?, pw_reset_token = NULL WHERE pw_reset_token = ?', [hashedPassword, req.params.token]);
 
         logActivity(rows[0].id, 'password_reset', 'Password reset', req.ip);
 

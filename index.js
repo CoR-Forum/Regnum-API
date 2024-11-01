@@ -5,7 +5,8 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
-const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const argon2 = require('argon2'); // Import the argon2 module
 const { mail, notifyAdmins } = require('./notificator');
 const { validateUsername, validatePassword } = require('./validation');
 const { queryDb, logActivity } = require('./utils');
@@ -27,6 +28,10 @@ app.use(session({
     store: sessionStore,
     cookie: { secure: false }
 }));
+
+const hashPassword = async (password) => {
+    return await argon2.hash(password); // Hash the password using argon2
+};
 
 const initializeDatabase = async () => {
     const queries = [
@@ -150,7 +155,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
         if (rows.length === 0) return res.status(401).json({ status: "error", message: "Invalid username or password" });
 
         const user = rows[0];
-        const passwordMatch = await bcrypt.compare(password, user.password);
+        const passwordMatch = await argon2.verify(user.password, password); // Verify the password using argon2
         if (!passwordMatch) return res.status(401).json({ status: "error", message: "Invalid username or password" });
 
         if (user.activation_token) return res.status(403).json({ status: "error", message: "Account not activated" });
