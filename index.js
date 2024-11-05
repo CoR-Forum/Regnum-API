@@ -34,7 +34,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
-  cookie: { secure: false }
+  cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true }
 }));
 
 const updateLastActivity = async (req, res, next) => {
