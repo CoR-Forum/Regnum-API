@@ -18,6 +18,7 @@
     "express": "^4.21.1",
     "express-mysql-session": "^3.0.3",
     "express-session": "^1.18.1",
+    "helmet": "^8.0.0",
     "mongodb": "^6.10.0",
     "mongoose": "^8.8.0",
     "mysql-express-session": "^0.5.0",

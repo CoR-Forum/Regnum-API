@@ -6,6 +6,7 @@ const express = require('express');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const mongoose = require('mongoose');
+const helmet = require('helmet'); // Add helmet
 const argon2 = require('argon2');
 const { mail, notifyAdmins } = require('./notificator');
 const { validateUsername, validatePassword, validateEmail, validateNickname } = require('./validation');
@@ -26,6 +27,26 @@ mongoose.connect(process.env.MONGO_URI).then(() => {
 }).catch((error) => {
   console.error('MongoDB connection error:', error);
   process.exit(1);
+});
+
+// Use Helmet to set various HTTP headers for security
+app.use(helmet());
+
+// Set Content Security Policy (CSP)
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: ["'self'"],
+    objectSrc: ["'none'"],
+    upgradeInsecureRequests: [],
+  },
+}));
+
+// Enforce HTTPS
+app.use((req, res, next) => {
+  if (req.headers['x-forwarded-proto'] !== 'https' && process.env.NODE_ENV === 'production') {
+    return res.redirect(`https://${req.headers.host}${req.url}`);
+  }
+  next();
 });
 
 app.use(express.json());
