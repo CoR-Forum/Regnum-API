@@ -14,7 +14,7 @@ const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
 const { router: feedbackRoutes, initializeFeedbackTable } = require('./router/feedback');
 const { validateSession } = require('./middleware');
-const { User, UserSettings, License, MemoryPointer, System, ActivityLog } = require('./models'); // Import models
+const { User, UserSettings, License, MemoryPointer, Settings, ActivityLog, initializeDatabase } = require('./models'); // Import models and initializeDatabase
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,25 +36,6 @@ app.use(session({
   store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
   cookie: { secure: false }
 }));
-
-const initializeDatabase = async () => {
-  // Insert or update default memory pointers
-  const defaultMemoryPointers = [
-    { feature: 'zoom', address: '0x68FC54', offsets: '' }
-  ];
-
-  for (const pointer of defaultMemoryPointers) {
-    const existingPointer = await MemoryPointer.findOne({ feature: pointer.feature });
-    if (!existingPointer) {
-      await new MemoryPointer(pointer).save();
-    } else {
-      existingPointer.address = pointer.address;
-      existingPointer.offsets = pointer.offsets;
-      await existingPointer.save();
-    }
-  }
-  console.log("Default memory pointers inserted or updated successfully.");
-};
 
 const updateLastActivity = async (req, res, next) => {
   if (req.session.userId) {
@@ -114,6 +95,13 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
         }
       }
 
+      // Fetch settings
+      const settings = await Settings.find();
+      const settingsObject = {};
+      settings.forEach(setting => {
+        settingsObject[setting.name] = setting.value;
+      });
+
       // Fetch user settings from user_settings_sylentx table
       const userSettings = await UserSettings.findOne({ user_id: user._id });
 
@@ -127,7 +115,8 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
           settings: userSettings ? userSettings.settings : null,
           features: user.sylentx_features,
           pointers: memoryPointers
-        }
+        },
+        settings: settingsObject
       });
     });
   } catch (error) {
