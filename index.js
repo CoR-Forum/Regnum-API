@@ -47,9 +47,16 @@ const initializeDatabase = async () => {
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             banned TINYINT(1) DEFAULT 0,
             last_activity TIMESTAMP DEFAULT NULL,
-            sylentx_settings TEXT DEFAULT NULL,
             sylentx_features TEXT DEFAULT NULL,
             deleted TINYINT(1) DEFAULT 0
+        );`,
+        `CREATE TABLE IF NOT EXISTS user_settings_sylentx (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL UNIQUE,
+            settings TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
         );`,
         `CREATE TABLE IF NOT EXISTS licenses (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -170,6 +177,10 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
                 }
             }
 
+            // Fetch user settings from user_settings_sylentx table
+            const settingsRows = await queryDb('SELECT settings FROM user_settings_sylentx WHERE user_id = ?', [user.id]);
+            const userSettings = settingsRows.length > 0 ? settingsRows[0].settings : null;
+
             res.json({
                 status: "success",
                 message: "Login successful",
@@ -177,7 +188,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
                     id: user.id,
                     username: user.username,
                     nickname: user.nickname,
-                    settings: user.sylentx_settings,
+                    settings: userSettings,
                     features: user.sylentx_features,
                     pointers: memoryPointers
                 }
@@ -197,10 +208,15 @@ app.post(`${BASE_PATH}/logout`, validateSession, (req, res) => {
 });
 
 app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
-    const { settings } = req.body;
+    const { userSettings } = req.body;
 
     try {
-        await queryDb('UPDATE users SET sylentx_settings = ? WHERE id = ?', [settings, req.session.userId]);
+        const rows = await queryDb('SELECT * FROM user_settings_sylentx WHERE user_id = ?', [req.session.userId]);
+        if (rows.length === 0) {
+            await queryDb('INSERT INTO user_settings_sylentx (user_id, settings) VALUES (?, ?)', [req.session.userId, userSettings]);
+        } else {
+            await queryDb('UPDATE user_settings_sylentx SET settings = ? WHERE user_id = ?', [userSettings, req.session.userId]);
+        }
         logActivity(req.session.userId, 'settings_save', 'Settings saved', req.ip);
         res.json({ status: "success", message: "Settings saved successfully" });
     } catch (error) {
