@@ -13,7 +13,7 @@ const { queryDb, logActivity } = require('./utils');
 const { pool } = require('./db');
 const registerRoutes = require('./register');
 const passwordResetRoutes = require('./passwordReset');
-const feedbackRoutes = require('./feedback');
+const { router: feedbackRoutes, initializeFeedbackTable } = require('./feedback');
 const { validateSession } = require('./middleware'); // Import validateSession from middleware.js
 
 const app = express();
@@ -73,15 +73,6 @@ const initializeDatabase = async () => {
             feature VARCHAR(255) NOT NULL,
             address VARCHAR(255) NOT NULL,
             offsets TEXT
-        );`,
-        `CREATE TABLE IF NOT EXISTS feedback (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            type VARCHAR(255) NOT NULL,
-            user_id int NOT NULL,
-            feedback TEXT NOT NULL,
-            log TEXT DEFAULT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
         );`,
         `CREATE TABLE IF NOT EXISTS system (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -224,6 +215,8 @@ app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
 app.get(`${BASE_PATH}`, (req, res) => res.redirect(`${BASE_PATH}/status`));
 
 initializeDatabase().then(() => {
+    initializeFeedbackTable(); // Initialize feedback table
+
     const server = app.listen(PORT, () => {
         console.log(`Server is running at http://localhost:${PORT}`);
         notifyAdmins(`API server started at port ${PORT}`);
