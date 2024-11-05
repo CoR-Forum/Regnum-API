@@ -6,13 +6,15 @@ const express = require('express');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 const crypto = require('crypto');
-const argon2 = require('argon2'); // Import the argon2 module
+const argon2 = require('argon2');
 const { mail, notifyAdmins } = require('./notificator');
 const { validateUsername, validatePassword } = require('./validation');
 const { queryDb, logActivity } = require('./utils');
 const { pool } = require('./db');
 const registerRoutes = require('./register');
 const passwordResetRoutes = require('./passwordReset');
+const feedbackRoutes = require('./feedback');
+const { validateSession } = require('./middleware'); // Import validateSession from middleware.js
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -52,6 +54,19 @@ const initializeDatabase = async () => {
             sylentx_settings TEXT DEFAULT NULL,
             sylentx_features TEXT DEFAULT NULL,
             deleted TINYINT(1) DEFAULT 0
+        );`,
+        `CREATE TABLE IF NOT EXISTS licenses (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            license_key VARCHAR(255) NOT NULL UNIQUE,
+            license_type ENUM('lifetime', 'minutely', 'hourly', 'daily', 'weekly', 'monthly', 'yearly') NOT NULL,
+            license_features TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_by INT DEFAULT NULL,
+            activated_at TIMESTAMP DEFAULT NULL,
+            expires_at TIMESTAMP DEFAULT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
         );`,
         `CREATE TABLE IF NOT EXISTS memory_pointers (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -118,24 +133,9 @@ const updateLastActivity = async (req, res, next) => {
 
 app.use(updateLastActivity);
 
-const validateSession = async (req, res, next) => {
-    if (!req.session.userId) return res.status(401).json({ message: "Unauthorized" });
-
-    try {
-        const rows = await queryDb('SELECT * FROM users WHERE id = ?', [req.session.userId]);
-        if (rows.length === 0) return res.status(401).json({ message: "Invalid session" });
-
-        const user = rows[0];
-        if (user.activation_token) return res.status(403).json({ message: "Account not activated" });
-
-        next();
-    } catch (error) {
-        res.status(500).json({ message: "Internal server error" });
-    }
-};
-
 app.use(`${BASE_PATH}`, registerRoutes);
 app.use(`${BASE_PATH}`, passwordResetRoutes);
+app.use(`${BASE_PATH}`, feedbackRoutes);
 
 app.post(`${BASE_PATH}/login`, async (req, res) => {
     const { username, password } = req.body;
@@ -218,21 +218,6 @@ app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
         await queryDb('UPDATE users SET sylentx_settings = ? WHERE id = ?', [settings, req.session.userId]);
         logActivity(req.session.userId, 'settings_save', 'Settings saved', req.ip);
         res.json({ status: "success", message: "Settings saved successfully" });
-    } catch (error) {
-        res.status(500).json({ status: "error", message: "Internal server error" });
-    }
-});
-
-app.post(`${BASE_PATH}/feedback`, validateSession, async (req, res) => {
-    const { type, feedback, log } = req.body;
-
-    try {
-        await queryDb('INSERT INTO feedback (type, user_id, feedback, log) VALUES (?, ?, ?, ?)', [type, req.session.userId, feedback, log]);
-
-        logActivity(req.session.userId, 'feedback', 'Feedback submitted', req.ip);
-        await notifyAdmins(`New feedback received from user: ${req.session.username}, "discord_feedback"`);
-
-        res.json({ status: "success", message: "Feedback submitted successfully" });
     } catch (error) {
         res.status(500).json({ status: "error", message: "Internal server error" });
     }
