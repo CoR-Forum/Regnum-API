@@ -1,11 +1,10 @@
-// FILE: passwordReset.js
-
 const express = require('express');
 const crypto = require('crypto');
-const argon2 = require('argon2'); // Import the argon2 module
+const argon2 = require('argon2');
 const { validateEmail, validatePassword } = require('../validation');
-const { queryDb, logActivity } = require('../utils');
+const { logActivity } = require('../utils');
 const { mail } = require('../notificator');
+const { User } = require('../models'); // Import Mongoose models
 
 const router = express.Router();
 
@@ -18,15 +17,16 @@ router.post('/reset-password', async (req, res) => {
     }
 
     try {
-        const rows = await queryDb('SELECT * FROM users WHERE email = ?', [email]);
-        if (rows.length === 0) return res.status(404).json({ status: "error", message: "Email not found" });
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ status: "error", message: "Email not found" });
 
         const resetToken = crypto.randomBytes(64).toString('hex');
-        await queryDb('UPDATE users SET pw_reset_token = ? WHERE email = ?', [resetToken, email]);
+        user.pw_reset_token = resetToken;
+        await user.save();
 
         await mail(email, 'Reset your password', `Use the following token to reset your password: ${resetToken}`);
 
-        logActivity(rows[0].id, 'password_reset_request', 'Password reset requested', req.ip);
+        logActivity(user._id, 'password_reset_request', 'Password reset requested', req.ip);
 
         res.json({ status: "success", message: "Password reset token sent successfully" });
     } catch (error) {
@@ -43,13 +43,15 @@ router.post('/reset-password/:token', async (req, res) => {
     }
 
     try {
-        const rows = await queryDb('SELECT * FROM users WHERE pw_reset_token = ?', [req.params.token]);
-        if (rows.length === 0) return res.status(404).json({ status: "error", message: "Reset token not found" });
+        const user = await User.findOne({ pw_reset_token: req.params.token });
+        if (!user) return res.status(404).json({ status: "error", message: "Reset token not found" });
 
-        const hashedPassword = await argon2.hash(password); // Hash the password using argon2
-        await queryDb('UPDATE users SET password = ?, pw_reset_token = NULL WHERE pw_reset_token = ?', [hashedPassword, req.params.token]);
+        const hashedPassword = await argon2.hash(password);
+        user.password = hashedPassword;
+        user.pw_reset_token = null;
+        await user.save();
 
-        logActivity(rows[0].id, 'password_reset', 'Password reset', req.ip);
+        logActivity(user._id, 'password_reset', 'Password reset', req.ip);
 
         res.json({ status: "success", message: "Password reset successfully" });
     } catch (error) {

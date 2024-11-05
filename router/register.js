@@ -1,11 +1,10 @@
-// FILE: register.js
-
 const express = require('express');
 const crypto = require('crypto');
-const argon2 = require('argon2'); // Import the argon2 module
+const argon2 = require('argon2');
 const { validateUsername, validatePassword, validateEmail, validateNickname, checkUsernameExists, checkEmailExists, checkNicknameExists } = require('../validation');
-const { queryDb, logActivity } = require('../utils');
+const { logActivity } = require('../utils');
 const { mail, notifyAdmins } = require('../notificator');
+const { User } = require('../models'); // Import Mongoose models
 
 const router = express.Router();
 
@@ -46,14 +45,22 @@ router.post('/register', async (req, res) => {
         }
 
         const activationToken = crypto.randomBytes(64).toString('hex');
-        const hashedPassword = await argon2.hash(password); // Hash the password using argon2
-        await queryDb('INSERT INTO users (username, nickname, password, email, activation_token) VALUES (?, ?, ?, ?, ?)', [username, nickname, hashedPassword, email, activationToken]);
+        const hashedPassword = await argon2.hash(password);
+
+        const newUser = new User({
+            username,
+            nickname,
+            password: hashedPassword,
+            email,
+            activation_token: activationToken
+        });
+
+        await newUser.save();
 
         const activationLink = `${process.env.BASE_URL}:${process.env.PORT}${process.env.BASE_PATH}/activate/${activationToken}`;
         await mail(email, 'Activate your account', `Click here to activate your account: ${activationLink}`);
 
-        const rows = await queryDb('SELECT * FROM users WHERE username = ?', [username]);
-        logActivity(rows[0].id, 'registration', 'User registered', req.ip);
+        logActivity(newUser._id, 'registration', 'User registered', req.ip);
 
         notifyAdmins(`New user registered: ${username}, email: ${email}, nickname: ${nickname}, IP: ${req.ip}`);
 
@@ -65,11 +72,13 @@ router.post('/register', async (req, res) => {
 
 router.get('/activate/:token', async (req, res) => {
     try {
-        const rows = await queryDb('SELECT * FROM users WHERE activation_token = ?', [req.params.token]);
-        if (rows.length === 0) return res.status(404).json({ status: "error", message: "Activation token not found" });
+        const user = await User.findOne({ activation_token: req.params.token });
+        if (!user) return res.status(404).json({ status: "error", message: "Activation token not found" });
 
-        await queryDb('UPDATE users SET activation_token = NULL WHERE activation_token = ?', [req.params.token]);
-        logActivity(rows[0].id, 'account_activation', 'Account activated', req.ip);
+        user.activation_token = null;
+        await user.save();
+
+        logActivity(user._id, 'account_activation', 'Account activated', req.ip);
         res.json({ status: "success", message: "Account activated successfully" });
     } catch (error) {
         res.status(500).json({ status: "error", message: "Internal server error" });

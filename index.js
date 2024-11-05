@@ -4,125 +4,64 @@ require('dotenv').config();
 
 const express = require('express');
 const session = require('express-session');
-const MySQLStore = require('express-mysql-session')(session);
+const MongoStore = require('connect-mongo');
+const mongoose = require('mongoose');
 const crypto = require('crypto');
 const argon2 = require('argon2');
 const { mail, notifyAdmins } = require('./notificator');
-const { validateUsername, validatePassword } = require('./validation');
-const { queryDb, logActivity } = require('./utils');
-const { pool } = require('./db');
+const { validateUsername, validatePassword, validateEmail, validateNickname } = require('./validation');
+const { logActivity } = require('./utils');
 const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
 const { router: feedbackRoutes, initializeFeedbackTable } = require('./router/feedback');
 const { validateSession } = require('./middleware');
+const { User, UserSettings, License, MemoryPointer, System, ActivityLog } = require('./models'); // Import models
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BASE_PATH = process.env.BASE_PATH || '/api';
 
-const sessionStore = new MySQLStore({}, pool);
+// Connect to MongoDB
+mongoose.connect(process.env.MONGO_URI).then(() => {
+  console.log('MongoDB connected');
+}).catch((error) => {
+  console.error('MongoDB connection error:', error);
+  process.exit(1);
+});
 
 app.use(express.json());
 app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    store: sessionStore,
-    cookie: { secure: false }
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
+  cookie: { secure: false }
 }));
 
 const initializeDatabase = async () => {
-    const queries = [
-        `CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            username VARCHAR(50) NOT NULL UNIQUE,
-            password VARCHAR(255) NOT NULL,
-            email VARCHAR(100) NOT NULL,
-            nickname VARCHAR(50) DEFAULT NULL,
-            activation_token VARCHAR(255) DEFAULT NULL,
-            pw_reset_token VARCHAR(255) DEFAULT NULL,
-            is_admin TINYINT(1) DEFAULT 0,
-            shoutbox_banned TINYINT(1) DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            banned TINYINT(1) DEFAULT 0,
-            last_activity TIMESTAMP DEFAULT NULL,
-            sylentx_features TEXT DEFAULT NULL,
-            deleted TINYINT(1) DEFAULT 0
-        );`,
-        `CREATE TABLE IF NOT EXISTS user_settings_sylentx (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL UNIQUE,
-            settings TEXT DEFAULT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        );`,
-        `CREATE TABLE IF NOT EXISTS licenses (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
-            license_key VARCHAR(255) NOT NULL UNIQUE,
-            license_type ENUM('lifetime', 'minutely', 'hourly', 'daily', 'weekly', 'monthly', 'yearly') NOT NULL,
-            license_features TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            created_by INT DEFAULT NULL,
-            activated_at TIMESTAMP DEFAULT NULL,
-            expires_at TIMESTAMP DEFAULT NULL,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        );`,
-        `CREATE TABLE IF NOT EXISTS memory_pointers (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            feature VARCHAR(255) NOT NULL,
-            address VARCHAR(255) NOT NULL,
-            offsets TEXT
-        );`,
-        `CREATE TABLE IF NOT EXISTS system (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name ENUM('status', 'latest_version') NOT NULL UNIQUE,
-            value TEXT NOT NULL,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        );`,
-        `CREATE TABLE IF NOT EXISTS sessions (
-            session_id VARCHAR(128) NOT NULL PRIMARY KEY,
-            expires INT(11) UNSIGNED NOT NULL,
-            data TEXT
-        );`,
-        `CREATE TABLE IF NOT EXISTS activity_logs (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
-            activity_type VARCHAR(50) NOT NULL,
-            description TEXT,
-            ip_address VARCHAR(45),
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        );`,
-    ];
+  // Insert or update default memory pointers
+  const defaultMemoryPointers = [
+    { feature: 'zoom', address: '0x68FC54', offsets: '' }
+  ];
 
-    for (const query of queries) await queryDb(query);
-    console.log("Database and tables initialized successfully.");
-
-    // Insert or update default memory pointers
-    const defaultMemoryPointers = [
-        { feature: 'zoom', address: '0x68FC54', offsets: '' }
-    ];
-
-    for (const pointer of defaultMemoryPointers) {
-        const rows = await queryDb('SELECT * FROM memory_pointers WHERE feature = ?', [pointer.feature]);
-        if (rows.length === 0) {
-            await queryDb('INSERT INTO memory_pointers (feature, address, offsets) VALUES (?, ?, ?)', [pointer.feature, pointer.address, pointer.offsets]);
-        } else {
-            await queryDb('UPDATE memory_pointers SET address = ?, offsets = ? WHERE feature = ?', [pointer.address, pointer.offsets, pointer.feature]);
-        }
+  for (const pointer of defaultMemoryPointers) {
+    const existingPointer = await MemoryPointer.findOne({ feature: pointer.feature });
+    if (!existingPointer) {
+      await new MemoryPointer(pointer).save();
+    } else {
+      existingPointer.address = pointer.address;
+      existingPointer.offsets = pointer.offsets;
+      await existingPointer.save();
     }
-    console.log("Default memory pointers inserted or updated successfully.");
+  }
+  console.log("Default memory pointers inserted or updated successfully.");
 };
 
 const updateLastActivity = async (req, res, next) => {
-    if (req.session.userId) {
-        await queryDb('UPDATE users SET last_activity = CURRENT_TIMESTAMP WHERE id = ?', [req.session.userId]);
-    }
-    next();
+  if (req.session.userId) {
+    await User.updateOne({ _id: req.session.userId }, { last_activity: new Date() });
+  }
+  next();
 };
 
 app.use(updateLastActivity);
@@ -132,123 +71,122 @@ app.use(`${BASE_PATH}`, passwordResetRoutes);
 app.use(`${BASE_PATH}`, feedbackRoutes);
 
 app.post(`${BASE_PATH}/login`, async (req, res) => {
-    const { username, password } = req.body;
+  const { username, password } = req.body;
 
-    const usernameValidation = validateUsername(username);
-    const passwordValidation = validatePassword(password);
+  const usernameValidation = validateUsername(username);
+  const passwordValidation = validatePassword(password);
 
-    if (!usernameValidation.valid) {
-        return res.status(400).json({ status: "error", message: usernameValidation.message });
-    }
-    if (!passwordValidation.valid) {
-        return res.status(400).json({ status: "error", message: passwordValidation.message });
-    }
+  if (!usernameValidation.valid) {
+    return res.status(400).json({ status: "error", message: usernameValidation.message });
+  }
+  if (!passwordValidation.valid) {
+    return res.status(400).json({ status: "error", message: passwordValidation.message });
+  }
 
-    try {
-        const rows = await queryDb('SELECT * FROM users WHERE username = ?', [username]);
-        if (rows.length === 0) return res.status(401).json({ status: "error", message: "Invalid username or password" });
+  try {
+    const user = await User.findOne({ username });
+    if (!user) return res.status(401).json({ status: "error", message: "Invalid username or password" });
 
-        const user = rows[0];
-        const passwordMatch = await argon2.verify(user.password, password); // Verify the password using argon2
-        if (!passwordMatch) return res.status(401).json({ status: "error", message: "Invalid username or password" });
+    const passwordMatch = await argon2.verify(user.password, password); // Verify the password using argon2
+    if (!passwordMatch) return res.status(401).json({ status: "error", message: "Invalid username or password" });
 
-        if (user.activation_token) return res.status(403).json({ status: "error", message: "Account not activated" });
+    if (user.activation_token) return res.status(403).json({ status: "error", message: "Account not activated" });
 
-        req.session.userId = user.id;
-        req.session.username = user.username;
+    req.session.userId = user._id;
+    req.session.username = user.username;
 
-        req.session.save(async err => {
-            if (err) return res.status(500).json({ status: "error", message: "Internal server error" });
+    req.session.save(async err => {
+      if (err) return res.status(500).json({ status: "error", message: "Internal server error" });
 
-            const loginNotificationText = `Hello ${user.username},\n\nYou have successfully logged in from IP address: ${req.ip}.\n\nIf this wasn't you, please contact support immediately.`;
-            await mail(user.email, 'Login Notification', loginNotificationText);
+      const loginNotificationText = `Hello ${user.username},\n\nYou have successfully logged in from IP address: ${req.ip}.\n\nIf this wasn't you, please contact support immediately.`;
+      await mail(user.email, 'Login Notification', loginNotificationText);
 
-            logActivity(user.id, 'login', 'User logged in', req.ip);
+      logActivity(user._id, 'login', 'User logged in', req.ip);
 
-            notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`, 'discord_login');
+      notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`, 'discord_login');
 
-            // Fetch memory pointers for available sylentx_features
-            const features = user.sylentx_features ? user.sylentx_features.split(',') : [];
-            const memoryPointers = {};
-            for (const feature of features) {
-                const pointerRows = await queryDb('SELECT * FROM memory_pointers WHERE feature = ?', [feature]);
-                if (pointerRows.length > 0) {
-                    memoryPointers[feature] = pointerRows[0];
-                }
-            }
+      // Fetch memory pointers for available sylentx_features
+      const features = user.sylentx_features ? user.sylentx_features.split(',') : [];
+      const memoryPointers = {};
+      for (const feature of features) {
+        const pointer = await MemoryPointer.findOne({ feature });
+        if (pointer) {
+          memoryPointers[feature] = pointer;
+        }
+      }
 
-            // Fetch user settings from user_settings_sylentx table
-            const settingsRows = await queryDb('SELECT settings FROM user_settings_sylentx WHERE user_id = ?', [user.id]);
-            const userSettings = settingsRows.length > 0 ? settingsRows[0].settings : null;
+      // Fetch user settings from user_settings_sylentx table
+      const userSettings = await UserSettings.findOne({ user_id: user._id });
 
-            res.json({
-                status: "success",
-                message: "Login successful",
-                user: {
-                    id: user.id,
-                    username: user.username,
-                    nickname: user.nickname,
-                    settings: userSettings,
-                    features: user.sylentx_features,
-                    pointers: memoryPointers
-                }
-            });
-        });
-    } catch (error) {
-        res.status(500).json({ status: "error", message: "Internal server error" });
-    }
+      res.json({
+        status: "success",
+        message: "Login successful",
+        user: {
+          id: user._id,
+          username: user.username,
+          nickname: user.nickname,
+          settings: userSettings ? userSettings.settings : null,
+          features: user.sylentx_features,
+          pointers: memoryPointers
+        }
+      });
+    });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: "Internal server error" });
+  }
 });
 
 app.post(`${BASE_PATH}/logout`, validateSession, (req, res) => {
-    req.session.destroy(err => {
-        if (err) return res.status(500).json({ status: "error", message: "Error logging out" });
-        notifyAdmins(`User logged out: ${req.session.username}, IP: ${req.ip}`);
-        res.json({ status: "success", message: "Logout successful" });
-    });
+  req.session.destroy(err => {
+    if (err) return res.status(500).json({ status: "error", message: "Error logging out" });
+    notifyAdmins(`User logged out: ${req.session.username}, IP: ${req.ip}`);
+    res.json({ status: "success", message: "Logout successful" });
+  });
 });
 
 app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
-    const { settings } = req.body;
-    const userSettings = settings;;
+  const { settings } = req.body;
+  const userSettings = settings;
 
-    if (!userSettings) {
-        return res.status(400).json({ status: "error", message: "Invalid settings" });
-    }
+  if (!userSettings) {
+    return res.status(400).json({ status: "error", message: "Invalid settings" });
+  }
 
-    try {
-        const rows = await queryDb('SELECT * FROM user_settings_sylentx WHERE user_id = ?', [req.session.userId]);
-        if (rows.length === 0) {
-            await queryDb('INSERT INTO user_settings_sylentx (user_id, settings) VALUES (?, ?)', [req.session.userId, userSettings]);
-        } else {
-            await queryDb('UPDATE user_settings_sylentx SET settings = ? WHERE user_id = ?', [userSettings, req.session.userId]);
-        }
-        logActivity(req.session.userId, 'settings_save', 'Settings saved', req.ip);
-        res.json({ status: "success", message: "Settings saved successfully" });
-    } catch (error) {
-        res.status(500).json({ status: "error", message: "Internal server error" });
+  try {
+    const existingSettings = await UserSettings.findOne({ user_id: req.session.userId });
+    if (!existingSettings) {
+      await new UserSettings({ user_id: req.session.userId, settings: userSettings }).save();
+    } else {
+      existingSettings.settings = userSettings;
+      await existingSettings.save();
     }
+    logActivity(req.session.userId, 'settings_save', 'Settings saved', req.ip);
+    res.json({ status: "success", message: "Settings saved successfully" });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: "Internal server error" });
+  }
 });
 
 app.get(`${BASE_PATH}`, (req, res) => res.redirect(`${BASE_PATH}/status`));
 
 initializeDatabase().then(() => {
-    initializeFeedbackTable();
+  initializeFeedbackTable();
 
-    const server = app.listen(PORT, () => {
-        console.log(`Server is running at http://localhost:${PORT}`);
-        notifyAdmins(`API server started at port ${PORT}`);
+  const server = app.listen(PORT, () => {
+    console.log(`Server is running at http://localhost:${PORT}`);
+    notifyAdmins(`API server started at port ${PORT}`);
+  });
+
+  const gracefulShutdown = () => {
+    console.log('Shutting down gracefully...');
+    server.close(async () => {
+      console.log('HTTP server closed.');
+      await mongoose.connection.close();
+      console.log('MongoDB connection closed.');
+      process.exit(0);
     });
+  };
 
-    const gracefulShutdown = () => {
-        console.log('Shutting down gracefully...');
-        server.close(async () => {
-            console.log('HTTP server closed.');
-            await pool.end();
-            console.log('Database connection pool closed.');
-            process.exit(0);
-        });
-    };
-
-    process.on('SIGINT', gracefulShutdown);
-    process.on('SIGTERM', gracefulShutdown);
+  process.on('SIGINT', gracefulShutdown);
+  process.on('SIGTERM', gracefulShutdown);
 });

@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
-const mysql = require('mysql2/promise');
 const axios = require('axios');
+const { User, NotificationQueue } = require('./models'); // Import Mongoose models
 require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
@@ -13,42 +13,12 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    database: process.env.DB_NAME,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
-
 const log = (message, error = null) => {
     const timestamp = new Date().toISOString();
     if (error) {
         console.error(`[${timestamp}] ${message}`, error);
     } else {
         console.log(`[${timestamp}] ${message}`);
-    }
-};
-
-const createNotificationQueueTable = async (connection) => {
-    const createTableSQL = `
-        CREATE TABLE IF NOT EXISTS notification_queue (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            to_email VARCHAR(255),
-            subject VARCHAR(255),
-            body TEXT,
-            type ENUM('email', 'admin_email', 'discord_log', 'discord_feedback', 'discord_login') NOT NULL,
-            status ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    `;
-    try {
-        await connection.execute(createTableSQL);
-        log('NOTIFIER: notification_queue table ensured');
-    } catch (error) {
-        log(`NOTIFIER: Error creating or updating notification_queue table: ${error.message}`, error);
     }
 };
 
@@ -107,14 +77,14 @@ const sendDiscordNotification = async (id, message, createdAt, type) => {
 const queueNotification = async (to, subject, text, type) => {
     log(`NOTIFIER: queueNotification called with type: ${type}`);
     try {
-        const connection = await pool.getConnection();
-        await createNotificationQueueTable(connection);
-        await connection.execute(
-            'INSERT INTO notification_queue (to_email, subject, body, type) VALUES (?, ?, ?, ?)',
-            [to, subject, text, type]
-        );
+        const notification = new NotificationQueue({
+            to_email: to,
+            subject,
+            body: text,
+            type
+        });
+        await notification.save();
         log(`NOTIFIER: ${type} notification queued successfully`);
-        connection.release();
     } catch (error) {
         log(`NOTIFIER: Error queuing ${type} notification: ${error.message}`, error);
     }
@@ -128,92 +98,53 @@ const notifyAdmins = async (message, type) => {
     await queueNotification(null, null, message, type || 'discord_log');
 };
 
-
 const processNotificationQueue = async () => {
     log('NOTIFIER: processNotificationQueue started');
     try {
-        const connection = await pool.getConnection();
-        await createNotificationQueueTable(connection);
-        const [rows] = await connection.execute(
-            'SELECT * FROM notification_queue WHERE status = "pending" OR status = "failed" LIMIT 3'
-        );
-        log(`NOTIFIER: Fetched ${rows.length} pending notifications`);
+        const notifications = await NotificationQueue.find({
+            status: { $in: ['pending', 'failed'] }
+        }).limit(3);
+
+        log(`NOTIFIER: Fetched ${notifications.length} pending notifications`);
 
         const processJob = async (job) => {
-            log(`NOTIFIER: Processing job id: ${job.id}`);
-            await connection.execute(
-                'UPDATE notification_queue SET status = "processing" WHERE id = ?',
-                [job.id]
-            );
+            log(`NOTIFIER: Processing job id: ${job._id}`);
+            job.status = 'processing';
+            await job.save();
 
             try {
                 if (job.type === 'email') {
                     await sendEmail(job.to_email, job.subject, job.body);
-                    await notifyAdmins(`[Processed Notification ID: ${job.id} (E-Mail)] Email sent to: ${job.to_email}: ${job.subject}`);
-                    await connection.execute(
-                        'UPDATE notification_queue SET status = "completed" WHERE id = ?',
-                        [job.id]
-                    );
+                    await notifyAdmins(`[Processed Notification ID: ${job._id} (E-Mail)] Email sent to: ${job.to_email}: ${job.subject}`);
+                    job.status = 'completed';
                 } else if (job.type.startsWith('discord')) {
-                    await sendDiscordNotification(job.id, job.body, job.created_at, job.type);
-                    await connection.execute(
-                        'UPDATE notification_queue SET status = "completed" WHERE id = ?',
-                        [job.id]
-                    );
+                    await sendDiscordNotification(job._id, job.body, job.created_at, job.type);
+                    job.status = 'completed';
                 }
-                log(`NOTIFIER: Job id: ${job.id} completed`);
+                log(`NOTIFIER: Job id: ${job._id} completed`);
             } catch (error) {
-                await connection.execute(
-                    'UPDATE notification_queue SET status = "failed" WHERE id = ?',
-                    [job.id]
-                );
-                log(`NOTIFIER: Job id: ${job.id} failed: ${error.message}`, error);
+                job.status = 'failed';
+                log(`NOTIFIER: Job id: ${job._id} failed: ${error.message}`, error);
             }
+            await job.save();
         };
 
-        await Promise.all(rows.map(processJob));
-        connection.release();
+        await Promise.all(notifications.map(processJob));
     } catch (error) {
         log(`NOTIFIER: Error processing notification queue: ${error.message}`, error);
     }
 };
 
-const checkDbConnection = async () => {
-    log('NOTIFIER: checkDbConnection called');
-    try {
-        const connection = await pool.getConnection();
-        log('NOTIFIER: Database is connected.');
-        connection.release();
-    } catch (error) {
-        log('NOTIFIER: Database is not connected. Attempting to reconnect...');
-        await initializeDbConnection();
-    }
-};
-
-const initializeDbConnection = async () => {
-    try {
-        const connection = await pool.getConnection();
-        await createNotificationQueueTable(connection);
-        log('NOTIFIER: Database connection established');
-        connection.release();
-    } catch (error) {
-        log(`NOTIFIER: Error establishing database connection: ${error.message}`, error);
-    }
-};
-
-initializeDbConnection().then(() => {
-    interval = setInterval(async () => {
-        await checkDbConnection();
-        await processNotificationQueue();
-    }, 2000);
-});
+// Start processing the notification queue
+const interval = setInterval(async () => {
+    await processNotificationQueue();
+}, 2000);
 
 process.on('exit', async () => {
     if (interval) {
         clearInterval(interval);
         log('NOTIFIER: Interval cleared');
     }
-    await pool.end();
     log('NOTIFIER: Database connection pool closed');
 });
 process.on('SIGINT', async () => {
@@ -221,7 +152,6 @@ process.on('SIGINT', async () => {
         clearInterval(interval);
         log('NOTIFIER: Interval cleared');
     }
-    await pool.end();
     log('NOTIFIER: Database connection pool closed');
 });
 process.on('SIGTERM', async () => {
@@ -229,7 +159,6 @@ process.on('SIGTERM', async () => {
         clearInterval(interval);
         log('NOTIFIER: Interval cleared');
     }
-    await pool.end();
     log('NOTIFIER: Database connection pool closed');
 });
 

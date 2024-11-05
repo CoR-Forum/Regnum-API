@@ -1,24 +1,15 @@
-// FILE: utils.js
-
-const { pool } = require('./db'); // Import pool from db.js
+const { ActivityLog } = require('./models'); // Import Mongoose models
 const { notifyAdmins } = require('./notificator');
-
-const queryDb = async (query, params) => {
-    const db = await pool.getConnection();
-    try {
-        const [rows] = await db.query(query, params);
-        return rows;
-    } catch (error) {
-        console.error("Database error:", error);
-        throw error;
-    } finally {
-        db.release();
-    }
-};
 
 const logActivity = async (userId, activityType, description, ipAddress) => {
     try {
-        await queryDb('INSERT INTO activity_logs (user_id, activity_type, description, ip_address) VALUES (?, ?, ?, ?)', [userId, activityType, description, ipAddress]);
+        const activityLog = new ActivityLog({
+            user_id: userId,
+            activity_type: activityType,
+            description,
+            ip_address: ipAddress
+        });
+        await activityLog.save();
         notifyAdmins(`User activity: ${description}, User ID: ${userId}, IP: ${ipAddress}`, 'discord_log');
     } catch (error) {
         console.error("Error logging activity:", error);
@@ -26,6 +17,5 @@ const logActivity = async (userId, activityType, description, ipAddress) => {
 };
 
 module.exports = {
-    queryDb,
     logActivity
 };

@@ -1,5 +1,5 @@
 const validator = require('validator');
-const { pool } = require('./db'); // Import the pool from db.js
+const { User } = require('./models'); // Import Mongoose models
 
 const validateUsername = (username) => {
     const usernameRegex = /^[a-zA-Z0-9]{3,20}$/;
@@ -33,24 +33,24 @@ const validateNickname = (nickname) => {
 };
 
 const checkUsernameExists = async (username) => {
-    const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
-    if (rows.length > 0) {
+    const user = await User.findOne({ username });
+    if (user) {
         return { exists: true, message: 'Username already exists.' };
     }
     return { exists: false };
 };
 
 const checkEmailExists = async (email) => {
-    const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
-    if (rows.length > 0) {
+    const user = await User.findOne({ email });
+    if (user) {
         return { exists: true, message: 'Email already exists.' };
     }
     return { exists: false };
 };
 
 const checkNicknameExists = async (nickname) => {
-    const [rows] = await pool.query('SELECT * FROM users WHERE nickname = ?', [nickname]);
-    if (rows.length > 0) {
+    const user = await User.findOne({ nickname });
+    if (user) {
         return { exists: true, message: 'Nickname already exists.' };
     }
     return { exists: false };
