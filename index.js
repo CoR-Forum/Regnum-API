@@ -1,7 +1,3 @@
-// FILE: index.js
-
-require('dotenv').config();
-
 const express = require('express');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
@@ -14,6 +10,7 @@ const { pool } = require('./db');
 const registerRoutes = require('./register');
 const passwordResetRoutes = require('./passwordReset');
 const feedbackRoutes = require('./feedback');
+const authRoutes = require('./auth'); // Add this line
 const { validateSession } = require('./middleware'); // Import validateSession from middleware.js
 
 const app = express();
@@ -136,6 +133,7 @@ app.use(updateLastActivity);
 app.use(`${BASE_PATH}`, registerRoutes);
 app.use(`${BASE_PATH}`, passwordResetRoutes);
 app.use(`${BASE_PATH}`, feedbackRoutes);
+app.use(`${BASE_PATH}`, authRoutes); // Add this line
 
 app.post(`${BASE_PATH}/login`, async (req, res) => {
     const { username, password } = req.body;
@@ -196,26 +194,6 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
                 }
             });
         });
-    } catch (error) {
-        res.status(500).json({ status: "error", message: "Internal server error" });
-    }
-});
-
-app.post(`${BASE_PATH}/logout`, validateSession, (req, res) => {
-    req.session.destroy(err => {
-        if (err) return res.status(500).json({ status: "error", message: "Error logging out" });
-        notifyAdmins(`User logged out: ${req.session.username}, IP: ${req.ip}`);
-        res.json({ status: "success", message: "Logout successful" });
-    });
-});
-
-app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
-    const { settings } = req.body;
-
-    try {
-        await queryDb('UPDATE users SET sylentx_settings = ? WHERE id = ?', [settings, req.session.userId]);
-        logActivity(req.session.userId, 'settings_save', 'Settings saved', req.ip);
-        res.json({ status: "success", message: "Settings saved successfully" });
     } catch (error) {
         res.status(500).json({ status: "error", message: "Internal server error" });
     }
