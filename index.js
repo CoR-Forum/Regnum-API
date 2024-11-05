@@ -112,7 +112,10 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
       for (const feature of features) {
         const pointer = await MemoryPointer.findOne({ feature });
         if (pointer) {
-          memoryPointers[feature] = pointer;
+          memoryPointers[feature] = {
+            address: pointer.address,
+            offsets: pointer.offsets
+          };
         }
       }
 
@@ -134,10 +137,12 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
           username: user.username,
           nickname: user.nickname,
           settings: userSettings ? userSettings.settings : null,
-          features: user.sylentx_features,
-          pointers: memoryPointers
+          features: features.map(feature => ({
+            name: feature,
+            pointer: memoryPointers[feature] || null
+          }))
         },
-        settings: settingsObject
+        system: settingsObject
       });
     });
   } catch (error) {
