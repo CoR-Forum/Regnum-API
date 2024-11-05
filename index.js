@@ -209,8 +209,6 @@ app.post(`${BASE_PATH}/logout`, validateSession, (req, res) => {
     });
 });
 
-app.get(`${BASE_PATH}`, (req, res) => res.send('API is running'));
-
 app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
     const { settings } = req.body;
 
@@ -222,6 +220,8 @@ app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
         res.status(500).json({ status: "error", message: "Internal server error" });
     }
 });
+
+app.get(`${BASE_PATH}`, (req, res) => res.redirect(`${BASE_PATH}/status`));
 
 initializeDatabase().then(() => {
     const server = app.listen(PORT, () => {
