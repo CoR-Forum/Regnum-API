@@ -53,7 +53,7 @@ const initializeDatabase = async () => {
         `CREATE TABLE IF NOT EXISTS user_settings_sylentx (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL UNIQUE,
-            settings TEXT NOT NULL,
+            settings TEXT DEFAULT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
@@ -208,7 +208,12 @@ app.post(`${BASE_PATH}/logout`, validateSession, (req, res) => {
 });
 
 app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
-    const { userSettings } = req.body;
+    const { settings } = req.body;
+    const userSettings = settings;;
+
+    if (!userSettings) {
+        return res.status(400).json({ status: "error", message: "Invalid settings" });
+    }
 
     try {
         const rows = await queryDb('SELECT * FROM user_settings_sylentx WHERE user_id = ?', [req.session.userId]);
