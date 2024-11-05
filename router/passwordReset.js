@@ -3,9 +3,9 @@
 const express = require('express');
 const crypto = require('crypto');
 const argon2 = require('argon2'); // Import the argon2 module
-const { validateEmail, validatePassword } = require('./validation');
-const { queryDb, logActivity } = require('./utils');
-const { mail } = require('./notificator');
+const { validateEmail, validatePassword } = require('../validation');
+const { queryDb, logActivity } = require('../utils');
+const { mail } = require('../notificator');
 
 const router = express.Router();
 

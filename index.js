@@ -11,10 +11,10 @@ const { mail, notifyAdmins } = require('./notificator');
 const { validateUsername, validatePassword } = require('./validation');
 const { queryDb, logActivity } = require('./utils');
 const { pool } = require('./db');
-const registerRoutes = require('./register');
-const passwordResetRoutes = require('./passwordReset');
-const { router: feedbackRoutes, initializeFeedbackTable } = require('./feedback');
-const { validateSession } = require('./middleware'); // Import validateSession from middleware.js
+const registerRoutes = require('./router/register');
+const passwordResetRoutes = require('./router/passwordReset');
+const { router: feedbackRoutes, initializeFeedbackTable } = require('./router/feedback');
+const { validateSession } = require('./middleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,10 +30,6 @@ app.use(session({
     store: sessionStore,
     cookie: { secure: false }
 }));
-
-const hashPassword = async (password) => {
-    return await argon2.hash(password); // Hash the password using argon2
-};
 
 const initializeDatabase = async () => {
     const queries = [
@@ -215,7 +211,7 @@ app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
 app.get(`${BASE_PATH}`, (req, res) => res.redirect(`${BASE_PATH}/status`));
 
 initializeDatabase().then(() => {
-    initializeFeedbackTable(); // Initialize feedback table
+    initializeFeedbackTable();
 
     const server = app.listen(PORT, () => {
         console.log(`Server is running at http://localhost:${PORT}`);

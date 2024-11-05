@@ -1,9 +1,9 @@
 // FILE: feedback.js
 
 const express = require('express');
-const { queryDb, logActivity } = require('./utils');
-const { notifyAdmins } = require('./notificator');
-const { validateSession } = require('./middleware'); // Import validateSession from middleware.js
+const { queryDb, logActivity } = require('../utils');
+const { notifyAdmins } = require('../notificator');
+const { validateSession } = require('../middleware'); // Import validateSession from middleware.js
 
 const router = express.Router();
 
