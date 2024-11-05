@@ -6,7 +6,6 @@ const express = require('express');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const mongoose = require('mongoose');
-const crypto = require('crypto');
 const argon2 = require('argon2');
 const { mail, notifyAdmins } = require('./notificator');
 const { validateUsername, validatePassword, validateEmail, validateNickname } = require('./validation');
