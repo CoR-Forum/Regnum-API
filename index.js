@@ -171,12 +171,15 @@ app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
 
 const os = require('os');
 
-app.get(`${BASE_PATH}`, (req, res) => {
+app.get(`${BASE_PATH}`, async (req, res) => {
     const load = os.loadavg();
     const uptime = os.uptime();
     const freeMemory = os.freemem();
     const totalMemory = os.totalmem();
     const cpus = os.cpus().length;
+
+    // Fetch database stats
+    const dbStats = await mongoose.connection.db.stats();
 
     res.json({
         status: "success",
@@ -187,6 +190,15 @@ app.get(`${BASE_PATH}`, (req, res) => {
             freeMemory: freeMemory,
             totalMemory: totalMemory,
             cpus: cpus
+        },
+        database: {
+            collections: dbStats.collections,
+            objects: dbStats.objects,
+            avgObjSize: dbStats.avgObjSize,
+            dataSize: dbStats.dataSize,
+            storageSize: dbStats.storageSize,
+            indexes: dbStats.indexes,
+            indexSize: dbStats.indexSize
         }
     });
 });
