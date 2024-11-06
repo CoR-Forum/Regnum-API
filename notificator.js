@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
 const axios = require('axios');
-const { User, NotificationQueue } = require('./models'); // Import Mongoose models
+const { User, NotificationQueue } = require('./models');
 require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
@@ -25,7 +25,7 @@ const log = (message, error = null) => {
 const sendEmail = async (to, subject, text) => {
     log(`NOTIFIER: sendEmail called with to: ${to}, subject: ${subject}`);
     try {
-        let info = await transporter.sendMail({
+        const info = await transporter.sendMail({
             from: `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_USER}>`,
             to,
             subject,
@@ -39,17 +39,15 @@ const sendEmail = async (to, subject, text) => {
 };
 
 const sendDiscordNotification = async (id, message, createdAt, type) => {
-    let webhookUrl;
-    switch (type) {
-        case 'discord_login':
-            webhookUrl = process.env.DISCORD_LOGIN_WEBHOOK_URL;
-            break;
-        case 'discord_log':
-            webhookUrl = process.env.DISCORD_LOG_WEBHOOK_URL;
-            break;
-        default:
-            log(`NOTIFIER: Unknown Discord notification type: ${type}`);
-            throw new Error(`Unknown Discord notification type: ${type}`);
+    const webhookUrls = {
+        discord_login: process.env.DISCORD_LOGIN_WEBHOOK_URL,
+        discord_log: process.env.DISCORD_LOG_WEBHOOK_URL
+    };
+
+    const webhookUrl = webhookUrls[type];
+    if (!webhookUrl) {
+        log(`NOTIFIER: Unknown Discord notification type: ${type}`);
+        throw new Error(`Unknown Discord notification type: ${type}`);
     }
 
     log(`NOTIFIER: sendDiscordNotification called with webhookUrl: ${webhookUrl}`);
@@ -58,12 +56,10 @@ const sendDiscordNotification = async (id, message, createdAt, type) => {
             title: `Notification ID: ${id}`,
             description: message,
             timestamp: createdAt,
-            color: 3447003 // Blue color
+            color: 3447003
         };
 
-        await axios.post(webhookUrl, {
-            embeds: [embed]
-        });
+        await axios.post(webhookUrl, { embeds: [embed] });
         log('NOTIFIER: Discord notification sent');
     } catch (error) {
         log(`NOTIFIER: Error sending Discord notification: ${error.message}`, error);
@@ -91,8 +87,8 @@ const mail = async (to, subject, text) => {
     await queueNotification(to, subject, text, 'email');
 };
 
-const notifyAdmins = async (message, type) => {
-    await queueNotification(null, null, message, type || 'discord_log');
+const notifyAdmins = async (message, type = 'discord_log') => {
+    await queueNotification(null, null, message, type);
 };
 
 const processNotificationQueue = async () => {
@@ -132,31 +128,20 @@ const processNotificationQueue = async () => {
     }
 };
 
-// Start processing the notification queue
 const interval = setInterval(async () => {
     await processNotificationQueue();
 }, 2000);
 
-process.on('exit', async () => {
+const clearIntervalAndLog = async () => {
     if (interval) {
         clearInterval(interval);
         log('NOTIFIER: Interval cleared');
     }
     log('NOTIFIER: Database connection pool closed');
-});
-process.on('SIGINT', async () => {
-    if (interval) {
-        clearInterval(interval);
-        log('NOTIFIER: Interval cleared');
-    }
-    log('NOTIFIER: Database connection pool closed');
-});
-process.on('SIGTERM', async () => {
-    if (interval) {
-        clearInterval(interval);
-        log('NOTIFIER: Interval cleared');
-    }
-    log('NOTIFIER: Database connection pool closed');
-});
+};
+
+process.on('exit', clearIntervalAndLog);
+process.on('SIGINT', clearIntervalAndLog);
+process.on('SIGTERM', clearIntervalAndLog);
 
 module.exports = { mail, notifyAdmins };
