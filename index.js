@@ -169,7 +169,27 @@ app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
   }
 });
 
-app.get(`${BASE_PATH}`, (req, res) => res.redirect(`${BASE_PATH}/status`));
+const os = require('os');
+
+app.get(`${BASE_PATH}`, (req, res) => {
+    const load = os.loadavg();
+    const uptime = os.uptime();
+    const freeMemory = os.freemem();
+    const totalMemory = os.totalmem();
+    const cpus = os.cpus().length;
+
+    res.json({
+        status: "success",
+        message: "API is running",
+        system: {
+            load: load,
+            uptime: uptime,
+            freeMemory: freeMemory,
+            totalMemory: totalMemory,
+            cpus: cpus
+        }
+    });
+});
 
 const server = app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
