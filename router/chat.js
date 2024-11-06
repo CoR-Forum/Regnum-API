@@ -2,19 +2,47 @@ const express = require('express');
 const { validateSession } = require('../middleware');
 const { PublicChat, User } = require('../models');
 const { logActivity } = require('../utils');
+const sanitizeHtml = require('sanitize-html');
+const rateLimit = require('express-rate-limit');
+const Joi = require('joi');
+const helmet = require('helmet');
 
 const router = express.Router();
 
-router.post('/send', validateSession, async (req, res) => {
-    const { message } = req.body;
-    const { userId } = req.session;
+// Apply Helmet middleware
+router.use(helmet());
 
-    if (!message || typeof message !== 'string') {
+// Rate limiter middleware
+const limiter = rateLimit({
+    windowMs: 1 * 5 * 1000, // 5 seconds
+    max: 1, // limit each IP to 1 request per windowMs
+    handler: (req, res) => {
+        res.status(429).json({
+            status: "error",
+            message: `Too many requests, please try again after ${Math.ceil(req.rateLimit.resetTime - Date.now() / 1000)} seconds`
+        });
+    }
+});
+router.use(limiter);
+
+// Validation schema
+const messageSchema = Joi.object({
+    message: Joi.string().min(1).max(500).required()
+});
+
+router.post('/send', validateSession, async (req, res) => {
+    const { error } = messageSchema.validate(req.body);
+    if (error) {
         return res.status(400).json({ status: "error", message: "Invalid message" });
     }
 
+    const { message } = req.body;
+    const { userId } = req.session;
+
+    const sanitizedMessage = sanitizeHtml(message);
+
     try {
-        const newMessage = new PublicChat({ user_id: userId, message });
+        const newMessage = new PublicChat({ user_id: userId, message: sanitizedMessage });
         await newMessage.save();
 
         logActivity(userId, 'chat_message', 'Message sent', req.ip);
