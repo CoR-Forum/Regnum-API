@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const argon2 = require('argon2');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const { body, validationResult } = require('express-validator');
 const { validateUsername, validatePassword, validateEmail, validateNickname, checkUsernameExists, checkEmailExists, checkNicknameExists } = require('../validation');
 const { logActivity } = require('../utils');
 const { mail, notifyAdmins } = require('../notificator');
@@ -11,7 +12,16 @@ const { User } = require('../models');
 const router = express.Router();
 
 // Apply security headers
-router.use(helmet());
+router.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: [],
+        },
+    },
+}));
 
 // Rate limiting middleware
 const limiter = rateLimit({
@@ -54,7 +64,17 @@ const checkExistence = async ({ username, email, nickname }) => {
     return { exists: false };
 };
 
-router.post('/register', async (req, res) => {
+router.post('/register', [
+    body('username').trim().escape(),
+    body('nickname').trim().escape(),
+    body('password').trim().escape(),
+    body('email').isEmail().normalizeEmail()
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ status: "error", message: errors.array() });
+    }
+
     const { username, nickname, password, email } = req.body;
 
     const inputValidation = validateInputs({ username, nickname, password, email });
