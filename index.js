@@ -13,7 +13,7 @@ const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
 const { validateSession, checkPermissions } = require('./middleware');
 const { User, UserSettings, MemoryPointer, Settings, initializeDatabase } = require('./models');
-const chatRoutes = require('./router/chat'); // Import chat routes
+const chatRoutes = require('./router/chat');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -61,14 +61,13 @@ const updateLastActivity = async (req, res, next) => {
 
 app.use(updateLastActivity);
 
-// Example route with permission check
 app.post(`${BASE_PATH}/admin`, validateSession, checkPermissions(['admin']), (req, res) => {
   res.json({ status: "success", message: "Admin access granted" });
 });
 
 app.use(`${BASE_PATH}`, registerRoutes);
 app.use(`${BASE_PATH}`, passwordResetRoutes);
-app.use(`${BASE_PATH}/chat`, chatRoutes); // Use chat routes
+app.use(`${BASE_PATH}/chat`, chatRoutes);
 
 app.post(`${BASE_PATH}/login`, async (req, res) => {
   const { username, password } = req.body;
@@ -185,7 +184,7 @@ const server = app.listen(PORT, () => {
 });
 
 initializeDatabase().then(() => {
-  // OLD (placeholder): initializeFeedbackTable();
+  // Initialization logic if needed
 });
 
 const gracefulShutdown = () => {
