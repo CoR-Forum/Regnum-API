@@ -23,16 +23,6 @@ router.use(helmet({
     },
 }));
 
-// Rate limiting middleware
-const limiter = rateLimit({
-    windowMs: 5 * 60 * 1000,
-    max: 5,
-    handler: (req, res) => {
-        const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000);
-        res.status(429).json({ status: "error", message: `Too many requests, please try again in ${retryAfter} seconds` });
-    }
-});
-
 const validateInputs = ({ username, nickname, password, email }) => {
     const validations = [
         validateUsername(username),
@@ -63,7 +53,7 @@ const checkExistence = async ({ username, email, nickname }) => {
     return { exists: false };
 };
 
-router.post('/register', limiter, [
+router.post('/register', [
     body('username').trim().escape(),
     body('nickname').trim().escape(),
     body('password').trim().escape(),
@@ -106,14 +96,35 @@ router.post('/register', limiter, [
         logActivity(newUser._id, 'registration', 'User registered', req.ip);
         notifyAdmins(`New user registered: ${username}, email: ${email}, nickname: ${nickname}, IP: ${req.ip}`);
 
-        res.json({ status: "success", message: "User registered successfully" });
+        // Apply rate limiting after successful registration
+        const limiter = rateLimit({
+            windowMs: 5 * 60 * 1000,
+            max: 5,
+            handler: (req, res) => {
+                const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000);
+                res.status(429).json({ status: "error", message: `Too many requests, please try again in ${retryAfter} seconds` });
+            }
+        });
+        limiter(req, res, () => {
+            res.json({ status: "success", message: "User registered successfully" });
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ status: "error", message: "Internal server error" });
     }
 });
 
-router.get('/activate/:token', limiter, async (req, res) => {
+// Higher rate limit for activation route
+const activationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // limit each IP to 10 activation requests per windowMs
+    handler: (req, res) => {
+        const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000);
+        res.status(429).json({ status: "error", message: `Too many requests, please try again in ${retryAfter} seconds` });
+    }
+});
+
+router.get('/activate/:token', activationLimiter, async (req, res) => {
     try {
         const user = await User.findOne({ activation_token: req.params.token });
         if (!user) return res.status(404).json({ status: "error", message: "Activation token not found" });
