@@ -172,9 +172,11 @@ app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
 const os = require('os');
 const disk = require('diskusage'); // You may need to install this package
 
+const startTime = Date.now();
 app.get(`${BASE_PATH}`, async (req, res) => {
   const load = os.loadavg();
   const uptime = os.uptime();
+  const apiUptime = Date.now() - startTime;
   const freeMemory = os.freemem();
   const totalMemory = os.totalmem();
   const cpus = os.cpus().length;
@@ -197,6 +199,10 @@ app.get(`${BASE_PATH}`, async (req, res) => {
   res.json({
       status: "success",
       message: "API is running",
+      api: {
+        uptime: apiUptime / 1000,
+        activeSessions: activeSessions
+    },
       system: {
           load: load,
           uptime: uptime,
@@ -219,9 +225,8 @@ app.get(`${BASE_PATH}`, async (req, res) => {
           storageSize: dbStats.storageSize,
           indexes: dbStats.indexes,
           indexSize: dbStats.indexSize
-      },
-      activeSessions: activeSessions
-  });
+      }
+    });
 });
 
 const server = app.listen(PORT, () => {
