@@ -41,9 +41,6 @@ const sendEmail = async (to, subject, text) => {
 const sendDiscordNotification = async (id, message, createdAt, type) => {
     let webhookUrl;
     switch (type) {
-        case 'discord_feedback':
-            webhookUrl = process.env.DISCORD_FEEDBACK_WEBHOOK_URL;
-            break;
         case 'discord_login':
             webhookUrl = process.env.DISCORD_LOGIN_WEBHOOK_URL;
             break;

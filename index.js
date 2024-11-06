@@ -11,8 +11,7 @@ const { validateUsername, validatePassword } = require('./validation');
 const { logActivity } = require('./utils');
 const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
-const { router: feedbackRoutes, initializeFeedbackTable } = require('./router/feedback');
-const { validateSession } = require('./middleware');
+const { validateSession, checkPermissions } = require('./middleware');
 const { User, UserSettings, MemoryPointer, Settings, initializeDatabase } = require('./models');
 const chatRoutes = require('./router/chat'); // Import chat routes
 
@@ -62,9 +61,13 @@ const updateLastActivity = async (req, res, next) => {
 
 app.use(updateLastActivity);
 
+// Example route with permission check
+app.post(`${BASE_PATH}/admin`, validateSession, checkPermissions(['admin']), (req, res) => {
+  res.json({ status: "success", message: "Admin access granted" });
+});
+
 app.use(`${BASE_PATH}`, registerRoutes);
 app.use(`${BASE_PATH}`, passwordResetRoutes);
-app.use(`${BASE_PATH}`, feedbackRoutes);
 app.use(`${BASE_PATH}/chat`, chatRoutes); // Use chat routes
 
 app.post(`${BASE_PATH}/login`, async (req, res) => {
@@ -182,7 +185,7 @@ const server = app.listen(PORT, () => {
 });
 
 initializeDatabase().then(() => {
-  initializeFeedbackTable();
+  // OLD (placeholder): initializeFeedbackTable();
 });
 
 const gracefulShutdown = () => {

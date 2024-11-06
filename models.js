@@ -19,10 +19,8 @@ const userSchema = new mongoose.Schema({
     nickname: { type: String },
     activation_token: { type: String },
     pw_reset_token: { type: String },
-    is_admin: { type: Boolean, default: false },
-    shoutbox_banned: { type: Boolean, default: false },
+    permissions: { type: [String], default: [] },
     created_at: { type: Date, default: Date.now },
-    updated_at: { type: Date, default: Date.now },
     banned: { type: Boolean, default: false },
     last_activity: { type: Date },
     sylentx_features: { type: String },
@@ -48,7 +46,6 @@ const licenseSchema = new mongoose.Schema({
     created_at: { type: Date, default: Date.now },
     activated_at: { type: Date },
     expires_at: { type: Date },
-    updated_at: { type: Date, default: Date.now }
 });
 
 const License = mongoose.model('License', licenseSchema);
@@ -64,7 +61,6 @@ const MemoryPointer = mongoose.model('MemoryPointer', memoryPointerSchema);
 const settingsSchema = new mongoose.Schema({
     name: { type: String, enum: ['status', 'latest_version'], unique: true },
     value: { type: String },
-    updated_at: { type: Date, default: Date.now }
 });
 
 const Settings = mongoose.model('Settings', settingsSchema);
