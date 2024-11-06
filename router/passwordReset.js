@@ -1,12 +1,24 @@
 const express = require('express');
 const crypto = require('crypto');
 const argon2 = require('argon2');
+const rateLimit = require('express-rate-limit');
 const { validateEmail, validatePassword } = require('../validation');
 const { logActivity } = require('../utils');
 const { mail } = require('../notificator');
-const { User } = require('../models'); // Import Mongoose models
+const { User, PasswordReset } = require('../models'); // Import Mongoose models
 
 const router = express.Router();
+
+// Rate limiting middleware
+const limiter = rateLimit({
+    windowMs: 1 * 30 * 1000,
+    max: 5,
+    handler: (req, res) => {
+        const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000);
+        res.status(429).json({ status: "error", message: `Too many requests, please try again in ${retryAfter} seconds` });
+    }
+});
+router.use(limiter);
 
 const handleError = (res, status, message) => {
     res.status(status).json({ status: "error", message });
@@ -16,7 +28,7 @@ const handleSuccess = (res, message) => {
     res.json({ status: "success", message });
 };
 
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', limiter, async (req, res) => {
     const { email } = req.body;
 
     const emailValidation = validateEmail(email);
@@ -26,23 +38,30 @@ router.post('/reset-password', async (req, res) => {
 
     try {
         const user = await User.findOne({ email });
-        if (!user) return handleError(res, 404, "Email not found");
+        if (user) {
+            const resetToken = crypto.randomBytes(64).toString('hex');
+            const hashedToken = await argon2.hash(resetToken);
+            const expiryDate = Date.now() + 3600000; // 1 hour expiry
 
-        const resetToken = crypto.randomBytes(64).toString('hex');
-        user.pw_reset_token = resetToken;
-        await user.save();
+            await PasswordReset.create({
+                user_id: user._id,
+                reset_token: hashedToken,
+                expires_at: expiryDate
+            });
 
-        await mail(email, 'Reset your password', `Use the following token to reset your password: ${resetToken}`);
+            await mail(email, 'Reset your password', `Use the following token to reset your password: ${resetToken}`);
 
-        logActivity(user._id, 'password_reset_request', 'Password reset requested', req.ip);
+            logActivity(user._id, 'password_reset_request', 'Password reset requested', req.ip);
+        }
 
-        handleSuccess(res, "Password reset token sent successfully");
+        // Always return success message to avoid email enumeration
+        handleSuccess(res, "If the email exists, a password reset token has been sent");
     } catch (error) {
         handleError(res, 500, "Internal server error");
     }
 });
 
-router.post('/reset-password/:token', async (req, res) => {
+router.post('/reset-password/:token', limiter, async (req, res) => {
     const { password } = req.body;
 
     const passwordValidation = validatePassword(password);
@@ -51,13 +70,18 @@ router.post('/reset-password/:token', async (req, res) => {
     }
 
     try {
-        const user = await User.findOne({ pw_reset_token: req.params.token });
-        if (!user) return handleError(res, 404, "Reset token not found");
+        const resetRecord = await PasswordReset.findOne({ reset_token: req.params.token, expires_at: { $gt: Date.now() } }).populate('user_id');
+        if (!resetRecord) return handleError(res, 404, "Reset token not found or expired");
+
+        const isTokenValid = await argon2.verify(resetRecord.reset_token, req.params.token);
+        if (!isTokenValid) return handleError(res, 400, "Invalid reset token");
 
         const hashedPassword = await argon2.hash(password);
+        const user = resetRecord.user_id;
         user.password = hashedPassword;
-        user.pw_reset_token = null;
         await user.save();
+
+        await PasswordReset.deleteOne({ _id: resetRecord._id });
 
         logActivity(user._id, 'password_reset', 'Password reset', req.ip);
 

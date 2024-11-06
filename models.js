@@ -18,7 +18,6 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     nickname: { type: String },
     activation_token: { type: String },
-    pw_reset_token: { type: String },
     permissions: { type: [String], default: [] },
     created_at: { type: Date, default: Date.now },
     banned: { type: Boolean, default: false },
@@ -28,6 +27,14 @@ const userSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model('User', userSchema);
+
+const passwordResetSchema = new mongoose.Schema({
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    reset_token: { type: String },
+    expires_at: { type: Date }
+});
+
+const PasswordReset = mongoose.model('PasswordReset', passwordResetSchema);
 
 // schema for license activation keys to enable features
 const licensesSchema = new mongoose.Schema({
@@ -143,6 +150,7 @@ const initializeDatabase = async () => {
 
 module.exports = {
     User,
+    PasswordReset,
     UserSettings,
     Licenses,
     MemoryPointer,
