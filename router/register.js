@@ -8,40 +8,48 @@ const { User } = require('../models'); // Import Mongoose models
 
 const router = express.Router();
 
+const validateInputs = ({ username, nickname, password, email }) => {
+    const validations = [
+        validateUsername(username),
+        validatePassword(password),
+        validateEmail(email),
+        validateNickname(nickname)
+    ];
+
+    for (const validation of validations) {
+        if (!validation.valid) {
+            return { valid: false, message: validation.message };
+        }
+    }
+    return { valid: true };
+};
+
+const checkExistence = async ({ username, email, nickname }) => {
+    const [usernameExists, emailExists, nicknameExists] = await Promise.all([
+        checkUsernameExists(username),
+        checkEmailExists(email),
+        checkNicknameExists(nickname)
+    ]);
+
+    if (usernameExists.exists) return { exists: true, message: usernameExists.message };
+    if (emailExists.exists) return { exists: true, message: emailExists.message };
+    if (nicknameExists.exists) return { exists: true, message: nicknameExists.message };
+
+    return { exists: false };
+};
+
 router.post('/register', async (req, res) => {
     const { username, nickname, password, email } = req.body;
 
-    const usernameValidation = validateUsername(username);
-    const passwordValidation = validatePassword(password);
-    const emailValidation = validateEmail(email);
-    const nicknameValidation = validateNickname(nickname);
-
-    if (!usernameValidation.valid) {
-        return res.status(400).json({ status: "error", message: usernameValidation.message });
-    }
-    if (!passwordValidation.valid) {
-        return res.status(400).json({ status: "error", message: passwordValidation.message });
-    }
-    if (!emailValidation.valid) {
-        return res.status(400).json({ status: "error", message: emailValidation.message });
-    }
-    if (!nicknameValidation.valid) {
-        return res.status(400).json({ status: "error", message: nicknameValidation.message });
+    const inputValidation = validateInputs({ username, nickname, password, email });
+    if (!inputValidation.valid) {
+        return res.status(400).json({ status: "error", message: inputValidation.message });
     }
 
     try {
-        const usernameExists = await checkUsernameExists(username);
-        const emailExists = await checkEmailExists(email);
-        const nicknameExists = await checkNicknameExists(nickname);
-
-        if (usernameExists.exists) {
-            return res.status(400).json({ status: "error", message: usernameExists.message });
-        }
-        if (emailExists.exists) {
-            return res.status(400).json({ status: "error", message: emailExists.message });
-        }
-        if (nicknameExists.exists) {
-            return res.status(400).json({ status: "error", message: nicknameExists.message });
+        const existenceCheck = await checkExistence({ username, email, nickname });
+        if (existenceCheck.exists) {
+            return res.status(400).json({ status: "error", message: existenceCheck.message });
         }
 
         const activationToken = crypto.randomBytes(64).toString('hex');
@@ -61,11 +69,11 @@ router.post('/register', async (req, res) => {
         await mail(email, 'Activate your account', `Click here to activate your account: ${activationLink}`);
 
         logActivity(newUser._id, 'registration', 'User registered', req.ip);
-
         notifyAdmins(`New user registered: ${username}, email: ${email}, nickname: ${nickname}, IP: ${req.ip}`);
 
         res.json({ status: "success", message: "User registered successfully" });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ status: "error", message: "Internal server error" });
     }
 });
@@ -81,6 +89,7 @@ router.get('/activate/:token', async (req, res) => {
         logActivity(user._id, 'account_activation', 'Account activated', req.ip);
         res.json({ status: "success", message: "Account activated successfully" });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ status: "error", message: "Internal server error" });
     }
 });
