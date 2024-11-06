@@ -12,7 +12,7 @@ const { logActivity } = require('./utils');
 const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
 const { validateSession, checkPermissions } = require('./middleware');
-const { User, UserSettings, MemoryPointer, Settings, initializeDatabase } = require('./models');
+const { User, UserSettings, MemoryPointer, Settings, Licenses, initializeDatabase } = require('./models');
 const chatRoutes = require('./router/chat');
 
 const app = express();
@@ -97,7 +97,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
       notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`, 'discord_login');
 
-      const features = user.sylentx_features ? user.sylentx_features.split(',') : [];
+      const features = user.sylentx_features || [];
       const memoryPointers = {};
       for (const feature of features) {
         const pointer = await MemoryPointer.findOne({ feature });
@@ -144,6 +144,42 @@ app.post(`${BASE_PATH}/logout`, validateSession, (req, res) => {
     notifyAdmins(`User logged out: ${req.session.username}, IP: ${req.ip}`);
     res.json({ status: "success", message: "Logout successful" });
   });
+});
+
+app.put(`${BASE_PATH}/license/activate`, validateSession, async (req, res) => {
+  const { licenseKey } = req.body;
+
+  if (!licenseKey) {
+    return res.status(400).json({ status: "error", message: "Invalid license key" });
+  }
+
+  try {
+    const license = await Licenses.findOne({ key: licenseKey });
+    if (!license) {
+      return res.status(404).json({ status: "error", message: "License not found" });
+    }
+
+    if (license.activated_by) {
+      return res.status(403).json({ status: "error", message: "License already in use" });
+    }
+
+    license.activated_by = req.session.userId;
+    license.activated_at = new Date();
+    await license.save();
+
+    const user = await User.findOne({ _id: req.session.userId });
+    if (Array.isArray(license.features)) {
+      user.sylentx_features = license.features;
+    } else {
+      user.sylentx_features = [];
+    }
+    await user.save();
+
+    logActivity(req.session.userId, 'license_activate', 'License activated', req.ip);
+    res.json({ status: "success", message: "License activated successfully" });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: "Internal server error: " + error.message });
+  }
 });
 
 app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {

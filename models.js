@@ -23,11 +23,43 @@ const userSchema = new mongoose.Schema({
     created_at: { type: Date, default: Date.now },
     banned: { type: Boolean, default: false },
     last_activity: { type: Date },
-    sylentx_features: { type: String },
+    sylentx_features: [{ type: String }],
     deleted: { type: Boolean, default: false }
 });
 
 const User = mongoose.model('User', userSchema);
+
+// schema for license activation keys to enable features
+const licensesSchema = new mongoose.Schema({
+    key: { type: String, required: true, unique: true },
+    activated_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    activated_at: { type: Date },
+    features: [{ type: String, required: true }],
+    expires_at: { type: Date }
+});
+
+const Licenses = mongoose.model('Licenses', licensesSchema);
+
+// add default license keys here
+const defaultLicenses = [
+    {
+        key: '123',
+        features: ['zoom', 'pov', 'moonwalk'],
+        expires_at: new Date('2024-12-31')
+    }
+];
+
+const initializeLicenses = async () => {
+    for (const license of defaultLicenses) {
+        const existingLicense = await Licenses.findOne({ key: license.key });
+        if (!existingLicense) {
+            await new Licenses(license).save();
+        }
+    }
+    console.log("Default licenses inserted or updated successfully.");
+}
+
+initializeLicenses();
 
 const userSettingsSchema = new mongoose.Schema({
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true },
@@ -108,6 +140,7 @@ const initializeDatabase = async () => {
 module.exports = {
     User,
     UserSettings,
+    Licenses,
     MemoryPointer,
     Settings,
     ActivityLog,
