@@ -32,7 +32,6 @@ const limiter = rateLimit({
         res.status(429).json({ status: "error", message: `Too many requests, please try again in ${retryAfter} seconds` });
     }
 });
-router.use(limiter);
 
 const validateInputs = ({ username, nickname, password, email }) => {
     const validations = [
@@ -64,7 +63,7 @@ const checkExistence = async ({ username, email, nickname }) => {
     return { exists: false };
 };
 
-router.post('/register', [
+router.post('/register', limiter, [
     body('username').trim().escape(),
     body('nickname').trim().escape(),
     body('password').trim().escape(),
@@ -114,7 +113,7 @@ router.post('/register', [
     }
 });
 
-router.get('/activate/:token', async (req, res) => {
+router.get('/activate/:token', limiter, async (req, res) => {
     try {
         const user = await User.findOne({ activation_token: req.params.token });
         if (!user) return res.status(404).json({ status: "error", message: "Activation token not found" });

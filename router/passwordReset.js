@@ -18,7 +18,6 @@ const limiter = rateLimit({
         res.status(429).json({ status: "error", message: `Too many requests, please try again in ${retryAfter} seconds` });
     }
 });
-router.use(limiter);
 
 const handleError = (res, status, message) => {
     res.status(status).json({ status: "error", message });
