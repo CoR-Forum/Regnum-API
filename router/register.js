@@ -84,6 +84,8 @@ router.get('/activate/:token', async (req, res) => {
         if (!user) return res.status(404).json({ status: "error", message: "Activation token not found" });
 
         user.activation_token = null;
+        user.sylentx_features = 'zoom'; // Add sylentx_features zoom to the user
+
         await user.save();
 
         logActivity(user._id, 'account_activation', 'Account activated', req.ip);
