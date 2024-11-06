@@ -1,8 +1,5 @@
-// FILE: models.js
-
 const mongoose = require('mongoose');
 
-// Define NotificationQueue model
 const notificationQueueSchema = new mongoose.Schema({
     to_email: { type: String },
     subject: { type: String },
@@ -15,7 +12,6 @@ const notificationQueueSchema = new mongoose.Schema({
 
 const NotificationQueue = mongoose.model('NotificationQueue', notificationQueueSchema);
 
-// Define other models similarly
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
@@ -35,7 +31,6 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
-// Define other models similarly
 const userSettingsSchema = new mongoose.Schema({
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true },
     settings: { type: String },
@@ -84,8 +79,15 @@ const activityLogSchema = new mongoose.Schema({
 
 const ActivityLog = mongoose.model('ActivityLog', activityLogSchema);
 
+const publicChatSchema = new mongoose.Schema({
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    message: { type: String, required: true },
+    timestamp: { type: Date, default: Date.now }
+});
+
+const PublicChat = mongoose.model('PublicChat', publicChatSchema);
+
 const initializeDatabase = async () => {
-  // Insert or update default memory pointers
   const defaultMemoryPointers = [
     { feature: 'zoom', address: '0x68FC54', offsets: '' }
   ];
@@ -102,23 +104,22 @@ const initializeDatabase = async () => {
   }
   console.log("Default memory pointers inserted or updated successfully.");
 
-  // Insert or update default settings
-    const defaultSettings = [
-        { name: 'status', value: 'online' },
-        { name: 'latest_version', value: '0.0.0' }
-    ];
-    if (defaultSettings) {
-        for (const setting of defaultSettings) {
-            const existingSetting = await Settings.findOne({ name: setting.name });
-            if (!existingSetting) {
-                await new Settings(setting).save();
-            } else {
-                existingSetting.value = setting.value;
-                await existingSetting.save();
-            }
-        }
-        console.log("Default settings inserted or updated successfully.");
+  const defaultSettings = [
+    { name: 'status', value: 'online' },
+    { name: 'latest_version', value: '0.0.0' }
+  ];
+  if (defaultSettings) {
+    for (const setting of defaultSettings) {
+      const existingSetting = await Settings.findOne({ name: setting.name });
+      if (!existingSetting) {
+        await new Settings(setting).save();
+      } else {
+        existingSetting.value = setting.value;
+        await existingSetting.save();
+      }
     }
+    console.log("Default settings inserted or updated successfully.");
+  }
 };
 
 module.exports = {
@@ -129,5 +130,6 @@ module.exports = {
     Settings,
     ActivityLog,
     NotificationQueue,
-    initializeDatabase // Export initializeDatabase function
+    PublicChat,
+    initializeDatabase
 };
