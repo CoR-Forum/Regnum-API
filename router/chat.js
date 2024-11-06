@@ -23,14 +23,13 @@ const limiter = rateLimit({
         });
     }
 });
-router.use(limiter);
 
 // Validation schema
 const messageSchema = Joi.object({
     message: Joi.string().min(1).max(500).required()
 });
 
-router.post('/send', validateSession, async (req, res) => {
+router.post('/send', validateSession, limiter, async (req, res) => {
     const { error } = messageSchema.validate(req.body);
     if (error) {
         return res.status(400).json({ status: "error", message: "Invalid message" });
