@@ -32,29 +32,17 @@ const validateNickname = (nickname) => {
     return { valid: true };
 };
 
-const checkUsernameExists = async (username) => {
-    const user = await User.findOne({ username });
+const checkFieldExists = async (field, value) => {
+    const user = await User.findOne({ [field]: value });
     if (user) {
-        return { exists: true, message: 'Username already exists.' };
+        return { exists: true, message: `${field.charAt(0).toUpperCase() + field.slice(1)} already exists.` };
     }
     return { exists: false };
 };
 
-const checkEmailExists = async (email) => {
-    const user = await User.findOne({ email });
-    if (user) {
-        return { exists: true, message: 'Email already exists.' };
-    }
-    return { exists: false };
-};
-
-const checkNicknameExists = async (nickname) => {
-    const user = await User.findOne({ nickname });
-    if (user) {
-        return { exists: true, message: 'Nickname already exists.' };
-    }
-    return { exists: false };
-};
+const checkUsernameExists = async (username) => checkFieldExists('username', username);
+const checkEmailExists = async (email) => checkFieldExists('email', email);
+const checkNicknameExists = async (nickname) => checkFieldExists('nickname', nickname);
 
 module.exports = {
     validateUsername,
