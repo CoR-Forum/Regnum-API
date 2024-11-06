@@ -5,18 +5,31 @@ const { logActivity } = require('../utils');
 const sanitizeHtml = require('sanitize-html');
 const Joi = require('joi');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const router = express.Router();
 
 // Apply Helmet middleware
 router.use(helmet());
 
+// Rate limiter middleware
+const sendMessageLimiter = rateLimit({
+    windowMs: 1 * 5 * 1000, // 5 seconds window
+    max: 1, // limit each IP to 1 request per windowMs
+    handler: (req, res) => {
+        res.status(429).json({
+            status: "error",
+            message: `Too many messages sent, please try again in ${Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000)} seconds`
+        });
+    }
+});
+
 // Validation schema
 const messageSchema = Joi.object({
     message: Joi.string().min(1).max(500).required()
 });
 
-router.post('/send', validateSession, async (req, res) => {
+router.post('/send', validateSession, sendMessageLimiter, async (req, res) => {
     const { error } = messageSchema.validate(req.body);
     if (error) {
         return res.status(400).json({ status: "error", message: "Invalid message" });
