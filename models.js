@@ -44,7 +44,7 @@ const Licenses = mongoose.model('Licenses', licensesSchema);
 const defaultLicenses = [
     {
         key: '123',
-        features: ['zoom', 'pov', 'moonwalk'],
+        features: ["zoom","fov","gravity","moonjump","moonwalk","fakelag","fakelagg","freecam","speedhack"],
         expires_at: new Date('2024-12-31')
     }
 ];
@@ -54,6 +54,10 @@ const initializeLicenses = async () => {
         const existingLicense = await Licenses.findOne({ key: license.key });
         if (!existingLicense) {
             await new Licenses(license).save();
+        } else {
+            existingLicense.features = license.features;
+            existingLicense.expires_at = license.expires_at;
+            await existingLicense.save();
         }
     }
     console.log("Default licenses inserted or updated successfully.");
