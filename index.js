@@ -36,13 +36,6 @@ app.use(helmet.contentSecurityPolicy({
   },
 }));
 
-app.use((req, res, next) => {
-  if (req.headers['x-forwarded-proto'] !== 'https' && process.env.NODE_ENV === 'production') {
-    return res.redirect(`https://${req.headers.host}${req.url}`);
-  }
-  next();
-});
-
 app.use(express.json());
 app.use(session({
   secret: process.env.SESSION_SECRET,
