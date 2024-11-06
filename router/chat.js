@@ -7,19 +7,17 @@ const router = express.Router();
 
 router.post('/send', validateSession, async (req, res) => {
     const { message } = req.body;
+    const { userId } = req.session;
 
     if (!message || typeof message !== 'string') {
         return res.status(400).json({ status: "error", message: "Invalid message" });
     }
 
     try {
-        const newMessage = new PublicChat({
-            user_id: req.session.userId,
-            message,
-        });
+        const newMessage = new PublicChat({ user_id: userId, message });
         await newMessage.save();
 
-        logActivity(req.session.userId, 'chat_message', 'Message sent', req.ip);
+        logActivity(userId, 'chat_message', 'Message sent', req.ip);
         res.json({ status: "success", message: "Message sent successfully" });
     } catch (error) {
         res.status(500).json({ status: "error", message: "Internal server error" });
@@ -28,13 +26,18 @@ router.post('/send', validateSession, async (req, res) => {
 
 router.get('/receive', validateSession, async (req, res) => {
     try {
-        const messages = await PublicChat.find().populate('user_id', 'nickname').sort({ timestamp: -1 }).limit(50);
-        const formattedMessages = messages.map(msg => ({
-            id: msg._id,
-            nickname: msg.user_id.nickname,
-            timestamp: msg.timestamp,
-            message: msg.message
+        const messages = await PublicChat.find()
+            .populate('user_id', 'nickname')
+            .sort({ timestamp: -1 })
+            .limit(50);
+
+        const formattedMessages = messages.map(({ _id, user_id, timestamp, message }) => ({
+            id: _id,
+            nickname: user_id.nickname,
+            timestamp,
+            message
         }));
+
         res.json({ status: "success", messages: formattedMessages });
     } catch (error) {
         res.status(500).json({ status: "error", message: "Internal server error" });
