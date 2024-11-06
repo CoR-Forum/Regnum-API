@@ -38,18 +38,6 @@ const userSettingsSchema = new mongoose.Schema({
 
 const UserSettings = mongoose.model('UserSettings', userSettingsSchema);
 
-const licenseSchema = new mongoose.Schema({
-    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    license_key: { type: String, unique: true },
-    license_type: { type: String, enum: ['lifetime', 'minutely', 'hourly', 'daily', 'weekly', 'monthly', 'yearly'] },
-    license_features: { type: String },
-    created_at: { type: Date, default: Date.now },
-    activated_at: { type: Date },
-    expires_at: { type: Date },
-});
-
-const License = mongoose.model('License', licenseSchema);
-
 const memoryPointerSchema = new mongoose.Schema({
     feature: { type: String },
     address: { type: String },
@@ -121,7 +109,6 @@ const initializeDatabase = async () => {
 module.exports = {
     User,
     UserSettings,
-    License,
     MemoryPointer,
     Settings,
     ActivityLog,
