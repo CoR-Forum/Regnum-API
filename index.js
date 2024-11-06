@@ -1,27 +1,24 @@
-// FILE: index.js
-
 require('dotenv').config();
 
 const express = require('express');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const mongoose = require('mongoose');
-const helmet = require('helmet'); // Add helmet
+const helmet = require('helmet');
 const argon2 = require('argon2');
 const { mail, notifyAdmins } = require('./notificator');
-const { validateUsername, validatePassword, validateEmail, validateNickname } = require('./validation');
+const { validateUsername, validatePassword } = require('./validation');
 const { logActivity } = require('./utils');
 const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
 const { router: feedbackRoutes, initializeFeedbackTable } = require('./router/feedback');
 const { validateSession } = require('./middleware');
-const { User, UserSettings, License, MemoryPointer, Settings, ActivityLog, initializeDatabase } = require('./models'); // Import models and initializeDatabase
+const { User, UserSettings, MemoryPointer, Settings, initializeDatabase } = require('./models');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BASE_PATH = process.env.BASE_PATH || '/api';
 
-// Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI).then(() => {
   console.log('MongoDB connected');
 }).catch((error) => {
@@ -29,10 +26,8 @@ mongoose.connect(process.env.MONGO_URI).then(() => {
   process.exit(1);
 });
 
-// Use Helmet to set various HTTP headers for security
 app.use(helmet());
 
-// Set Content Security Policy (CSP)
 app.use(helmet.contentSecurityPolicy({
   directives: {
     defaultSrc: ["'self'"],
@@ -41,7 +36,6 @@ app.use(helmet.contentSecurityPolicy({
   },
 }));
 
-// Enforce HTTPS
 app.use((req, res, next) => {
   if (req.headers['x-forwarded-proto'] !== 'https' && process.env.NODE_ENV === 'production') {
     return res.redirect(`https://${req.headers.host}${req.url}`);
@@ -88,7 +82,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
     const user = await User.findOne({ username });
     if (!user) return res.status(401).json({ status: "error", message: "Invalid username or password" });
 
-    const passwordMatch = await argon2.verify(user.password, password); // Verify the password using argon2
+    const passwordMatch = await argon2.verify(user.password, password);
     if (!passwordMatch) return res.status(401).json({ status: "error", message: "Invalid username or password" });
 
     if (user.activation_token) return res.status(403).json({ status: "error", message: "Account not activated" });
@@ -106,7 +100,6 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
       notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`, 'discord_login');
 
-      // Fetch memory pointers for available sylentx_features
       const features = user.sylentx_features ? user.sylentx_features.split(',') : [];
       const memoryPointers = {};
       for (const feature of features) {
@@ -119,14 +112,12 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
         }
       }
 
-      // Fetch settings
       const settings = await Settings.find();
       const settingsObject = {};
       settings.forEach(setting => {
         settingsObject[setting.name] = setting.value;
       });
 
-      // Fetch user settings from user_settings_sylentx table
       const userSettings = await UserSettings.findOne({ user_id: user._id });
 
       res.json({
@@ -183,24 +174,24 @@ app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
 
 app.get(`${BASE_PATH}`, (req, res) => res.redirect(`${BASE_PATH}/status`));
 
+const server = app.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}`);
+  notifyAdmins(`API server started at port ${PORT}`);
+});
+
 initializeDatabase().then(() => {
   initializeFeedbackTable();
-
-  const server = app.listen(PORT, () => {
-    console.log(`Server is running at http://localhost:${PORT}`);
-    notifyAdmins(`API server started at port ${PORT}`);
-  });
-
-  const gracefulShutdown = () => {
-    console.log('Shutting down gracefully...');
-    server.close(async () => {
-      console.log('HTTP server closed.');
-      await mongoose.connection.close();
-      console.log('MongoDB connection closed.');
-      process.exit(0);
-    });
-  };
-
-  process.on('SIGINT', gracefulShutdown);
-  process.on('SIGTERM', gracefulShutdown);
 });
+
+const gracefulShutdown = () => {
+  console.log('Shutting down gracefully...');
+  server.close(async () => {
+    console.log('HTTP server closed.');
+    await mongoose.connection.close();
+    console.log('MongoDB connection closed.');
+    process.exit(0);
+  });
+};
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
