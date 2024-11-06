@@ -12,23 +12,32 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+    - run: echo "🔄 Checking out code..."
 
     - name: Set up Node.js
       uses: actions/setup-node@v2
       with:
         node-version: '18'
+    - run: echo "🔧 Node.js 18 set up successfully."
 
     - name: Install dependencies
-      run: npm install
+      run: |
+        echo "📦 Installing dependencies..."
+        npm install
 
     - name: Run tests
-      run: npm test
+      run: |
+        echo "✅ Running tests..."
+        npm test
 
     - name: Debug SERVER_PORT
-      run: echo "SERVER_PORT=${{ vars.SERVER_PORT }}"
+      run: |
+        echo "🔍 Debugging SERVER_PORT environment variable..."
+        echo "SERVER_PORT=${{ vars.SERVER_PORT }}"
 
     - name: Add server to known hosts
       run: |
+        echo "🔐 Adding server to known hosts..."
         mkdir -p ~/.ssh
         ssh-keyscan -p ${{ vars.SERVER_PORT }} ${{ vars.SERVER_HOST }} >> ~/.ssh/known_hosts
 
@@ -36,7 +45,22 @@ jobs:
       env:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       run: |
+        echo "🚀 Deploying to server..."
         echo "$SSH_PRIVATE_KEY" > private_key
         chmod 600 private_key
         rsync -avz -e "ssh -i private_key -p ${{ vars.SERVER_PORT }}" --exclude='.git' --exclude='node_modules' ./ ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }}:${{ vars.DEPLOY_PATH }}
         ssh -i private_key -p ${{ vars.SERVER_PORT }} ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} "curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash - && sudo apt-get install -y nodejs && sudo npm install -g pm2 && cd ${{ vars.DEPLOY_PATH }} && npm install && pm2 restart all --update-env"
+      run: echo "🎉 Deployment successful!"
+
+    - name: Send Success Notification
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.repos.createDispatchEvent({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            event_type: "deployment-success",
+            client_payload: {
+              message: "Sylent-X-API deployment to server succeeded on main branch."
+            }
+          })
