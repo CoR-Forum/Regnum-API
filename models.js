@@ -72,38 +72,37 @@ const publicChatSchema = new mongoose.Schema({
 const PublicChat = mongoose.model('PublicChat', publicChatSchema);
 
 const initializeDatabase = async () => {
-  const defaultMemoryPointers = [
-    { feature: 'zoom', address: '0x68FC54', offsets: '' }
-  ];
+    const defaultMemoryPointers = [
+        { feature: 'zoom', address: '0x68FC54', offsets: '' }
+    ];
 
-  for (const pointer of defaultMemoryPointers) {
-    const existingPointer = await MemoryPointer.findOne({ feature: pointer.feature });
-    if (!existingPointer) {
-      await new MemoryPointer(pointer).save();
-    } else {
-      existingPointer.address = pointer.address;
-      existingPointer.offsets = pointer.offsets;
-      await existingPointer.save();
+    for (const pointer of defaultMemoryPointers) {
+        const existingPointer = await MemoryPointer.findOne({ feature: pointer.feature });
+        if (!existingPointer) {
+            await new MemoryPointer(pointer).save();
+        } else {
+            existingPointer.address = pointer.address;
+            existingPointer.offsets = pointer.offsets;
+            await existingPointer.save();
+        }
     }
-  }
-  console.log("Default memory pointers inserted or updated successfully.");
+    console.log("Default memory pointers inserted or updated successfully.");
 
-  const defaultSettings = [
-    { name: 'status', value: 'online' },
-    { name: 'latest_version', value: '0.0.0' }
-  ];
-  if (defaultSettings) {
+    const defaultSettings = [
+        { name: 'status', value: 'online' },
+        { name: 'latest_version', value: '0.0.0' }
+    ];
+
     for (const setting of defaultSettings) {
-      const existingSetting = await Settings.findOne({ name: setting.name });
-      if (!existingSetting) {
-        await new Settings(setting).save();
-      } else {
-        existingSetting.value = setting.value;
-        await existingSetting.save();
-      }
+        const existingSetting = await Settings.findOne({ name: setting.name });
+        if (!existingSetting) {
+            await new Settings(setting).save();
+        } else {
+            existingSetting.value = setting.value;
+            await existingSetting.save();
+        }
     }
     console.log("Default settings inserted or updated successfully.");
-  }
 };
 
 module.exports = {
