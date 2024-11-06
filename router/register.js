@@ -1,12 +1,28 @@
 const express = require('express');
 const crypto = require('crypto');
 const argon2 = require('argon2');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 const { validateUsername, validatePassword, validateEmail, validateNickname, checkUsernameExists, checkEmailExists, checkNicknameExists } = require('../validation');
 const { logActivity } = require('../utils');
 const { mail, notifyAdmins } = require('../notificator');
 const { User } = require('../models');
 
 const router = express.Router();
+
+// Apply security headers
+router.use(helmet());
+
+// Rate limiting middleware
+const limiter = rateLimit({
+    windowMs: 5 * 60 * 1000,
+    max: 5,
+    handler: (req, res) => {
+        const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000);
+        res.status(429).json({ status: "error", message: `Too many requests, please try again in ${retryAfter} seconds` });
+    }
+});
+router.use(limiter);
 
 const validateInputs = ({ username, nickname, password, email }) => {
     const validations = [
