@@ -170,37 +170,58 @@ app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
 });
 
 const os = require('os');
+const disk = require('diskusage'); // You may need to install this package
 
 app.get(`${BASE_PATH}`, async (req, res) => {
-    const load = os.loadavg();
-    const uptime = os.uptime();
-    const freeMemory = os.freemem();
-    const totalMemory = os.totalmem();
-    const cpus = os.cpus().length;
+  const load = os.loadavg();
+  const uptime = os.uptime();
+  const freeMemory = os.freemem();
+  const totalMemory = os.totalmem();
+  const cpus = os.cpus().length;
+  const nodeVersion = process.version;
+  const envVariables = {
+      NODE_ENV: process.env.NODE_ENV,
+      BASE_URL: process.env.BASE_URL,
+      BASE_PATH: process.env.BASE_PATH
+  };
 
-    // Fetch database stats
-    const dbStats = await mongoose.connection.db.stats();
+  // Fetch disk usage
+  const diskUsage = await disk.check('/'); // Adjust the path as needed
 
-    res.json({
-        status: "success",
-        message: "API is running",
-        system: {
-            load: load,
-            uptime: uptime,
-            freeMemory: freeMemory,
-            totalMemory: totalMemory,
-            cpus: cpus
-        },
-        database: {
-            collections: dbStats.collections,
-            objects: dbStats.objects,
-            avgObjSize: dbStats.avgObjSize,
-            dataSize: dbStats.dataSize,
-            storageSize: dbStats.storageSize,
-            indexes: dbStats.indexes,
-            indexSize: dbStats.indexSize
-        }
-    });
+  // Fetch database stats
+  const dbStats = await mongoose.connection.db.stats();
+
+  // Fetch active sessions count
+  const activeSessions = await mongoose.connection.db.collection('sessions').countDocuments({});
+
+  res.json({
+      status: "success",
+      message: "API is running",
+      system: {
+          load: load,
+          uptime: uptime,
+          freeMemory: freeMemory,
+          totalMemory: totalMemory,
+          cpus: cpus,
+          diskUsage: {
+              free: diskUsage.free,
+              total: diskUsage.total,
+              available: diskUsage.available
+          },
+          nodeVersion: nodeVersion,
+          envVariables: envVariables
+      },
+      database: {
+          collections: dbStats.collections,
+          objects: dbStats.objects,
+          avgObjSize: dbStats.avgObjSize,
+          dataSize: dbStats.dataSize,
+          storageSize: dbStats.storageSize,
+          indexes: dbStats.indexes,
+          indexSize: dbStats.indexSize
+      },
+      activeSessions: activeSessions
+  });
 });
 
 const server = app.listen(PORT, () => {
