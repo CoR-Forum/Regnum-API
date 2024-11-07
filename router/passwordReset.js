@@ -9,9 +9,6 @@ const { RateLimiter } = require('../modules/rateLimiter'); // Import the RateLim
 
 const router = express.Router();
 
-// Rate limiting middleware
-const limiter = RateLimiter(5, 30); // 5 requests per 30 seconds
-
 const handleError = (res, status, message) => {
     res.status(status).json({ status: "error", message });
 };
@@ -20,7 +17,7 @@ const handleSuccess = (res, message) => {
     res.json({ status: "success", message });
 };
 
-router.post('/reset-password', limiter, async (req, res) => {
+router.post('/reset-password', RateLimiter(3, 60), async (req, res) => {
     const { email } = req.body;
 
     const emailValidation = validateEmail(email);
@@ -53,7 +50,7 @@ router.post('/reset-password', limiter, async (req, res) => {
     }
 });
 
-router.post('/reset-password/:token', limiter, async (req, res) => {
+router.post('/reset-password/:token', RateLimiter(1, 60), async (req, res) => {
     const { password } = req.body;
 
     const passwordValidation = validatePassword(password);
