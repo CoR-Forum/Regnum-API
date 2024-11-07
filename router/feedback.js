@@ -3,7 +3,7 @@ const { validateSession } = require('../middleware');
 const { Feedback } = require('../models');
 const { logActivity } = require('../utils');
 const xss = require('xss');
-const { RateLimiter } = require('../modules/rateLimiter'); // Import the RateLimiter function
+const { RateLimiter } = require('../modules/rateLimiter');
 
 const router = express.Router();
 
@@ -14,7 +14,6 @@ router.post('/feedback', RateLimiter(1, 3600), validateSession, async (req, res)
     return res.status(400).json({ status: "error", message: "Message is required" });
   }
 
-  // Sanitize input
   const sanitizedMessage = xss(message);
   const sanitizedLogs = logs ? xss(logs) : null;
 
@@ -31,7 +30,7 @@ router.post('/feedback', RateLimiter(1, 3600), validateSession, async (req, res)
     logActivity(req.session.userId, 'feedback_submit', 'Feedback submitted', req.ip);
     res.json({ status: "success", message: "Feedback submitted successfully" });
   } catch (error) {
-    console.error(error); // Log the error for debugging
+    console.error(error);
     res.status(500).json({ status: "error", message: "Internal server error" });
   }
 });
