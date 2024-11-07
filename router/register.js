@@ -7,11 +7,10 @@ const { validateUsername, validatePassword, validateEmail, validateNickname, che
 const { logActivity } = require('../utils');
 const { mail, notifyAdmins } = require('../notificator');
 const { User } = require('../models');
-const { RateLimiter } = require('../modules/rateLimiter'); // Import the RateLimiter function
+const { RateLimiter } = require('../modules/rateLimiter');
 
 const router = express.Router();
 
-// Apply security headers
 router.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -58,7 +57,7 @@ router.post('/register', [
     body('nickname').trim().escape(),
     body('password').trim().escape(),
     body('email').isEmail().normalizeEmail()
-], RateLimiter(5, 300), async (req, res) => { // 5 requests per 5 minutes
+], RateLimiter(5, 300), async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ status: "error", message: errors.array() });
@@ -103,10 +102,7 @@ router.post('/register', [
     }
 });
 
-// Higher rate limit for activation route
-const activationLimiter = RateLimiter(10, 900); // 10 requests per 15 minutes
-
-router.get('/activate/:token', activationLimiter, async (req, res) => {
+router.get('/activate/:token', RateLimiter(10, 900), async (req, res) => {
     try {
         const user = await User.findOne({ activation_token: req.params.token });
         if (!user) return res.status(404).json({ status: "error", message: "Activation token not found" });
