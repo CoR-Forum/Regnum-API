@@ -12,15 +12,12 @@ const router = express.Router();
 // Apply Helmet middleware
 router.use(helmet());
 
-// Rate limiter middleware
-const sendMessageLimiter = RateLimiter(1, 5); // 1 request per 5 seconds
-
 // Validation schema
 const messageSchema = Joi.object({
     message: Joi.string().min(1).max(500).required()
 });
 
-router.post('/send', validateSession, sendMessageLimiter, async (req, res) => {
+router.post('/send', validateSession, RateLimiter(1, 5), async (req, res) => {
     const { error } = messageSchema.validate(req.body);
     if (error) {
         return res.status(400).json({ status: "error", message: "Invalid message" });
