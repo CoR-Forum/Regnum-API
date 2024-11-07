@@ -1,13 +1,13 @@
 const express = require('express');
 const crypto = require('crypto');
 const argon2 = require('argon2');
-const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const { body, validationResult } = require('express-validator');
 const { validateUsername, validatePassword, validateEmail, validateNickname, checkUsernameExists, checkEmailExists, checkNicknameExists } = require('../validation');
 const { logActivity } = require('../utils');
 const { mail, notifyAdmins } = require('../notificator');
 const { User } = require('../models');
+const { RateLimiter } = require('../modules/rateLimiter'); // Import the RateLimiter function
 
 const router = express.Router();
 
@@ -58,7 +58,7 @@ router.post('/register', [
     body('nickname').trim().escape(),
     body('password').trim().escape(),
     body('email').isEmail().normalizeEmail()
-], async (req, res) => {
+], RateLimiter(5, 300), async (req, res) => { // 5 requests per 5 minutes
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ status: "error", message: errors.array() });
@@ -96,18 +96,7 @@ router.post('/register', [
         logActivity(newUser._id, 'registration', 'User registered', req.ip);
         notifyAdmins(`New user registered: ${username}, email: ${email}, nickname: ${nickname}, IP: ${req.ip}`);
 
-        // Apply rate limiting after successful registration
-        const limiter = rateLimit({
-            windowMs: 5 * 60 * 1000,
-            max: 5,
-            handler: (req, res) => {
-                const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000);
-                res.status(429).json({ status: "error", message: `Too many requests, please try again in ${retryAfter} seconds` });
-            }
-        });
-        limiter(req, res, () => {
-            res.json({ status: "success", message: "User registered successfully" });
-        });
+        res.json({ status: "success", message: "User registered successfully" });
     } catch (error) {
         console.error(error);
         res.status(500).json({ status: "error", message: "Internal server error" });
@@ -115,14 +104,7 @@ router.post('/register', [
 });
 
 // Higher rate limit for activation route
-const activationLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10, // limit each IP to 10 activation requests per windowMs
-    handler: (req, res) => {
-        const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000);
-        res.status(429).json({ status: "error", message: `Too many requests, please try again in ${retryAfter} seconds` });
-    }
-});
+const activationLimiter = RateLimiter(10, 900); // 10 requests per 15 minutes
 
 router.get('/activate/:token', activationLimiter, async (req, res) => {
     try {
@@ -130,7 +112,6 @@ router.get('/activate/:token', activationLimiter, async (req, res) => {
         if (!user) return res.status(404).json({ status: "error", message: "Activation token not found" });
 
         user.activation_token = null;
-        user.sylentx_features = 'zoom';
 
         await user.save();
 

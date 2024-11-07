@@ -2,23 +2,10 @@ const express = require('express');
 const { validateSession } = require('../middleware');
 const { Feedback } = require('../models');
 const { logActivity } = require('../utils');
-const rateLimit = require('express-rate-limit');
 const xss = require('xss');
+const { RateLimiter } = require('../modules/rateLimiter'); // Import the RateLimiter function
 
 const router = express.Router();
-
-// Custom rate limiter function
-const RateLimiter = (maxRequests, windowSeconds) => {
-    console.log(`RateLimiter called with windowSeconds: ${windowSeconds}`); // Log the windowSeconds value
-    return rateLimit({
-        windowMs: windowSeconds * 1000, // Convert seconds to milliseconds
-        max: maxRequests, // Limit each IP to maxRequests per windowMs
-        handler: (req, res) => {
-            const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000);
-            res.status(429).json({ status: "error", message: `Too many requests, please try again later.`, cooldown: retryAfter });
-        }
-    });
-};
 
 router.post('/feedback', RateLimiter(1, 3600), validateSession, async (req, res) => {
   const { type, message, logs } = req.body;

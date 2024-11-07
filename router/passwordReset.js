@@ -1,23 +1,16 @@
 const express = require('express');
 const crypto = require('crypto');
 const argon2 = require('argon2');
-const rateLimit = require('express-rate-limit');
 const { validateEmail, validatePassword } = require('../validation');
 const { logActivity } = require('../utils');
 const { mail } = require('../notificator');
 const { User, PasswordReset } = require('../models'); // Import Mongoose models
+const { RateLimiter } = require('../modules/rateLimiter'); // Import the RateLimiter function
 
 const router = express.Router();
 
 // Rate limiting middleware
-const limiter = rateLimit({
-    windowMs: 1 * 30 * 1000,
-    max: 5,
-    handler: (req, res) => {
-        const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000);
-        res.status(429).json({ status: "error", message: `Too many requests, please try again in ${retryAfter} seconds` });
-    }
-});
+const limiter = RateLimiter(5, 30); // 5 requests per 30 seconds
 
 const handleError = (res, status, message) => {
     res.status(status).json({ status: "error", message });
