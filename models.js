@@ -51,7 +51,7 @@ const Licenses = mongoose.model('Licenses', licensesSchema);
 const defaultLicenses = [
     {
         key: '123',
-        features: ["zoom","fov","gravity","moonjump","moonwalk","fakelag","fakelagg","freecam","speedhack"],
+        features: ["zoom"],
         expires_at: new Date('2024-12-31')
     }
 ];
