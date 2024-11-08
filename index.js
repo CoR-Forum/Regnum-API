@@ -39,8 +39,10 @@ app.use(helmet.contentSecurityPolicy({
 app.use(express.json());
 
 const generateToken = async (user) => {
+  await Token.deleteMany({ userId: user._id });
   const token = jwt.sign({ userId: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  await new Token({ userId: user._id, token }).save(); // Save the token in MongoDB
+  await new Token({ userId: user._id, token }).save();
+
   return token;
 };
 
@@ -66,7 +68,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
     if (user.activation_token) return res.status(403).json({ status: "error", message: "Account not activated" });
 
-    const token = await generateToken(user); // Use the updated generateToken function
+    const token = await generateToken(user);
 
     const loginNotificationText = `Hello ${user.username},\n\nYou have successfully logged in from IP address: ${req.ip}.\n\nIf this wasn't you, please contact support immediately.`;
     await mail(user.email, 'Login Notification', loginNotificationText);
