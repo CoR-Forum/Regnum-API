@@ -1,5 +1,5 @@
 const express = require('express');
-const { validateSession } = require('../middleware');
+const { validateToken } = require('../middleware');
 const { PublicChat, User } = require('../models');
 const { logActivity } = require('../utils');
 const sanitizeHtml = require('sanitize-html');
@@ -17,14 +17,14 @@ const messageSchema = Joi.object({
     message: Joi.string().min(1).max(500).required()
 });
 
-router.post('/send', validateSession, RateLimiter(1, 5), async (req, res) => {
+router.post('/send', validateToken, RateLimiter(1, 5), async (req, res) => {
     const { error } = messageSchema.validate(req.body);
     if (error) {
         return res.status(400).json({ status: "error", message: "Invalid message" });
     }
 
     const { message } = req.body;
-    const { userId } = req.session;
+    const { userId } = req.user;
 
     const sanitizedMessage = sanitizeHtml(message);
 
@@ -39,7 +39,7 @@ router.post('/send', validateSession, RateLimiter(1, 5), async (req, res) => {
     }
 });
 
-router.get('/receive', validateSession, async (req, res) => {
+router.get('/receive', validateToken, async (req, res) => {
     try {
         const messages = await PublicChat.find()
             .populate('user_id', 'nickname')

@@ -159,6 +159,14 @@ const feedbackSchema = new mongoose.Schema({
 
 const Feedback = mongoose.model('Feedback', feedbackSchema);
 
+const tokenSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
+    token: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now, expires: '1h' } // Token will expire after 1 hour
+});
+
+const Token = mongoose.model('Token', tokenSchema);
+
 module.exports = {
     User,
     PasswordReset,
@@ -170,5 +178,6 @@ module.exports = {
     NotificationQueue,
     PublicChat,
     Feedback,
+    Token,
     initializeDatabase
 };

@@ -1,21 +1,28 @@
-const { User } = require('./models');
+const jwt = require('jsonwebtoken');
+const { User, Token } = require('./models');
 
-const validateSession = async (req, res, next) => {
-    if (!req.session || !req.session.userId) {
-        return res.status(401).json({ message: "Unauthorized: No session ID" });
+const validateToken = async (req, res, next) => {
+    const token = req.headers['authorization'];
+    if (!token) {
+        return res.status(401).json({ message: "Unauthorized: No token provided" });
     }
     try {
-        const user = await User.findById(req.session.userId);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.userId);
         if (!user) {
             return res.status(401).json({ message: "Unauthorized: Invalid session" });
         }
         if (user.activation_token) {
             return res.status(403).json({ message: "Forbidden: Account not activated" });
         }
+        const tokenExists = await Token.findOne({ token });
+        if (!tokenExists) {
+            return res.status(401).json({ message: "Unauthorized: Invalid token" });
+        }
         req.user = user;
         next();
     } catch (error) {
-        console.error("Error validating session:", error);
+        console.error("Error validating token:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 };
@@ -36,4 +43,4 @@ const checkPermissions = (requiredPermissions) => {
     };
 };
 
-module.exports = { validateSession, checkPermissions };
+module.exports = { validateToken, checkPermissions };

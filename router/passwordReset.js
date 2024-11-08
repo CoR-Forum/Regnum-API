@@ -4,8 +4,8 @@ const argon2 = require('argon2');
 const { validateEmail, validatePassword } = require('../validation');
 const { logActivity } = require('../utils');
 const { mail } = require('../notificator');
-const { User, PasswordReset } = require('../models'); // Import Mongoose models
-const { RateLimiter } = require('../modules/rateLimiter'); // Import the RateLimiter function
+const { User, PasswordReset } = require('../models');
+const { RateLimiter } = require('../modules/rateLimiter');
 
 const router = express.Router();
 
@@ -46,6 +46,7 @@ router.post('/reset-password', RateLimiter(3, 60), async (req, res) => {
         // Always return success message to avoid email enumeration
         handleSuccess(res, "If the email exists, a password reset token has been sent");
     } catch (error) {
+        console.error(error);
         handleError(res, 500, "Internal server error");
     }
 });
@@ -76,6 +77,7 @@ router.post('/reset-password/:token', RateLimiter(1, 60), async (req, res) => {
 
         handleSuccess(res, "Password reset successfully");
     } catch (error) {
+        console.error(error);
         handleError(res, 500, "Internal server error");
     }
 });

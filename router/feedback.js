@@ -1,5 +1,5 @@
 const express = require('express');
-const { validateSession } = require('../middleware');
+const { validateToken } = require('../middleware');
 const { Feedback } = require('../models');
 const { logActivity } = require('../utils');
 const xss = require('xss');
@@ -7,7 +7,7 @@ const { RateLimiter } = require('../modules/rateLimiter');
 
 const router = express.Router();
 
-router.post('/feedback', RateLimiter(1, 3600), validateSession, async (req, res) => {
+router.post('/feedback', RateLimiter(1, 3600), validateToken, async (req, res) => {
   const { type, message, logs } = req.body;
 
   if (!message) {
@@ -19,7 +19,7 @@ router.post('/feedback', RateLimiter(1, 3600), validateSession, async (req, res)
 
   try {
     const feedback = new Feedback({
-      user_id: req.session.userId,
+      user_id: req.user.userId,
       type,
       message: sanitizedMessage,
       logs: sanitizedLogs
@@ -27,7 +27,7 @@ router.post('/feedback', RateLimiter(1, 3600), validateSession, async (req, res)
 
     await feedback.save();
 
-    logActivity(req.session.userId, 'feedback_submit', 'Feedback submitted', req.ip);
+    logActivity(req.user.userId, 'feedback_submit', 'Feedback submitted', req.ip);
     res.json({ status: "success", message: "Feedback submitted successfully" });
   } catch (error) {
     console.error(error);

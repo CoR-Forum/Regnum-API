@@ -1,19 +1,18 @@
 require('dotenv').config();
 
 const express = require('express');
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
 const argon2 = require('argon2');
+const jwt = require('jsonwebtoken');
 const { mail, notifyAdmins } = require('./notificator');
 const { validateUsername, validatePassword } = require('./validation');
 const { logActivity } = require('./utils');
 const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
 const feedbackRoutes = require('./router/feedback');
-const { validateSession, checkPermissions } = require('./middleware');
-const { User, UserSettings, MemoryPointer, Settings, Licenses, initializeDatabase } = require('./models');
+const { validateToken, checkPermissions } = require('./middleware');
+const { User, UserSettings, MemoryPointer, Settings, Licenses, Token, initializeDatabase } = require('./models');
 const chatRoutes = require('./router/chat');
 
 const app = express();
@@ -38,31 +37,12 @@ app.use(helmet.contentSecurityPolicy({
 }));
 
 app.use(express.json());
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
-  cookie: { secure: process.env.NODE_ENV === 'production', httpOnly: true }
-}));
 
-const updateLastActivity = async (req, res, next) => {
-  if (req.session.userId) {
-    await User.updateOne({ _id: req.session.userId }, { last_activity: new Date() });
-  }
-  next();
+const generateToken = async (user) => {
+  const token = jwt.sign({ userId: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  await new Token({ userId: user._id, token }).save(); // Save the token in MongoDB
+  return token;
 };
-
-app.use(updateLastActivity);
-
-app.post(`${BASE_PATH}/admin`, validateSession, checkPermissions(['admin']), (req, res) => {
-  res.json({ status: "success", message: "Admin access granted" });
-});
-
-app.use(`${BASE_PATH}`, registerRoutes);
-app.use(`${BASE_PATH}`, passwordResetRoutes);
-app.use(`${BASE_PATH}/chat`, chatRoutes);
-app.use(`${BASE_PATH}`, feedbackRoutes);
 
 app.post(`${BASE_PATH}/login`, async (req, res) => {
   const { username, password } = req.body;
@@ -86,69 +66,75 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
     if (user.activation_token) return res.status(403).json({ status: "error", message: "Account not activated" });
 
-    req.session.userId = user._id;
-    req.session.username = user.username;
+    const token = await generateToken(user); // Use the updated generateToken function
 
-    req.session.save(async err => {
-      if (err) return res.status(500).json({ status: "error", message: "Internal server error" });
+    const loginNotificationText = `Hello ${user.username},\n\nYou have successfully logged in from IP address: ${req.ip}.\n\nIf this wasn't you, please contact support immediately.`;
+    await mail(user.email, 'Login Notification', loginNotificationText);
 
-      const loginNotificationText = `Hello ${user.username},\n\nYou have successfully logged in from IP address: ${req.ip}.\n\nIf this wasn't you, please contact support immediately.`;
-      await mail(user.email, 'Login Notification', loginNotificationText);
+    logActivity(user._id, 'login', 'User logged in', req.ip);
 
-      logActivity(user._id, 'login', 'User logged in', req.ip);
+    notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`, 'discord_login');
 
-      notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`, 'discord_login');
-
-      const features = user.sylentx_features || [];
-      const memoryPointers = {};
-      for (const feature of features) {
-        const pointer = await MemoryPointer.findOne({ feature });
-        if (pointer) {
-          memoryPointers[feature] = {
-            address: pointer.address,
-            offsets: pointer.offsets
-          };
-        }
+    const features = user.sylentx_features || [];
+    const memoryPointers = {};
+    for (const feature of features) {
+      const pointer = await MemoryPointer.findOne({ feature });
+      if (pointer) {
+        memoryPointers[feature] = {
+          address: pointer.address,
+          offsets: pointer.offsets
+        };
       }
+    }
 
-      const settings = await Settings.find();
-      const settingsObject = {};
-      settings.forEach(setting => {
-        settingsObject[setting.name] = setting.value;
-      });
+    const settings = await Settings.find();
+    const settingsObject = {};
+    settings.forEach(setting => {
+      settingsObject[setting.name] = setting.value;
+    });
 
-      const userSettings = await UserSettings.findOne({ user_id: user._id });
+    const userSettings = await UserSettings.findOne({ user_id: user._id });
 
-      res.json({
-        status: "success",
-        message: "Login successful",
-        user: {
-          id: user._id,
-          username: user.username,
-          nickname: user.nickname,
-          settings: userSettings ? userSettings.settings : null,
-          features: features.map(feature => ({
-            name: feature,
-            pointer: memoryPointers[feature] || null
-          }))
-        },
-        system: settingsObject
-      });
+    res.json({
+      status: "success",
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        nickname: user.nickname,
+        settings: userSettings ? userSettings.settings : null,
+        features: features.map(feature => ({
+          name: feature,
+          pointer: memoryPointers[feature] || null
+        }))
+      },
+      system: settingsObject
     });
   } catch (error) {
     res.status(500).json({ status: "error", message: "Internal server error" });
   }
 });
 
-app.post(`${BASE_PATH}/logout`, validateSession, (req, res) => {
-  req.session.destroy(err => {
-    if (err) return res.status(500).json({ status: "error", message: "Error logging out" });
-    notifyAdmins(`User logged out: ${req.session.username}, IP: ${req.ip}`);
+app.post(`${BASE_PATH}/logout`, validateToken, async (req, res) => {
+  try {
+    await Token.deleteOne({ token: req.headers['authorization'] }); // Delete the token from MongoDB
     res.json({ status: "success", message: "Logout successful" });
-  });
+  } catch (error) {
+    res.status(500).json({ status: "error", message: "Internal server error" });
+  }
 });
 
-app.put(`${BASE_PATH}/license/activate`, validateSession, async (req, res) => {
+app.post(`${BASE_PATH}/admin`, validateToken, checkPermissions(['admin']), (req, res) => {
+  res.json({ status: "success", message: "Admin access granted" });
+});
+
+app.use(`${BASE_PATH}`, registerRoutes);
+app.use(`${BASE_PATH}`, passwordResetRoutes);
+app.use(`${BASE_PATH}/chat`, chatRoutes);
+app.use(`${BASE_PATH}`, feedbackRoutes);
+
+app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
   const { licenseKey } = req.body;
 
   if (!licenseKey) {
@@ -165,11 +151,11 @@ app.put(`${BASE_PATH}/license/activate`, validateSession, async (req, res) => {
       return res.status(403).json({ status: "error", message: "License already in use" });
     }
 
-    license.activated_by = req.session.userId;
+    license.activated_by = req.user.userId;
     license.activated_at = new Date();
     await license.save();
 
-    const user = await User.findOne({ _id: req.session.userId });
+    const user = await User.findOne({ _id: req.user.userId });
     if (Array.isArray(license.features)) {
       user.sylentx_features = license.features;
     } else {
@@ -177,14 +163,14 @@ app.put(`${BASE_PATH}/license/activate`, validateSession, async (req, res) => {
     }
     await user.save();
 
-    logActivity(req.session.userId, 'license_activate', 'License activated', req.ip);
+    logActivity(req.user.userId, 'license_activate', 'License activated', req.ip);
     res.json({ status: "success", message: "License activated successfully" });
   } catch (error) {
     res.status(500).json({ status: "error", message: "Internal server error: " + error.message });
   }
 });
 
-app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
+app.put(`${BASE_PATH}/save-settings`, validateToken, async (req, res) => {
   const { settings } = req.body;
   const userSettings = settings;
 
@@ -193,14 +179,14 @@ app.put(`${BASE_PATH}/save-settings`, validateSession, async (req, res) => {
   }
 
   try {
-    const existingSettings = await UserSettings.findOne({ user_id: req.session.userId });
+    const existingSettings = await UserSettings.findOne({ user_id: req.user.userId });
     if (!existingSettings) {
-      await new UserSettings({ user_id: req.session.userId, settings: userSettings }).save();
+      await new UserSettings({ user_id: req.user.userId, settings: userSettings }).save();
     } else {
       existingSettings.settings = userSettings;
       await existingSettings.save();
     }
-    logActivity(req.session.userId, 'settings_save', 'Settings saved', req.ip);
+    logActivity(req.user.userId, 'settings_save', 'Settings saved', req.ip);
     res.json({ status: "success", message: "Settings saved successfully" });
   } catch (error) {
     res.status(500).json({ status: "error", message: "Internal server error" });
@@ -231,15 +217,11 @@ app.get(`${BASE_PATH}`, async (req, res) => {
   // Fetch database stats
   const dbStats = await mongoose.connection.db.stats();
 
-  // Fetch active sessions count
-  const activeSessions = await mongoose.connection.db.collection('sessions').countDocuments({});
-
   res.json({
       status: "success",
       message: "API is running",
       api: {
-        uptime: apiUptime / 1000,
-        activeSessions: activeSessions
+        uptime: apiUptime / 1000
     },
       system: {
           load: load,

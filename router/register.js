@@ -3,7 +3,15 @@ const crypto = require('crypto');
 const argon2 = require('argon2');
 const helmet = require('helmet');
 const { body, validationResult } = require('express-validator');
-const { validateUsername, validatePassword, validateEmail, validateNickname, checkUsernameExists, checkEmailExists, checkNicknameExists } = require('../validation');
+const {
+    validateUsername,
+    validatePassword,
+    validateEmail,
+    validateNickname,
+    checkUsernameExists,
+    checkEmailExists,
+    checkNicknameExists
+} = require('../validation');
 const { logActivity } = require('../utils');
 const { mail, notifyAdmins } = require('../notificator');
 const { User } = require('../models');
