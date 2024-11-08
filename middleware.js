@@ -22,6 +22,13 @@ const validateToken = async (req, res, next) => {
         req.user = user;
         next();
     } catch (error) {
+        if (error.name === 'JsonWebTokenError') {
+            console.error("Error validating token:", error);
+            return res.status(401).json({ message: "Unauthorized: Invalid token" });
+        }
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: "Unauthorized: Token expired" });
+        }
         console.error("Error validating token:", error);
         res.status(500).json({ message: "Internal server error" });
     }
