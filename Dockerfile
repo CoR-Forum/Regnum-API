@@ -1,20 +1,19 @@
-# Use the official Node.js image
 FROM node:23-alpine
 
-# Create and change to the app directory
+LABEL maintainer="Joshua2504 & Knight1"
+LABEL org.opencontainers.image.source="https://github.com/sylent-x/sylent-x-api"
+
 WORKDIR /usr/src/app
 
-# Copy the package.json and package-lock.json files
 COPY package*.json ./
 
-# Install npm dependencies
-RUN npm install
+RUN apk add --no-cache python3 make g++ \
+    && npm install
 
-# Copy the rest of the application code
 COPY . .
 
-# Expose the application port
+USER www-data
+
 EXPOSE 3000
 
-# Define the command to run the application
-CMD ["npm", "start"]
+CMD ["node", "index.js"]
