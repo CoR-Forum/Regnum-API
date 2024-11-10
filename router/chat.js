@@ -42,19 +42,27 @@ router.post('/send', validateToken, RateLimiter(1, 5), async (req, res) => {
 router.get('/receive', validateToken, async (req, res) => {
     try {
         const messages = await PublicChat.find()
-            .populate('user_id', 'nickname')
             .sort({ timestamp: -1 })
             .limit(50);
 
+        const userIds = messages.map(message => message.user_id);
+        const users = await User.find({ _id: { $in: userIds } });
+
+        const userMap = users.reduce((acc, user) => {
+            acc[user._id] = user.nickname;
+            return acc;
+        }, {});
+
         const formattedMessages = messages.map(({ _id, user_id, timestamp, message }) => ({
             id: _id,
-            nickname: user_id.nickname,
+            nickname: userMap[user_id],
             timestamp,
             message
         }));
 
         res.json({ status: "success", messages: formattedMessages });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ status: "error", message: "Internal server error" });
     }
 });
