@@ -23,7 +23,6 @@ EMAIL_PORT=587
 EMAIL_SURE=true
 DISCORD_LOGIN_WEBHOOK_URL=************************************************************
 DISCORD_LOG_WEBHOOK_URL=************************************************************
-
 MONGO_URI=mongodb://admin:password@mongo.domain.net:27017/
 NODE_ENV=development
 ```
