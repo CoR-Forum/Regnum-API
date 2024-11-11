@@ -119,6 +119,15 @@ router.get('/activate/:token', RateLimiter(10, 900), async (req, res) => {
 
         await user.save();
 
+        const defaultFeatures = ['zoom', 'posx', 'posy', 'posz'];
+        for (const feature of defaultFeatures) {
+            await new SylentxFeature({
+                user_id: user._id,
+                type: feature,
+                expires_at: new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000)
+            }).save();
+        }
+
         logActivity(user._id, 'account_activation', 'Account activated', req.ip);
         res.json({ status: "success", message: "Account activated successfully" });
     } catch (error) {
