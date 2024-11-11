@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
     created_at: { type: Date, default: Date.now },
     banned: { type: Boolean, default: false },
     last_activity: { type: Date },
-    sylentx_features: [{ type: String }],
+    sylentx_features: [{ type: String, default: 'zoom' }],
     deleted: { type: Boolean, default: false }
 });
 
