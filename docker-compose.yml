@@ -4,30 +4,68 @@ services:
     container_name: api
     ports:
       - "3000:3000/tcp"
+    user: 10000:10000
     environment:
-        TZ: "Europe/Berlin"
-        PORT: 3000
-        ADDRESS: 10.0.0.2
+        VIRTUAL_HOST: "api.sylent-x.de"
+        MONGODB_HOST: "mongo"
+        MONGODB_PORT: 27017
+        MONGODB_DATABASE: ${MONGO_DATABASE}
+        MONGODB_USER: ${MONGO_USER}
+        MONGODB_PASS: MONGO_PASSWORD
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     restart: always
+    depends_on:
+      - mongo
     networks:
       sylent-x_net:
-        ipv4_address: 10.0.0.2
+        ipv4_address: 10.254.0.2
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
 
   mongo:
     image: mongo
     container_name: mongodb
     restart: always
+    user: 10000:10000
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-    restart: always
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     networks:
       sylent-x_net:
-        ipv4_address: 10.0.0.3
+        ipv4_address: 10.254.0.3
+    volumes:
+    - mongo:/data/db
+    env_file: .env
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+  watchtower:
+    container_name: watchtower
+    hostname: watchtower
+    image: containrrr/watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      TZ: Europe/Berlin
+      WATCHTOWER_SCHEDULE: "0 0 5 * * *"
+      WATCHTOWER_CLEANUP: true
+      WATCHTOWER_INCLUDE_STOPPED: true
+      WATCHTOWER_LABEL_ENABLE: true
 
 networks:
   sylent-x_net:
     driver: bridge
     ipam:
      config:
-       - subnet: 10.0.0.0/29
+       - subnet: 10.254.0.0/29
+
+volumes:
+  mongo:
+    driver: local
