@@ -99,7 +99,7 @@ client.on('messageCreate', async (message) => {
 
     if (command === '!llist') {
         try {
-            const licenses = await Licenses.find();
+            const licenses = await Licenses.find().populate('activated_by', 'username');
             if (licenses.length === 0) return message.reply('No licenses found.');
 
             const licenseListEmbed = new EmbedBuilder()
@@ -108,7 +108,7 @@ client.on('messageCreate', async (message) => {
 
             licenses.forEach((license, index) => {
                 licenseListEmbed.addFields(
-                    { name: `License ${index + 1}`, value: `Key: ${license.key}\nFeatures: ${license.features.join(', ')}\nRuntime: ${license.runtime}\nExpires At: ${license.expires_at.toISOString()}` }
+                    { name: `License ${index + 1}`, value: `Key: ${license.key}\nFeatures: ${license.features.join(', ')}\nRuntime: ${license.runtime}\nExpires At: ${license.expires_at.toISOString()}\nActivated By: ${license.activated_by ? license.activated_by.username : 'N/A'}\nActivated At: ${license.activated_at ? license.activated_at.toISOString() : 'N/A'}` }
                 );
             });
 
