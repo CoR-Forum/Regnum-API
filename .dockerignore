@@ -1,1 +1,7 @@
 README.md
+.github
+.git
+.gitignore
+Dockerfile
+.env
+.env.example

@@ -10,8 +10,8 @@ services:
         MONGODB_HOST: "mongo"
         MONGODB_PORT: 27017
         MONGODB_DATABASE: ${MONGO_DATABASE}
-        MONGODB_USER: ${MONGO_USER}
-        MONGODB_PASS: MONGO_PASSWORD
+        MONGODB_USER: ${MONGO_USERNAME}
+        MONGODB_PASS: ${MONGO_PASSWORD}
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     restart: always
@@ -23,6 +23,14 @@ services:
     read_only: true
     security_opt:
       - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '0.001'
+          memory: 50M
+        reservations:
+          cpus: '0.0001'
+          memory: 20M
 
   mongo:
     image: mongo:8.0.3
@@ -44,7 +52,14 @@ services:
     read_only: true
     security_opt:
       - no-new-privileges:true
-
+    deploy:
+      resources:
+        limits:
+          cpus: '0.001'
+          memory: 50M
+        reservations:
+          cpus: '0.0001'
+          memory: 20M
 
   watchtower:
     container_name: watchtower
@@ -58,6 +73,43 @@ services:
       WATCHTOWER_SCHEDULE: "0 0 5 * * *"
       WATCHTOWER_CLEANUP: true
       WATCHTOWER_LABEL_ENABLE: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '0.001'
+          memory: 50M
+        reservations:
+          cpus: '0.0001'
+          memory: 20M
+
+  backup:
+    image: stefanprodan/mgob:latest
+    container_name: backup
+    restart: always
+    volumes:
+#      - ${PROJECT_ROOT}/nodebb/mgob/mgob-config:/config
+      - mongo-backup:/storage
+      - backup-data:/data
+      - backup-tmp:/tmp
+    depends_on:
+      - mongo
+    networks:
+      sylent-x_net:
+        ipv4_address: 10.254.0.3
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '0.001'
+          memory: 50M
+        reservations:
+          cpus: '0.0001'
+          memory: 20M
 
 networks:
   sylent-x_net:
@@ -70,4 +122,8 @@ volumes:
   mongo:
     driver: local
   mongo-backup:
+    driver: local
+  backup-data:
+    driver: local
+  backup-tmp:
     driver: local
