@@ -79,7 +79,9 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
     const features = await SylentxFeature.find({ user_id: user._id });
     const memoryPointers = {};
-    for (const feature of features) {
+    const validFeatures = features.filter(feature => new Date(feature.expires_at) > new Date());
+
+    for (const feature of validFeatures) {
       const pointer = await MemoryPointer.findOne({ feature: feature.type });
       if (pointer) {
         memoryPointers[feature.type] = {
@@ -106,7 +108,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
         username: user.username,
         nickname: user.nickname,
         settings: userSettings ? userSettings.settings : null,
-        features: features.map(feature => ({
+        features: validFeatures.map(feature => ({
           name: feature.type,
           expires_at: feature.expires_at,
           pointer: memoryPointers[feature.type] || null
@@ -191,7 +193,19 @@ app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
               expires_at.setDate(expires_at.getDate() + 1); // Default to 1 day if runtime is not recognized
           }
         }
-        await new SylentxFeature({ user_id: user._id, type, expires_at }).save();
+
+        // Check if the user already has this feature activated
+        const existingFeature = await SylentxFeature.findOne({ user_id: user._id, type });
+        if (existingFeature) {
+          // Disable the old license
+          const oldLicense = await Licenses.findOne({ _id: existingFeature.license_id });
+          if (oldLicense) {
+            oldLicense.disabled_for_new_license = true;
+            await oldLicense.save();
+          }
+        }
+
+        await new SylentxFeature({ user_id: user._id, type, expires_at, license_id: license._id }).save();
       }
     }
 
