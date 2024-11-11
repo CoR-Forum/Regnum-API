@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
 const { logActivity } = require('./utils');
-const { User } = require('./models');
+const { User, Licenses } = require('./models'); // Import Licenses model
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
@@ -10,27 +10,17 @@ client.once('ready', () => {
 });
 
 client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
+    if (message.author.bot || !message.member.permissions.has(PermissionsBitField.Flags.Administrator)) return;
 
-    // Check if the user has the "ADMINISTRATOR" permission
-    if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-        return message.reply('You do not have permission to use this bot.');
-    }
-
-    const args = message.content.split(' ');
-    const command = args.shift().toLowerCase();
+    const [command, ...args] = message.content.split(' ');
 
     if (command === '!u') {
         const username = args[0];
-        if (!username) {
-            return message.reply('Please provide a username.');
-        }
+        if (!username) return message.reply('Please provide a username.');
 
         try {
             const user = await User.findOne({ username });
-            if (!user) {
-                return message.reply('User not found.');
-            }
+            if (!user) return message.reply('User not found.');
 
             const userInfoEmbed = new EmbedBuilder()
                 .setColor('#0099ff')
@@ -49,32 +39,83 @@ client.on('messageCreate', async (message) => {
         }
     }
 
-    if (command === '!l') {
-        const userId = args[0];
-        const activityType = args[1];
-        const description = args.slice(2).join(' ');
+    if (command === '!lgen') {
+        const [runtime, ...features] = args;
 
-        if (!userId || !activityType || !description) {
-            return message.reply('Please provide userId, activityType, and description.');
-        }
+        if (!runtime || features.length === 0) return message.reply('Please provide runtime and at least one feature.');
 
         try {
-            await logActivity(userId, activityType, description, message.author.id);
+            const licenseKey = `license-${Math.random().toString(36).substr(2, 9)}`;
+            const expiresAt = new Date();
+            const value = parseInt(runtime.slice(0, -1), 10);
+            const unit = runtime.slice(-1);
 
-            const logActivityEmbed = new EmbedBuilder()
+            switch (unit) {
+                case 'h':
+                    expiresAt.setHours(expiresAt.getHours() + value);
+                    break;
+                case 'd':
+                    expiresAt.setDate(expiresAt.getDate() + value);
+                    break;
+                case 'w':
+                    expiresAt.setDate(expiresAt.getDate() + (value * 7));
+                    break;
+                case 'm':
+                    expiresAt.setMonth(expiresAt.getMonth() + value);
+                    break;
+                case 'y':
+                    expiresAt.setFullYear(expiresAt.getFullYear() + value);
+                    break;
+                default:
+                    return message.reply('Invalid runtime format.');
+            }
+
+            const newLicense = new Licenses({
+                key: licenseKey,
+                features: features,
+                runtime,
+                expires_at: expiresAt
+            });
+
+            await newLicense.save();
+
+            const licenseEmbed = new EmbedBuilder()
                 .setColor('#00ff00')
-                .setTitle('Activity Logged')
+                .setTitle('License Generated')
                 .addFields(
-                    { name: 'User ID', value: userId, inline: true },
-                    { name: 'Activity Type', value: activityType, inline: true },
-                    { name: 'Description', value: description, inline: true }
+                    { name: 'License Key', value: licenseKey, inline: true },
+                    { name: 'Features', value: features.join(', '), inline: true },
+                    { name: 'Runtime', value: runtime, inline: true },
+                    { name: 'Expires At', value: expiresAt.toISOString(), inline: true }
                 )
                 .setTimestamp();
 
-            message.reply({ embeds: [logActivityEmbed] });
+            message.reply({ embeds: [licenseEmbed] });
         } catch (error) {
             console.error(error);
-            message.reply('Error logging activity.');
+            message.reply('Error generating license.');
+        }
+    }
+
+    if (command === '!llist') {
+        try {
+            const licenses = await Licenses.find();
+            if (licenses.length === 0) return message.reply('No licenses found.');
+
+            const licenseListEmbed = new EmbedBuilder()
+                .setColor('#0099ff')
+                .setTitle('License List');
+
+            licenses.forEach((license, index) => {
+                licenseListEmbed.addFields(
+                    { name: `License ${index + 1}`, value: `Key: ${license.key}\nFeatures: ${license.features.join(', ')}\nRuntime: ${license.runtime}\nExpires At: ${license.expires_at.toISOString()}` }
+                );
+            });
+
+            message.reply({ embeds: [licenseListEmbed] });
+        } catch (error) {
+            console.error(error);
+            message.reply('Error fetching licenses.');
         }
     }
 });
