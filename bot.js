@@ -40,20 +40,26 @@ client.on('messageCreate', async (message) => {
     }
 
     if (command === '!ulist') {
+        const pageSize = 10; // Number of users per page
+        const page = parseInt(args[0], 10) || 1; // Current page number
+
         try {
-            const users = await User.find();
+            const users = await User.find().skip((page - 1) * pageSize).limit(pageSize);
+            const totalUsers = await User.countDocuments();
+            const totalPages = Math.ceil(totalUsers / pageSize);
+
             if (users.length === 0) return message.reply('No users found.');
 
             const userListEmbed = new EmbedBuilder()
                 .setColor('#0099ff')
-                .setTitle('User List');
+                .setTitle(`User List - Page ${page} of ${totalPages}`);
 
             users.forEach((user, index) => {
                 userListEmbed.addFields(
                     { name: `User ${index + 1}`, value: `Username: ${user.username}\nEmail: ${user.email}\nNickname: ${user.nickname}` }
                 );
             });
-        
+
             message.reply({ embeds: [userListEmbed] });
         } catch (error) {
             console.error(error);
@@ -120,13 +126,19 @@ client.on('messageCreate', async (message) => {
     }
 
     if (command === '!llist') {
+        const pageSize = 10; // Number of licenses per page
+        const page = parseInt(args[0], 10) || 1; // Current page number
+
         try {
-            const licenses = await Licenses.find().populate('activated_by', 'username');
+            const licenses = await Licenses.find().populate('activated_by', 'username').skip((page - 1) * pageSize).limit(pageSize);
+            const totalLicenses = await Licenses.countDocuments();
+            const totalPages = Math.ceil(totalLicenses / pageSize);
+
             if (licenses.length === 0) return message.reply('No licenses found.');
 
             const licenseListEmbed = new EmbedBuilder()
                 .setColor('#0099ff')
-                .setTitle('License List');
+                .setTitle(`License List - Page ${page} of ${totalPages}`);
 
             licenses.forEach((license, index) => {
                 licenseListEmbed.addFields(
