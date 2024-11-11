@@ -39,6 +39,28 @@ client.on('messageCreate', async (message) => {
         }
     }
 
+    if (command === '!ulist') {
+        try {
+            const users = await User.find();
+            if (users.length === 0) return message.reply('No users found.');
+
+            const userListEmbed = new EmbedBuilder()
+                .setColor('#0099ff')
+                .setTitle('User List');
+
+            users.forEach((user, index) => {
+                userListEmbed.addFields(
+                    { name: `User ${index + 1}`, value: `Username: ${user.username}\nEmail: ${user.email}\nNickname: ${user.nickname}` }
+                );
+            });
+        
+            message.reply({ embeds: [userListEmbed] });
+        } catch (error) {
+            console.error(error);
+            message.reply('Error fetching users.');
+        }
+    }
+
     if (command === '!lgen') {
         const [runtime, ...features] = args;
 
