@@ -12,7 +12,7 @@ const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
 const feedbackRoutes = require('./router/feedback');
 const { validateToken, checkPermissions } = require('./middleware');
-const { User, UserSettings, MemoryPointer, Settings, Licenses, Token, initializeDatabase } = require('./models');
+const { User, UserSettings, MemoryPointer, Settings, Licenses, Token, SylentxFeature, initializeDatabase } = require('./models');
 const chatRoutes = require('./router/chat');
 
 const app = express();
@@ -77,12 +77,12 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
     notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`, 'discord_login');
 
-    const features = user.sylentx_features || [];
+    const features = await SylentxFeature.find({ user_id: user._id });
     const memoryPointers = {};
     for (const feature of features) {
-      const pointer = await MemoryPointer.findOne({ feature });
+      const pointer = await MemoryPointer.findOne({ feature: feature.type });
       if (pointer) {
-        memoryPointers[feature] = {
+        memoryPointers[feature.type] = {
           address: pointer.address,
           offsets: pointer.offsets
         };
@@ -107,13 +107,15 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
         nickname: user.nickname,
         settings: userSettings ? userSettings.settings : null,
         features: features.map(feature => ({
-          name: feature,
-          pointer: memoryPointers[feature] || null
+          name: feature.type,
+          expires_at: feature.expires_at,
+          pointer: memoryPointers[feature.type] || null
         }))
       },
       system: settingsObject
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ status: "error", message: "Internal server error" });
   }
 });
@@ -163,7 +165,7 @@ app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
     }
 
     if (Array.isArray(license.features)) {
-      user.sylentx_features = license.features.map(feature => {
+      for (const feature of license.features) {
         const [type, runtime] = feature.split(':');
         const expires_at = new Date();
         if (runtime && typeof runtime === 'string') {
@@ -189,12 +191,9 @@ app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
               expires_at.setDate(expires_at.getDate() + 1); // Default to 1 day if runtime is not recognized
           }
         }
-        return { type, expires_at };
-      });
-    } else {
-      user.sylentx_features = [];
+        await new SylentxFeature({ user_id: user._id, type, expires_at }).save();
+      }
     }
-    await user.save();
 
     logActivity(req.user._id, 'license_activate', 'License activated', req.ip);
     res.json({ status: "success", message: "License activated successfully" });
