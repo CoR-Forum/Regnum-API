@@ -1,13 +1,13 @@
 module.exports = {
-    apps: [
-      {
-        name: 'sylentx-api',
-        script: 'index.js', // Change this to your main application file
-        instances: '1',
-        // exec_mode: 'cluster',
-        env: {
-          NODE_ENV: 'production',
-        },
+  apps: [
+    {
+      name: 'sylentx-api',
+      script: 'index.js',
+      instances: '1',
+      exec_mode: 'fork', // Ensure only one instance runs
+      env: {
+        NODE_ENV: 'production',
       },
-    ],
-  };
+    },
+  ],
+};
