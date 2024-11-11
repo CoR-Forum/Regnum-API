@@ -6,12 +6,14 @@ services:
       - "3000:3000/tcp"
     user: 10000:10000
     environment:
-        VIRTUAL_HOST: "api.sylent-x.de"
-        MONGODB_HOST: "mongo"
-        MONGODB_PORT: 27017
-        MONGODB_DATABASE: ${MONGO_DATABASE}
-        MONGODB_USER: ${MONGO_USERNAME}
-        MONGODB_PASS: ${MONGO_PASSWORD}
+      VIRTUAL_HOST: "api.sylent-x.de"
+      MONGODB_HOST: "mongo"
+      MONGODB_PORT: 27017
+      MONGODB_DATABASE: ${MONGO_DATABASE}
+      MONGODB_USER: ${MONGO_USERNAME}
+      MONGODB_PASS: /run/secrets/mongo_password
+    secrets:
+      - mongo_password
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     restart: always
@@ -26,11 +28,16 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.001'
-          memory: 50M
+          cpus: '1'
+          memory: 256M
         reservations:
-          cpus: '0.0001'
-          memory: 20M
+          cpus: '1'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
 
   mongo:
     image: mongo:8.0.3
@@ -39,8 +46,10 @@ services:
     user: 10000:10000
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_ROOT_PASSWORD: /run/secrets/mongo_initdb_root_password
       MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+    secrets:
+      - mongo_initdb_root_password
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     networks:
@@ -48,6 +57,7 @@ services:
         ipv4_address: 10.254.0.3
     volumes:
     - mongo:/data/db
+    - ./mongo/initdb.js:/initdb.js
     env_file: .env
     read_only: true
     security_opt:
@@ -55,11 +65,16 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.001'
-          memory: 50M
+          cpus: '1'
+          memory: 512M
         reservations:
-          cpus: '0.0001'
-          memory: 20M
+          cpus: '1'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
 
   watchtower:
     container_name: watchtower
@@ -79,11 +94,13 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.001'
-          memory: 50M
-        reservations:
-          cpus: '0.0001'
-          memory: 20M
+          cpus: '4'
+          memory: 1024M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
 
   backup:
     image: stefanprodan/mgob:latest
@@ -105,11 +122,13 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.001'
-          memory: 50M
-        reservations:
-          cpus: '0.0001'
-          memory: 20M
+          cpus: '1'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
 
 networks:
   sylent-x_net:
@@ -117,6 +136,12 @@ networks:
     ipam:
      config:
        - subnet: 10.254.0.0/29
+
+secrets:
+  mongo_initdb_root_password:
+    file: ./.secrets/mongo_initdb_root_password
+  mongo_password:
+    file: ./.secrets/mongo_password
 
 volumes:
   mongo:
