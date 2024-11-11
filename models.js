@@ -22,7 +22,15 @@ const userSchema = new mongoose.Schema({
     created_at: { type: Date, default: Date.now },
     banned: { type: Boolean, default: false },
     last_activity: { type: Date },
-    sylentx_features: [{ type: String, default: 'zoom' }],
+    sylentx_features: [{
+        type: {
+          type: String,
+          default: 'zoom'
+        },
+        expires_at: {
+          type: Date
+        }
+      }],
     deleted: { type: Boolean, default: false }
 });
 
@@ -42,6 +50,7 @@ const licensesSchema = new mongoose.Schema({
     activated_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     activated_at: { type: Date },
     features: [{ type: String, required: true }],
+    runtime: { type: String },
     expires_at: { type: Date }
 });
 
@@ -50,8 +59,9 @@ const Licenses = mongoose.model('Licenses', licensesSchema);
 // add default license keys here
 const defaultLicenses = [
     {
-        key: '123',
-        features: ["zoom"],
+        key: '12',
+        features: ["zoom", "posy"],
+        runtime: "2h",
         expires_at: new Date('2024-12-31')
     }
 ];

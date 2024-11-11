@@ -153,19 +153,50 @@ app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
       return res.status(403).json({ status: "error", message: "License already in use" });
     }
 
-    license.activated_by = req.user.userId;
+    license.activated_by = req.user._id;
     license.activated_at = new Date();
     await license.save();
 
-    const user = await User.findOne({ _id: req.user.userId });
+    const user = await User.findOne({ _id: req.user._id });
+    if (!user) {
+      return res.status(404).json({ status: "error", message: "User not found" });
+    }
+
     if (Array.isArray(license.features)) {
-      user.sylentx_features = license.features;
+      user.sylentx_features = license.features.map(feature => {
+        const [type, runtime] = feature.split(':');
+        const expires_at = new Date();
+        if (runtime && typeof runtime === 'string') {
+          const value = parseInt(runtime.slice(0, -1), 10);
+          const unit = runtime.slice(-1);
+          switch (unit) {
+            case 'h':
+              expires_at.setHours(expires_at.getHours() + value);
+              break;
+            case 'd':
+              expires_at.setDate(expires_at.getDate() + value);
+              break;
+            case 'w':
+              expires_at.setDate(expires_at.getDate() + (value * 7));
+              break;
+            case 'm':
+              expires_at.setMonth(expires_at.getMonth() + value);
+              break;
+            case 'y':
+              expires_at.setFullYear(expires_at.getFullYear() + value);
+              break;
+            default:
+              expires_at.setDate(expires_at.getDate() + 1); // Default to 1 day if runtime is not recognized
+          }
+        }
+        return { type, expires_at };
+      });
     } else {
       user.sylentx_features = [];
     }
     await user.save();
 
-    logActivity(req.user.userId, 'license_activate', 'License activated', req.ip);
+    logActivity(req.user._id, 'license_activate', 'License activated', req.ip);
     res.json({ status: "success", message: "License activated successfully" });
   } catch (error) {
     res.status(500).json({ status: "error", message: "Internal server error: " + error.message });
