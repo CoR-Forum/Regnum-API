@@ -1,6 +1,6 @@
 services:
   api:
-    image: ghcr.io/sylent-x/sylent-x-api
+    image: ghcr.io/sylent-x/sylent-x-api:latest
     container_name: api
     ports:
       - "3000:3000/tcp"
@@ -25,7 +25,7 @@ services:
       - no-new-privileges:true
 
   mongo:
-    image: mongo
+    image: mongo:8.0.3
     container_name: mongodb
     restart: always
     user: 10000:10000
@@ -45,18 +45,18 @@ services:
     security_opt:
       - no-new-privileges:true
 
+
   watchtower:
     container_name: watchtower
     hostname: watchtower
     image: containrrr/watchtower
     restart: unless-stopped
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       TZ: Europe/Berlin
       WATCHTOWER_SCHEDULE: "0 0 5 * * *"
       WATCHTOWER_CLEANUP: true
-      WATCHTOWER_INCLUDE_STOPPED: true
       WATCHTOWER_LABEL_ENABLE: true
 
 networks:
@@ -68,4 +68,6 @@ networks:
 
 volumes:
   mongo:
+    driver: local
+  mongo-backup:
     driver: local
