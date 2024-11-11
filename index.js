@@ -12,8 +12,9 @@ const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
 const feedbackRoutes = require('./router/feedback');
 const { validateToken, checkPermissions } = require('./middleware');
-const { User, UserSettings, MemoryPointer, Settings, Licenses, Token, initializeDatabase } = require('./models');
+const { User, UserSettings, MemoryPointer, Settings, Licenses, Token, SylentxFeature, initializeDatabase } = require('./models');
 const chatRoutes = require('./router/chat');
+require('./bot');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -77,12 +78,22 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
     notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`, 'discord_login');
 
-    const features = user.sylentx_features || [];
+    const features = await SylentxFeature.find({ user_id: user._id });
+    console.log('Fetched features:', features); // Debugging line
+
     const memoryPointers = {};
-    for (const feature of features) {
-      const pointer = await MemoryPointer.findOne({ feature });
+    const validFeatures = features.filter(feature => {
+      const expiresAt = new Date(feature.expires_at);
+      const now = new Date();
+      console.log(`Feature expires at: ${expiresAt}, Current time: ${now}`);
+      return expiresAt > now;
+    });
+    console.log('Valid features:', validFeatures); // Debugging line
+
+    for (const feature of validFeatures) {
+      const pointer = await MemoryPointer.findOne({ feature: feature.type });
       if (pointer) {
-        memoryPointers[feature] = {
+        memoryPointers[feature.type] = {
           address: pointer.address,
           offsets: pointer.offsets
         };
@@ -106,14 +117,16 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
         username: user.username,
         nickname: user.nickname,
         settings: userSettings ? userSettings.settings : null,
-        features: features.map(feature => ({
-          name: feature,
-          pointer: memoryPointers[feature] || null
+        features: validFeatures.map(feature => ({
+          name: feature.type,
+          expires_at: feature.expires_at,
+          pointer: memoryPointers[feature.type] || null
         }))
       },
       system: settingsObject
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ status: "error", message: "Internal server error" });
   }
 });
@@ -125,10 +138,6 @@ app.post(`${BASE_PATH}/logout`, validateToken, async (req, res) => {
   } catch (error) {
     res.status(500).json({ status: "error", message: "Internal server error" });
   }
-});
-
-app.post(`${BASE_PATH}/admin`, validateToken, checkPermissions(['admin']), (req, res) => {
-  res.json({ status: "success", message: "Admin access granted" });
 });
 
 app.use(`${BASE_PATH}`, registerRoutes);
@@ -153,19 +162,51 @@ app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
       return res.status(403).json({ status: "error", message: "License already in use" });
     }
 
-    license.activated_by = req.user.userId;
+    license.activated_by = req.user._id;
     license.activated_at = new Date();
     await license.save();
 
-    const user = await User.findOne({ _id: req.user.userId });
-    if (Array.isArray(license.features)) {
-      user.sylentx_features = license.features;
-    } else {
-      user.sylentx_features = [];
+    const user = await User.findOne({ _id: req.user._id });
+    if (!user) {
+      return res.status(404).json({ status: "error", message: "User not found" });
     }
-    await user.save();
 
-    logActivity(req.user.userId, 'license_activate', 'License activated', req.ip);
+    if (Array.isArray(license.features)) {
+      for (const feature of license.features) {
+        const [type, runtime] = feature.split(':');
+        const expires_at = new Date();
+        if (runtime && typeof runtime === 'string') {
+          const value = parseInt(runtime.slice(0, -1), 10);
+          const unit = runtime.slice(-1);
+          switch (unit) {
+            case 'h':
+              expires_at.setHours(expires_at.getHours() + value);
+              break;
+            case 'd':
+              expires_at.setDate(expires_at.getDate() + value);
+              break;
+            case 'w':
+              expires_at.setDate(expires_at.getDate() + (value * 7));
+              break;
+            case 'm':
+              expires_at.setMonth(expires_at.getMonth() + value);
+              break;
+            case 'y':
+              expires_at.setFullYear(expires_at.getFullYear() + value);
+              break;
+            default:
+              expires_at.setDate(expires_at.getDate() + 1); // Default to 1 day if runtime is not recognized
+          }
+        }
+
+        // Delete the existing feature if the user already has it
+        await SylentxFeature.deleteMany({ user_id: user._id, type });
+
+        await new SylentxFeature({ user_id: user._id, type, expires_at, license_id: license._id }).save();
+      }
+    }
+
+    logActivity(req.user._id, 'license_activate', 'License activated', req.ip);
     res.json({ status: "success", message: "License activated successfully" });
   } catch (error) {
     res.status(500).json({ status: "error", message: "Internal server error: " + error.message });
@@ -181,16 +222,19 @@ app.put(`${BASE_PATH}/save-settings`, validateToken, async (req, res) => {
   }
 
   try {
-    const existingSettings = await UserSettings.findOne({ user_id: req.user.userId });
+    const existingSettings = await UserSettings.findOne({ user_id: req.user._id });
     if (!existingSettings) {
-      await new UserSettings({ user_id: req.user.userId, settings: userSettings }).save();
+      await new UserSettings({ user_id: req.user._id, settings: userSettings }).save();
     } else {
+      console.log('Settings found for user:', req.user._id, existingSettings);
       existingSettings.settings = userSettings;
       await existingSettings.save();
+      console.log('Settings updated for user:', req.user._id, existingSettings);
     }
-    logActivity(req.user.userId, 'settings_save', 'Settings saved', req.ip);
+    logActivity(req.user._id, 'settings_save', 'Settings saved', req.ip);
     res.json({ status: "success", message: "Settings saved successfully" });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ status: "error", message: "Internal server error" });
   }
 });

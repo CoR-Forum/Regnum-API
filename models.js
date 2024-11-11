@@ -22,11 +22,18 @@ const userSchema = new mongoose.Schema({
     created_at: { type: Date, default: Date.now },
     banned: { type: Boolean, default: false },
     last_activity: { type: Date },
-    sylentx_features: [{ type: String }],
     deleted: { type: Boolean, default: false }
 });
 
 const User = mongoose.model('User', userSchema);
+
+const sylentxFeatureSchema = new mongoose.Schema({
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    type: { type: String, default: 'zoom' },
+    expires_at: { type: Date }
+});
+
+const SylentxFeature = mongoose.model('SylentxFeature', sylentxFeatureSchema);
 
 const passwordResetSchema = new mongoose.Schema({
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -36,22 +43,22 @@ const passwordResetSchema = new mongoose.Schema({
 
 const PasswordReset = mongoose.model('PasswordReset', passwordResetSchema);
 
-// schema for license activation keys to enable features
 const licensesSchema = new mongoose.Schema({
     key: { type: String, required: true, unique: true },
     activated_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     activated_at: { type: Date },
     features: [{ type: String, required: true }],
+    runtime: { type: String },
     expires_at: { type: Date }
 });
 
 const Licenses = mongoose.model('Licenses', licensesSchema);
 
-// add default license keys here
 const defaultLicenses = [
     {
-        key: '123',
-        features: ["zoom"],
+        key: 'beta11',
+        features: ["zoom", "posx", "posy"],
+        runtime: "1w",
         expires_at: new Date('2024-12-31')
     }
 ];
@@ -179,5 +186,6 @@ module.exports = {
     PublicChat,
     Feedback,
     Token,
+    SylentxFeature,
     initializeDatabase
 };
