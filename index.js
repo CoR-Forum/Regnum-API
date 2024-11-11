@@ -14,6 +14,7 @@ const feedbackRoutes = require('./router/feedback');
 const { validateToken, checkPermissions } = require('./middleware');
 const { User, UserSettings, MemoryPointer, Settings, Licenses, Token, SylentxFeature, initializeDatabase } = require('./models');
 const chatRoutes = require('./router/chat');
+require('./bot');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
