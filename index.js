@@ -78,8 +78,16 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
     notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`, 'discord_login');
 
     const features = await SylentxFeature.find({ user_id: user._id });
+    console.log('Fetched features:', features); // Debugging line
+
     const memoryPointers = {};
-    const validFeatures = features.filter(feature => new Date(feature.expires_at) > new Date());
+    const validFeatures = features.filter(feature => {
+      const expiresAt = new Date(feature.expires_at);
+      const now = new Date();
+      console.log(`Feature expires at: ${expiresAt}, Current time: ${now}`);
+      return expiresAt > now;
+    });
+    console.log('Valid features:', validFeatures); // Debugging line
 
     for (const feature of validFeatures) {
       const pointer = await MemoryPointer.findOne({ feature: feature.type });
@@ -129,10 +137,6 @@ app.post(`${BASE_PATH}/logout`, validateToken, async (req, res) => {
   } catch (error) {
     res.status(500).json({ status: "error", message: "Internal server error" });
   }
-});
-
-app.post(`${BASE_PATH}/admin`, validateToken, checkPermissions(['admin']), (req, res) => {
-  res.json({ status: "success", message: "Admin access granted" });
 });
 
 app.use(`${BASE_PATH}`, registerRoutes);
@@ -194,16 +198,8 @@ app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
           }
         }
 
-        // Check if the user already has this feature activated
-        const existingFeature = await SylentxFeature.findOne({ user_id: user._id, type });
-        if (existingFeature) {
-          // Disable the old license
-          const oldLicense = await Licenses.findOne({ _id: existingFeature.license_id });
-          if (oldLicense) {
-            oldLicense.disabled_for_new_license = true;
-            await oldLicense.save();
-          }
-        }
+        // Delete the existing feature if the user already has it
+        await SylentxFeature.deleteMany({ user_id: user._id, type });
 
         await new SylentxFeature({ user_id: user._id, type, expires_at, license_id: license._id }).save();
       }

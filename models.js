@@ -30,8 +30,7 @@ const User = mongoose.model('User', userSchema);
 const sylentxFeatureSchema = new mongoose.Schema({
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     type: { type: String, default: 'zoom' },
-    expires_at: { type: Date },
-    disabled_for_new_license: { type: Boolean, default: false }
+    expires_at: { type: Date }
 });
 
 const SylentxFeature = mongoose.model('SylentxFeature', sylentxFeatureSchema);
@@ -57,9 +56,9 @@ const Licenses = mongoose.model('Licenses', licensesSchema);
 
 const defaultLicenses = [
     {
-        key: 'beta',
-        features: ["zoom", "posx", "posy", "posz"],
-        runtime: "100y",
+        key: 'beta11',
+        features: ["zoom", "posx", "posy"],
+        runtime: "1w",
         expires_at: new Date('2024-12-31')
     }
 ];
