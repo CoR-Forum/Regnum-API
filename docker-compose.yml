@@ -57,7 +57,7 @@ services:
         ipv4_address: 10.254.0.3
     volumes:
     - mongo:/data/db
-    - ./mongo/initdb.js:/initdb.js
+    - ./mongo/initdb.js:/docker-entrypoint-initdb.d/initdb.js
     env_file: .env
     read_only: true
     security_opt:
@@ -111,6 +111,8 @@ services:
       - mongo-backup:/storage
       - backup-data:/data
       - backup-tmp:/tmp
+    labels:
+    - "com.centurylinklabs.watchtower.enable=true"
     depends_on:
       - mongo
     networks:
