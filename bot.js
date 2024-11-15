@@ -152,33 +152,33 @@ client.on('messageCreate', async (message) => {
         }
     }
 
-if (command === '!lp') {
-    try {
-        const pointers = await MemoryPointer.find();
+    if (command === '!lp') {
+        try {
+            const pointers = await MemoryPointer.find();
 
-        if (pointers.length === 0) return message.reply('No memory pointers found.');
+            if (pointers.length === 0) return message.reply('No memory pointers found.');
 
-        const batchSize = 10;
-        for (let i = 0; i < pointers.length; i += batchSize) {
-            const batch = pointers.slice(i, i + batchSize);
+            const batchSize = 10;
+            for (let i = 0; i < pointers.length; i += batchSize) {
+                const batch = pointers.slice(i, i + batchSize);
 
-            const pointerListEmbed = new EmbedBuilder()
-                .setColor('#0099ff')
-                .setTitle('Memory Pointer List');
+                const pointerListEmbed = new EmbedBuilder()
+                    .setColor('#0099ff')
+                    .setTitle('Memory Pointer List');
 
-            batch.forEach((pointer, index) => {
-                pointerListEmbed.addFields(
-                    { name: `${pointer.feature}`, value: `ID: ${pointer._id}\nAddress: ${pointer.address}\nOffsets: ${pointer.offsets.join(', ')}` }
-                );
-            });
+                batch.forEach((pointer, index) => {
+                    pointerListEmbed.addFields(
+                        { name: `${pointer.feature}`, value: `ID: ${pointer._id}\nAddress: ${pointer.address}\nOffsets: ${pointer.offsets.join(', ')}` }
+                    );
+                });
 
-            await message.reply({ embeds: [pointerListEmbed] });
+                await message.reply({ embeds: [pointerListEmbed] });
+            }
+        } catch (error) {
+            console.error(error);
+            message.reply('Error fetching memory pointers.');
         }
-    } catch (error) {
-        console.error(error);
-        message.reply('Error fetching memory pointers.');
     }
-}
 
     if (command === '!dp') {
         const pointerId = args[0];
