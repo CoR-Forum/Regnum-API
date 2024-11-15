@@ -30,13 +30,13 @@ router.use(helmet({
     },
 }));
 
-const validateInputs = ({ username, nickname, password, email }) => {
-    const validations = [
+const validateInputs = async ({ username, nickname, password, email }) => {
+    const validations = await Promise.all([
         validateUsername(username),
         validatePassword(password),
         validateEmail(email),
         validateNickname(nickname)
-    ];
+    ]);
 
     for (const validation of validations) {
         if (!validation.valid) {
@@ -73,7 +73,7 @@ router.post('/register', [
 
     const { username, nickname, password, email } = req.body;
 
-    const inputValidation = validateInputs({ username, nickname, password, email });
+    const inputValidation = await validateInputs({ username, nickname, password, email });
     if (!inputValidation.valid) {
         return res.status(400).json({ status: "error", message: inputValidation.message });
     }
