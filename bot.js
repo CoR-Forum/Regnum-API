@@ -1,6 +1,5 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
-const { logActivity } = require('./utils');
 const { User, Licenses, MemoryPointer, SylentxFeature } = require('./models');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
@@ -40,8 +39,8 @@ client.on('messageCreate', async (message) => {
     }
 
     if (command === '!ulist') {
-        const pageSize = 10; // Number of users per page
-        const page = parseInt(args[0], 10) || 1; // Current page number
+        const pageSize = 10;
+        const page = parseInt(args[0], 10) || 1;
 
         try {
             const users = await User.find().skip((page - 1) * pageSize).limit(pageSize);
@@ -126,8 +125,8 @@ client.on('messageCreate', async (message) => {
     }
 
     if (command === '!llist') {
-        const pageSize = 10; // Number of licenses per page
-        const page = parseInt(args[0], 10) || 1; // Current page number
+        const pageSize = 10;
+        const page = parseInt(args[0], 10) || 1;
 
         try {
             const licenses = await Licenses.find().populate('activated_by', 'username').skip((page - 1) * pageSize).limit(pageSize);
@@ -153,7 +152,6 @@ client.on('messageCreate', async (message) => {
         }
     }
 
-// list pointers without pagination
 if (command === '!lp') {
     try {
         const pointers = await MemoryPointer.find();
@@ -170,7 +168,7 @@ if (command === '!lp') {
 
             batch.forEach((pointer, index) => {
                 pointerListEmbed.addFields(
-                    { name: `Pointer ${i + index + 1}`, value: `ID: ${pointer._id}\nFeature: ${pointer.feature}\nAddress: ${pointer.address}\nOffsets: ${pointer.offsets.join(', ')}` }
+                    { name: `${pointer.feature}`, value: `ID: ${pointer._id}\nAddress: ${pointer.address}\nOffsets: ${pointer.offsets.join(', ')}` }
                 );
             });
 
@@ -182,36 +180,34 @@ if (command === '!lp') {
     }
 }
 
-// delete pointer
-if (command === '!dp') {
-    const pointerId = args[0];
-    if (!pointerId) return message.reply('Please provide a pointer ID.');
-    
-    try {
-        const pointer = await MemoryPointer.findById(pointerId);
-        if (!pointer) return message.reply('Memory pointer not found.');
+    if (command === '!dp') {
+        const pointerId = args[0];
+        if (!pointerId) return message.reply('Please provide a pointer ID.');
+        
+        try {
+            const pointer = await MemoryPointer.findById(pointerId);
+            if (!pointer) return message.reply('Memory pointer not found.');
 
-        await MemoryPointer.deleteOne({ _id: pointerId });
+            await MemoryPointer.deleteOne({ _id: pointerId });
 
-        const fields = [];
-        if (pointer.feature) fields.push({ name: 'Feature', value: pointer.feature, inline: true });
-        if (pointer.address) fields.push({ name: 'Address', value: pointer.address, inline: true });
-        if (pointer.offsets && pointer.offsets.length > 0) fields.push({ name: 'Offsets', value: pointer.offsets.join(', '), inline: true });
+            const fields = [];
+            if (pointer.feature) fields.push({ name: 'Feature', value: pointer.feature, inline: true });
+            if (pointer.address) fields.push({ name: 'Address', value: pointer.address, inline: true });
+            if (pointer.offsets && pointer.offsets.length > 0) fields.push({ name: 'Offsets', value: pointer.offsets.join(', '), inline: true });
 
-        const pointerEmbed = new EmbedBuilder()
-            .setColor('#ff0000')
-            .setTitle('Memory Pointer Deleted')
-            .addFields(fields)
-            .setTimestamp();
+            const pointerEmbed = new EmbedBuilder()
+                .setColor('#ff0000')
+                .setTitle('Memory Pointer Deleted')
+                .addFields(fields)
+                .setTimestamp();
 
-        message.reply({ embeds: [pointerEmbed] });
-    } catch (error) {
-        console.error(error);
-        message.reply('Error deleting memory pointer.');
+            message.reply({ embeds: [pointerEmbed] });
+        } catch (error) {
+            console.error(error);
+            message.reply('Error deleting memory pointer.');
+        }
     }
-}
 
-// add pointer
     if (command === '!ap') {
         const [feature, address, ...offsets] = args;
         if (!feature || !address) return message.reply('Usage: !ap <feature> <address> <offset1> <offset2> ...');
@@ -273,6 +269,26 @@ if (command === '!dp') {
             console.error(error);
             message.reply('Error editing memory pointer.');
         }
+    }
+
+    // help command with all commands
+    if (command === '!help') {
+        const helpEmbed = new EmbedBuilder()
+            .setColor('#0099ff')
+            .setTitle('Help')
+            .addFields(
+                { name: '!u <username>', value: 'Get user info by username.' },
+                { name: '!ulist [page]', value: 'List users.' },
+                { name: '!lgen <runtime> <feature1> <feature2> ...', value: 'Generate license.' },
+                { name: '!llist [page]', value: 'List licenses.' },
+                { name: '!lp', value: 'List memory pointers.' },
+                { name: '!dp <pointer_id>', value: 'Delete memory pointer.' },
+                { name: '!ap <feature> <address> <offset1> <offset2> ...', value: 'Add memory pointer.' },
+                { name: '!ep <pointer_id> <feature> <address> <offset1> <offset2> ...', value: 'Edit memory pointer.' }
+            )
+            .setTimestamp();
+
+        message.reply({ embeds: [helpEmbed] });
     }
 });
 
