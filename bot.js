@@ -84,10 +84,10 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!gl': async (message, args) => {
+    '!lg': async (message, args) => {
         const [runtime, ...features] = args;
 
-        if (!runtime || features.length === 0) return message.reply('Usage: !gl <runtime> <feature1> <feature2> ...\nExample: !lgen 1d feature1 feature2');
+        if (!runtime || features.length === 0) return message.reply('Usage: !lg <runtime> <feature1> <feature2> ...\nExample: !lgen 1d feature1 feature2');
 
         try {
             const licenseKey = `license-${Math.random().toString(36).substr(2, 9)}`;
