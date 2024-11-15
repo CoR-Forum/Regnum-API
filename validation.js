@@ -24,10 +24,6 @@ const validatePassword = async (password) => {
     return { valid: true };
 };
 
-validatePassword('password123').then((result) => {
-    console.log(result);
-});
-
 const validateEmail = (email) => {
     if (!email || !validator.isEmail(email)) {
         return { valid: false, message: 'Invalid email address.' };
