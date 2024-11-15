@@ -70,7 +70,7 @@ client.on('messageCreate', async (message) => {
     if (command === '!lgen') {
         const [runtime, ...features] = args;
 
-        if (!runtime || features.length === 0) return message.reply('Please provide runtime and at least one feature.');
+        if (!runtime || features.length === 0) return message.reply('Usage: !lgen <runtime> <feature1> <feature2> ...' + '\n' + 'Example: !lgen 1d feature1 feature2');
 
         try {
             const licenseKey = `license-${Math.random().toString(36).substr(2, 9)}`;
