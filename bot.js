@@ -14,10 +14,29 @@ const handleError = (message, error) => {
     message.reply('An error occurred.');
 };
 
+const sendHelpMessage = (message) => {
+    const helpEmbed = new EmbedBuilder()
+        .setColor('#0099ff')
+        .setTitle('Help')
+        .addFields(
+            { name: '!u <username>', value: 'Get user info by username.' },
+            { name: '!lu [page]', value: 'List users.' },
+            { name: '!gl <runtime> <feature1> <feature2> ...', value: 'Generate license.' },
+            { name: '!ll [page]', value: 'List licenses.' },
+            { name: '!lp', value: 'List memory pointers.' },
+            { name: '!dp <pointer_id>', value: 'Delete memory pointer.' },
+            { name: '!ap <feature> <address> <offset1> <offset2> ...', value: 'Add memory pointer.' },
+            { name: '!ep <pointer_id> <feature> <address> <offset1> <offset2> ...', value: 'Edit memory pointer.' }
+        )
+        .setTimestamp();
+
+    sendEmbed(message, helpEmbed);
+};
+
 const commands = {
     '!u': async (message, args) => {
         const username = args[0];
-        if (!username) return message.reply('Please provide a username.');
+        if (!username) return message.reply('Usage: !u <username>');
 
         try {
             const user = await User.findOne({ username });
@@ -38,7 +57,7 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!ulist': async (message, args) => {
+    '!lu': async (message, args) => {
         const pageSize = 10;
         const page = parseInt(args[0], 10) || 1;
 
@@ -64,10 +83,10 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!lgen': async (message, args) => {
+    '!gl': async (message, args) => {
         const [runtime, ...features] = args;
 
-        if (!runtime || features.length === 0) return message.reply('Usage: !lgen <runtime> <feature1> <feature2> ...\nExample: !lgen 1d feature1 feature2');
+        if (!runtime || features.length === 0) return message.reply('Usage: !gl <runtime> <feature1> <feature2> ...\nExample: !lgen 1d feature1 feature2');
 
         try {
             const licenseKey = `license-${Math.random().toString(36).substr(2, 9)}`;
@@ -103,7 +122,7 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!llist': async (message, args) => {
+    '!ll': async (message, args) => {
         const pageSize = 10;
         const page = parseInt(args[0], 10) || 1;
 
@@ -233,25 +252,9 @@ const commands = {
         } catch (error) {
             handleError(message, error);
         }
-    },
-    '!help': (message) => {
-        const helpEmbed = new EmbedBuilder()
-            .setColor('#0099ff')
-            .setTitle('Help')
-            .addFields(
-                { name: '!u <username>', value: 'Get user info by username.' },
-                { name: '!ulist [page]', value: 'List users.' },
-                { name: '!lgen <runtime> <feature1> <feature2> ...', value: 'Generate license.' },
-                { name: '!llist [page]', value: 'List licenses.' },
-                { name: '!lp', value: 'List memory pointers.' },
-                { name: '!dp <pointer_id>', value: 'Delete memory pointer.' },
-                { name: '!ap <feature> <address> <offset1> <offset2> ...', value: 'Add memory pointer.' },
-                { name: '!ep <pointer_id> <feature> <address> <offset1> <offset2> ...', value: 'Edit memory pointer.' }
-            )
-            .setTimestamp();
-
-        sendEmbed(message, helpEmbed);
-    }
+    },    
+    '!help': sendHelpMessage,
+    '!h': sendHelpMessage
 };
 
 client.on('messageCreate', async (message) => {
