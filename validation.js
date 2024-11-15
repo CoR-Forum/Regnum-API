@@ -1,5 +1,6 @@
 const validator = require('validator');
 const { User } = require('./models'); // Import Mongoose models
+const hibp = require('hibp'); // Import hibp
 
 const validateUsername = (username) => {
     const usernameRegex = /^[a-zA-Z0-9]{3,20}$/;
@@ -9,12 +10,23 @@ const validateUsername = (username) => {
     return { valid: true };
 };
 
-const validatePassword = (password) => {
+const validatePassword = async (password) => {
     if (!password || typeof password !== 'string' || password.length < 8) {
         return { valid: false, message: 'Password must be at least 8 characters long.' };
     }
+
+    // Check if the password has been pwned
+    const pwnedCount = await hibp.pwnedPassword(password);
+    if (pwnedCount > 0) {
+        return { valid: false, message: `This password has been seen ${pwnedCount} times before on haveibeenpwned.com. Please choose a more secure password.` };
+    }
+
     return { valid: true };
 };
+
+validatePassword('password123').then((result) => {
+    console.log(result);
+});
 
 const validateEmail = (email) => {
     if (!email || !validator.isEmail(email)) {
