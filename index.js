@@ -53,14 +53,8 @@ app.get(`${BASE_PATH}/auth/discord/callback`, passport.authenticate('discord', {
 app.post(`${BASE_PATH}/login`, async (req, res) => {
   const { username, password } = req.body;
 
-  const usernameValidation = validateUsername(username);
-  const passwordValidation = validatePassword(password);
-
-  if (!usernameValidation.valid) {
-    return res.status(400).json({ status: "error", message: usernameValidation.message });
-  }
-  if (!passwordValidation.valid) {
-    return res.status(400).json({ status: "error", message: passwordValidation.message });
+  if (!username || !password) {
+    return res.status(400).json({ status: "error", message: "Username and password are required" });
   }
 
   try {
