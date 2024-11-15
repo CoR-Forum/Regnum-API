@@ -33,4 +33,4 @@ jobs:
         echo "$SSH_PRIVATE_KEY" > private_key
         chmod 600 private_key
         rsync -avz -e "ssh -i private_key -p ${{ vars.SERVER_PORT }}" --exclude='.git' --exclude='node_modules' ./ ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }}:${{ vars.DEPLOY_PATH }}
-        ssh -i private_key -p ${{ vars.SERVER_PORT }} ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} "curl -fsSL https://deb.nodesource.com/setup_21.x | sudo -E bash - && sudo apt-get install -y nodejs make g++ && sudo npm install -g pm2 && cd ${{ vars.DEPLOY_PATH }} && npm install && pm2 start index.js --name sylent-x-api --update-env --watch -f"
+        ssh -i private_key -p ${{ vars.SERVER_PORT }} ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} "curl -fsSL https://deb.nodesource.com/setup_21.x | sudo -E bash - && sudo apt-get install -y nodejs make g++ && sudo npm install -g pm2 && pm2 update && cd ${{ vars.DEPLOY_PATH }} && npm install && pm2 restart sylent-x-api || pm2 start index.js --name sylent-x-api --update-env --watch"
