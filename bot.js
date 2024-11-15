@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
-const { User, Licenses, MemoryPointer, SylentxFeature } = require('./models');
+const { User, Licenses, MemoryPointer } = require('./models');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
@@ -8,12 +8,14 @@ client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
 });
 
-client.on('messageCreate', async (message) => {
-    if (message.author.bot || !message.member.permissions.has(PermissionsBitField.Flags.Administrator)) return;
+const sendEmbed = (message, embed) => message.reply({ embeds: [embed] });
+const handleError = (message, error) => {
+    console.error(error);
+    message.reply('An error occurred.');
+};
 
-    const [command, ...args] = message.content.split(' ');
-
-    if (command === '!u') {
+const commands = {
+    '!u': async (message, args) => {
         const username = args[0];
         if (!username) return message.reply('Please provide a username.');
 
@@ -31,14 +33,12 @@ client.on('messageCreate', async (message) => {
                 )
                 .setTimestamp();
 
-            message.reply({ embeds: [userInfoEmbed] });
+            sendEmbed(message, userInfoEmbed);
         } catch (error) {
-            console.error(error);
-            message.reply('Error fetching user info.');
+            handleError(message, error);
         }
-    }
-
-    if (command === '!ulist') {
+    },
+    '!ulist': async (message, args) => {
         const pageSize = 10;
         const page = parseInt(args[0], 10) || 1;
 
@@ -55,21 +55,19 @@ client.on('messageCreate', async (message) => {
 
             users.forEach((user, index) => {
                 userListEmbed.addFields(
-                    { name: `User ${index + 1}`, value: `Username: ${user.username}\nEmail: ${user.email}\nNickname: ${user.nickname}` }
+                    { name: `${user.username}`, value: `Email: ${user.email}\nNickname: ${user.nickname}\nCreated At: ${user.created_at.toISOString()}` }
                 );
             });
 
-            message.reply({ embeds: [userListEmbed] });
+            sendEmbed(message, userListEmbed);
         } catch (error) {
-            console.error(error);
-            message.reply('Error fetching users.');
+            handleError(message, error);
         }
-    }
-
-    if (command === '!lgen') {
+    },
+    '!lgen': async (message, args) => {
         const [runtime, ...features] = args;
 
-        if (!runtime || features.length === 0) return message.reply('Usage: !lgen <runtime> <feature1> <feature2> ...' + '\n' + 'Example: !lgen 1d feature1 feature2');
+        if (!runtime || features.length === 0) return message.reply('Usage: !lgen <runtime> <feature1> <feature2> ...\nExample: !lgen 1d feature1 feature2');
 
         try {
             const licenseKey = `license-${Math.random().toString(36).substr(2, 9)}`;
@@ -78,32 +76,15 @@ client.on('messageCreate', async (message) => {
             const unit = runtime.slice(-1);
 
             switch (unit) {
-                case 'h':
-                    expiresAt.setHours(expiresAt.getHours() + value);
-                    break;
-                case 'd':
-                    expiresAt.setDate(expiresAt.getDate() + value);
-                    break;
-                case 'w':
-                    expiresAt.setDate(expiresAt.getDate() + (value * 7));
-                    break;
-                case 'm':
-                    expiresAt.setMonth(expiresAt.getMonth() + value);
-                    break;
-                case 'y':
-                    expiresAt.setFullYear(expiresAt.getFullYear() + value);
-                    break;
-                default:
-                    return message.reply('Invalid runtime format.');
+                case 'h': expiresAt.setHours(expiresAt.getHours() + value); break;
+                case 'd': expiresAt.setDate(expiresAt.getDate() + value); break;
+                case 'w': expiresAt.setDate(expiresAt.getDate() + (value * 7)); break;
+                case 'm': expiresAt.setMonth(expiresAt.getMonth() + value); break;
+                case 'y': expiresAt.setFullYear(expiresAt.getFullYear() + value); break;
+                default: return message.reply('Invalid runtime format.');
             }
 
-            const newLicense = new Licenses({
-                key: licenseKey,
-                features: features,
-                runtime,
-                expires_at: expiresAt
-            });
-
+            const newLicense = new Licenses({ key: licenseKey, features, runtime, expires_at: expiresAt });
             await newLicense.save();
 
             const licenseEmbed = new EmbedBuilder()
@@ -117,14 +98,12 @@ client.on('messageCreate', async (message) => {
                 )
                 .setTimestamp();
 
-            message.reply({ embeds: [licenseEmbed] });
+            sendEmbed(message, licenseEmbed);
         } catch (error) {
-            console.error(error);
-            message.reply('Error generating license.');
+            handleError(message, error);
         }
-    }
-
-    if (command === '!llist') {
+    },
+    '!llist': async (message, args) => {
         const pageSize = 10;
         const page = parseInt(args[0], 10) || 1;
 
@@ -145,14 +124,12 @@ client.on('messageCreate', async (message) => {
                 );
             });
 
-            message.reply({ embeds: [licenseListEmbed] });
+            sendEmbed(message, licenseListEmbed);
         } catch (error) {
-            console.error(error);
-            message.reply('Error fetching licenses.');
+            handleError(message, error);
         }
-    }
-
-    if (command === '!lp') {
+    },
+    '!lp': async (message) => {
         try {
             const pointers = await MemoryPointer.find();
 
@@ -166,24 +143,22 @@ client.on('messageCreate', async (message) => {
                     .setColor('#0099ff')
                     .setTitle('Memory Pointer List');
 
-                batch.forEach((pointer, index) => {
+                batch.forEach((pointer) => {
                     pointerListEmbed.addFields(
                         { name: `${pointer.feature}`, value: `ID: ${pointer._id}\nAddress: ${pointer.address}\nOffsets: ${pointer.offsets.join(', ')}` }
                     );
                 });
 
-                await message.reply({ embeds: [pointerListEmbed] });
+                await sendEmbed(message, pointerListEmbed);
             }
         } catch (error) {
-            console.error(error);
-            message.reply('Error fetching memory pointers.');
+            handleError(message, error);
         }
-    }
-
-    if (command === '!dp') {
+    },
+    '!dp': async (message, args) => {
         const pointerId = args[0];
         if (!pointerId) return message.reply('Please provide a pointer ID.');
-        
+
         try {
             const pointer = await MemoryPointer.findById(pointerId);
             if (!pointer) return message.reply('Memory pointer not found.');
@@ -201,24 +176,17 @@ client.on('messageCreate', async (message) => {
                 .addFields(fields)
                 .setTimestamp();
 
-            message.reply({ embeds: [pointerEmbed] });
+            sendEmbed(message, pointerEmbed);
         } catch (error) {
-            console.error(error);
-            message.reply('Error deleting memory pointer.');
+            handleError(message, error);
         }
-    }
-
-    if (command === '!ap') {
+    },
+    '!ap': async (message, args) => {
         const [feature, address, ...offsets] = args;
         if (!feature || !address) return message.reply('Usage: !ap <feature> <address> <offset1> <offset2> ...');
 
         try {
-            const newPointer = new MemoryPointer({
-                feature,
-                address,
-                offsets
-            });
-
+            const newPointer = new MemoryPointer({ feature, address, offsets });
             await newPointer.save();
 
             const pointerEmbed = new EmbedBuilder()
@@ -231,15 +199,12 @@ client.on('messageCreate', async (message) => {
                 )
                 .setTimestamp();
 
-            message.reply({ embeds: [pointerEmbed] });
+            sendEmbed(message, pointerEmbed);
         } catch (error) {
-            console.error(error);
-            message.reply('Error adding memory pointer.');
+            handleError(message, error);
         }
-    }
-
-// edit pointer
-    if (command === '!ep') {
+    },
+    '!ep': async (message, args) => {
         const pointerId = args[0];
         const [feature, address, ...offsets] = args.slice(1);
         if (!pointerId || !feature || !address) return message.reply('Usage: !ep <pointer_id> <feature> <address> <offset1> <offset2> ...');
@@ -264,15 +229,12 @@ client.on('messageCreate', async (message) => {
                 )
                 .setTimestamp();
 
-            message.reply({ embeds: [pointerEmbed] });
+            sendEmbed(message, pointerEmbed);
         } catch (error) {
-            console.error(error);
-            message.reply('Error editing memory pointer.');
+            handleError(message, error);
         }
-    }
-
-    // help command with all commands
-    if (command === '!help') {
+    },
+    '!help': (message) => {
         const helpEmbed = new EmbedBuilder()
             .setColor('#0099ff')
             .setTitle('Help')
@@ -288,7 +250,17 @@ client.on('messageCreate', async (message) => {
             )
             .setTimestamp();
 
-        message.reply({ embeds: [helpEmbed] });
+        sendEmbed(message, helpEmbed);
+    }
+};
+
+client.on('messageCreate', async (message) => {
+    if (message.author.bot || !message.member.permissions.has(PermissionsBitField.Flags.Administrator)) return;
+
+    const [command, ...args] = message.content.split(' ');
+
+    if (commands[command]) {
+        await commands[command](message, args);
     }
 });
 
