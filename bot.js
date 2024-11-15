@@ -21,13 +21,13 @@ const sendHelpMessage = (message) => {
         .setTitle('Help')
         .addFields(
             { name: '!u <username>', value: 'Get user info by username.' },
-            { name: '!lu [page]', value: 'List users.' },
-            { name: '!gl <runtime> <feature1> <feature2> ...', value: 'Generate license.' },
+            { name: '!ul [page]', value: 'List users.' },
+            { name: '!lg <runtime> <feature1> <feature2> ...', value: 'Generate license.' },
             { name: '!ll [page]', value: 'List licenses.' },
-            { name: '!lp', value: 'List memory pointers.' },
-            { name: '!dp <pointer_id>', value: 'Delete memory pointer.' },
-            { name: '!ap <feature> <address> <offset1> <offset2> ...', value: 'Add memory pointer.' },
-            { name: '!ep <pointer_id> <feature> <address> <offset1> <offset2> ...', value: 'Edit memory pointer.' }
+            { name: '!pl', value: 'List memory pointers.' },
+            { name: '!pd <pointer_id>', value: 'Delete memory pointer.' },
+            { name: '!pa <feature> <address> <offset1> <offset2> ...', value: 'Add memory pointer.' },
+            { name: '!pe <pointer_id> <feature> <address> <offset1> <offset2> ...', value: 'Edit memory pointer.' }
         )
         .setTimestamp();
 
@@ -58,7 +58,7 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!lu': async (message, args) => {
+    '!ul': async (message, args) => {
         const pageSize = 10;
         const page = parseInt(args[0], 10) || 1;
 
@@ -149,7 +149,7 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!lp': async (message) => {
+    '!pl': async (message) => {
         try {
             const pointers = await MemoryPointer.find();
 
@@ -175,9 +175,9 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!dp': async (message, args) => {
+    '!pd': async (message, args) => {
         const pointerId = args[0];
-        if (!pointerId) return message.reply('Please provide a pointer ID.');
+        if (!pointerId) return message.reply('Usage: !pd <pointer_id>');
 
         try {
             const pointer = await MemoryPointer.findById(pointerId);
@@ -201,9 +201,9 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!ap': async (message, args) => {
+    '!pa': async (message, args) => {
         const [feature, address, ...offsets] = args;
-        if (!feature || !address) return message.reply('Usage: !ap <feature> <address> <offset1> <offset2> ...');
+        if (!feature || !address) return message.reply('Usage: !pa <feature> <address> <offset1> <offset2> ...');
 
         try {
             const newPointer = new MemoryPointer({ feature, address, offsets });
@@ -224,10 +224,10 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!ep': async (message, args) => {
+    '!pe': async (message, args) => {
         const pointerId = args[0];
         const [feature, address, ...offsets] = args.slice(1);
-        if (!pointerId || !feature || !address) return message.reply('Usage: !ep <pointer_id> <feature> <address> <offset1> <offset2> ...');
+        if (!pointerId || !feature || !address) return message.reply('Usage: !pe <pointer_id> <feature> <address> <offset1> <offset2> ...');
 
         try {
             const pointer = await MemoryPointer.findById(pointerId);
