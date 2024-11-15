@@ -123,46 +123,6 @@ const publicChatSchema = new mongoose.Schema({
 const PublicChat = mongoose.model('PublicChat', publicChatSchema);
 
 const initializeDatabase = async () => {
-    const defaultMemoryPointers = [
-        { feature: 'zoom', address: '0x68FC54', offsets: [] },
-        { feature: 'fov', address: '0x70B9FC', offsets: [] },
-        { feature: 'speedhack', address: '0x009B0BB0', offsets: ['0x94', '0x2BC', '0x40', '0x0', '0x11C', '0x58'] },
-        { feature: 'gravity', address: '0x009B0BB0', offsets: ['0x94', '0x2BC', '0x40', '0x0', '0x11C', '0x30'] },
-        { feature: 'moonjump', address: '0x009B0BB0', offsets: ['0x94', '0x2BC', '0x40', '0x0', '0x11C', '0x2C'] },
-        { feature: 'moonwalk', address: '0x009B0BB0', offsets: ['0x94', '0x2BC', '0x40', '0x0', '0x11C', '0xA4'] },
-        { feature: 'fakelag', address: '0x009B0BB0', offsets: ['0x94', '0x2BC', '0x40', '0x0', '0x11C', '0xB7'] },
-        { feature: 'fakelagg', address: '0x009B0BB0', offsets: ['0x94', '0x2BC', '0x40', '0x0', '0x11C', '0xB8'] },
-        { feature: 'cb', address: '0x007AF4CC', offsets: ['0x58', '0x1C', '0x8', '0x0', '0x1C', '0x88', '0x0'] },
-        { feature: 'ch', address: '0x007AF4CC', offsets: ['0x58', '0x1C', '0x8', '0x0', '0x1C', '0x88', '0x4'] },
-        { feature: 'cl', address: '0x007AF4CC', offsets: ['0x58', '0x1C', '0x8', '0x0', '0x1C', '0x88', '0x8'] },
-        { feature: 'Camheight', address: '0x00E6E9B8', offsets: ['0x94', '0x2BC', '0x4', '0x84', '0x98'] },
-        { feature: 'nomove1', address: '0x4F6A8D', offsets: [] },
-        { feature: 'nomove2', address: '0x4F69E4', offsets: [] },
-        { feature: 'nomove3', address: '0x4F67E9', offsets: [] },
-        { feature: 'nomove4', address: '0x4F6740', offsets: [] },
-        { feature: 'fastfly', address: '', offsets: [] },
-        { feature: 'camposx', address: '0x007B0518', offsets: ['0x0', '0x40', '0x0', '0x78'] },
-        { feature: 'camposy', address: '0x007B0518', offsets: ['0x0', '0x40', '0x0', '0x74'] },
-        { feature: 'camposz', address: '0x007B0518', offsets: ['0x0', '0x40', '0x0', '0x70'] },
-        { feature: 'posz', address: '0x007B0518', offsets: ['0x0', '0x40', '0x0', '0x78'] },
-        { feature: 'turn', address: '0x009AFBB0', offsets: ['0x130', '0x40', '0x0', '0x70'] },
-        { feature: 'posy', address: '0x007B0518', offsets: ['0x0', '0x40', '0x0', '0x74'] },
-        { feature: 'posx', address: '0x007B0518', offsets: ['0x0', '0x40', '0x0', '0x70'] },
-        { feature: 'speednop', address: '0x5050A1', offsets: [] }
-    ];
-    
-    for (const pointer of defaultMemoryPointers) {
-        const existingPointer = await MemoryPointer.findOne({ feature: pointer.feature });
-        if (!existingPointer) {
-            await new MemoryPointer(pointer).save();
-        } else {
-            existingPointer.address = pointer.address;
-            existingPointer.offsets = pointer.offsets;
-            await existingPointer.save();
-        }
-    }
-    console.log("Default memory pointers inserted or updated successfully.");
-
     const defaultSettings = [
         { name: 'status', value: 'online' },
         { name: 'latest_version', value: '0.0.0' }

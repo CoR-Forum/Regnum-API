@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
 const { logActivity } = require('./utils');
-const { User, Licenses } = require('./models'); // Import Licenses model
+const { User, Licenses, MemoryPointer, SylentxFeature } = require('./models');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
@@ -150,6 +150,128 @@ client.on('messageCreate', async (message) => {
         } catch (error) {
             console.error(error);
             message.reply('Error fetching licenses.');
+        }
+    }
+
+// list pointers without pagination
+if (command === '!lp') {
+    try {
+        const pointers = await MemoryPointer.find();
+
+        if (pointers.length === 0) return message.reply('No memory pointers found.');
+
+        const batchSize = 10;
+        for (let i = 0; i < pointers.length; i += batchSize) {
+            const batch = pointers.slice(i, i + batchSize);
+
+            const pointerListEmbed = new EmbedBuilder()
+                .setColor('#0099ff')
+                .setTitle('Memory Pointer List');
+
+            batch.forEach((pointer, index) => {
+                pointerListEmbed.addFields(
+                    { name: `Pointer ${i + index + 1}`, value: `ID: ${pointer._id}\nFeature: ${pointer.feature}\nAddress: ${pointer.address}\nOffsets: ${pointer.offsets.join(', ')}` }
+                );
+            });
+
+            await message.reply({ embeds: [pointerListEmbed] });
+        }
+    } catch (error) {
+        console.error(error);
+        message.reply('Error fetching memory pointers.');
+    }
+}
+
+// delete pointer
+if (command === '!dp') {
+    const pointerId = args[0];
+    if (!pointerId) return message.reply('Please provide a pointer ID.');
+    
+    try {
+        const pointer = await MemoryPointer.findById(pointerId);
+        if (!pointer) return message.reply('Memory pointer not found.');
+
+        await MemoryPointer.deleteOne({ _id: pointerId });
+
+        const fields = [];
+        if (pointer.feature) fields.push({ name: 'Feature', value: pointer.feature, inline: true });
+        if (pointer.address) fields.push({ name: 'Address', value: pointer.address, inline: true });
+        if (pointer.offsets && pointer.offsets.length > 0) fields.push({ name: 'Offsets', value: pointer.offsets.join(', '), inline: true });
+
+        const pointerEmbed = new EmbedBuilder()
+            .setColor('#ff0000')
+            .setTitle('Memory Pointer Deleted')
+            .addFields(fields)
+            .setTimestamp();
+
+        message.reply({ embeds: [pointerEmbed] });
+    } catch (error) {
+        console.error(error);
+        message.reply('Error deleting memory pointer.');
+    }
+}
+
+// add pointer
+    if (command === '!ap') {
+        const [feature, address, ...offsets] = args;
+        if (!feature || !address) return message.reply('Usage: !ap <feature> <address> <offset1> <offset2> ...');
+
+        try {
+            const newPointer = new MemoryPointer({
+                feature,
+                address,
+                offsets
+            });
+
+            await newPointer.save();
+
+            const pointerEmbed = new EmbedBuilder()
+                .setColor('#00ff00')
+                .setTitle('Memory Pointer Added')
+                .addFields(
+                    { name: 'Feature', value: feature, inline: true },
+                    { name: 'Address', value: address, inline: true },
+                    { name: 'Offsets', value: offsets.join(', '), inline: true }
+                )
+                .setTimestamp();
+
+            message.reply({ embeds: [pointerEmbed] });
+        } catch (error) {
+            console.error(error);
+            message.reply('Error adding memory pointer.');
+        }
+    }
+
+// edit pointer
+    if (command === '!ep') {
+        const pointerId = args[0];
+        const [feature, address, ...offsets] = args.slice(1);
+        if (!pointerId || !feature || !address) return message.reply('Usage: !ep <pointer_id> <feature> <address> <offset1> <offset2> ...');
+
+        try {
+            const pointer = await MemoryPointer.findById(pointerId);
+            if (!pointer) return message.reply('Memory pointer not found.');
+
+            pointer.feature = feature;
+            pointer.address = address;
+            pointer.offsets = offsets;
+
+            await pointer.save();
+
+            const pointerEmbed = new EmbedBuilder()
+                .setColor('#00ff00')
+                .setTitle('Memory Pointer Edited')
+                .addFields(
+                    { name: 'Feature', value: feature, inline: true },
+                    { name: 'Address', value: address, inline: true },
+                    { name: 'Offsets', value: offsets.join(', '), inline: true }
+                )
+                .setTimestamp();
+
+            message.reply({ embeds: [pointerEmbed] });
+        } catch (error) {
+            console.error(error);
+            message.reply('Error editing memory pointer.');
         }
     }
 });
