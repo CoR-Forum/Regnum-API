@@ -84,45 +84,51 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!lg': async (message, args) => {
-        const [runtime, ...features] = args;
+'!lg': async (message, args) => {
+    const [runtime, expiry, ...features] = args;
 
-        if (!runtime || features.length === 0) return message.reply('Usage: !lg <runtime> <feature1> <feature2> ...\nExample: !lgen 1d feature1 feature2');
+    if (!runtime || !expiry || features.length === 0) {
+        return message.reply('Usage: !lg <runtime> <expiry> <feature1> <feature2> ...\nExample: !lg 1d 2d feature1 feature2');
+    }
 
-        try {
-            const licenseKey = `license-${Math.random().toString(36).substr(2, 9)}`;
-            const expiresAt = new Date();
-            const value = parseInt(runtime.slice(0, -1), 10);
-            const unit = runtime.slice(-1);
+    try {
+        const licenseKey = `license-${Math.random().toString(36).substr(2, 9)}`;
+        let expiresAt = new Date();
 
-            switch (unit) {
-                case 'h': expiresAt.setHours(expiresAt.getHours() + value); break;
-                case 'd': expiresAt.setDate(expiresAt.getDate() + value); break;
-                case 'w': expiresAt.setDate(expiresAt.getDate() + (value * 7)); break;
-                case 'm': expiresAt.setMonth(expiresAt.getMonth() + value); break;
-                case 'y': expiresAt.setFullYear(expiresAt.getFullYear() + value); break;
-                default: return message.reply('Invalid runtime format.');
-            }
+        const expiryValue = parseInt(expiry.slice(0, -1), 10);
+        const expiryUnit = expiry.slice(-1);
 
-            const newLicense = new Licenses({ key: licenseKey, features, runtime, expires_at: expiresAt });
-            await newLicense.save();
-
-            const licenseEmbed = new EmbedBuilder()
-                .setColor('#00ff00')
-                .setTitle('License Generated')
-                .addFields(
-                    { name: 'License Key', value: licenseKey, inline: true },
-                    { name: 'Features', value: features.join(', '), inline: true },
-                    { name: 'Runtime', value: runtime, inline: true },
-                    { name: 'Expires At', value: expiresAt.toISOString(), inline: true }
-                )
-                .setTimestamp();
-
-            sendEmbed(message, licenseEmbed);
-        } catch (error) {
-            handleError(message, error);
+        if (isNaN(expiryValue) || !['h', 'd', 'w', 'm', 'y'].includes(expiryUnit)) {
+            return message.reply('Invalid expiry format. Use <number><unit> where unit is h, d, w, m, or y.');
         }
-    },
+
+        switch (expiryUnit) {
+            case 'h': expiresAt.setHours(expiresAt.getHours() + expiryValue); break;
+            case 'd': expiresAt.setDate(expiresAt.getDate() + expiryValue); break;
+            case 'w': expiresAt.setDate(expiresAt.getDate() + (expiryValue * 7)); break;
+            case 'm': expiresAt.setMonth(expiresAt.getMonth() + expiryValue); break;
+            case 'y': expiresAt.setFullYear(expiresAt.getFullYear() + expiryValue); break;
+        }
+
+        const newLicense = new Licenses({ key: licenseKey, features, runtime, expires_at: expiresAt });
+        await newLicense.save();
+
+        const licenseEmbed = new EmbedBuilder()
+            .setColor('#00ff00')
+            .setTitle('License Generated')
+            .addFields(
+                { name: 'License Key', value: licenseKey, inline: true },
+                { name: 'Features', value: features.join(', '), inline: true },
+                { name: 'Runtime', value: runtime, inline: true },
+                { name: 'Expires At', value: expiresAt.toISOString(), inline: true }
+            )
+            .setTimestamp();
+
+        sendEmbed(message, licenseEmbed);
+    } catch (error) {
+        handleError(message, error);
+    }
+},
     '!ll': async (message, args) => {
         const pageSize = 10;
         const page = parseInt(args[0], 10) || 1;
