@@ -6,6 +6,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBit
 
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
+    client.user.setActivity('your status message here', { type: 'WATCHING' }); // You can change the type to PLAYING, LISTENING, etc.
 });
 
 const sendEmbed = (message, embed) => message.reply({ embeds: [embed] });
