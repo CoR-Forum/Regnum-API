@@ -87,15 +87,15 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
     });
     console.log('Valid features:', validFeatures); // Debugging line
 
-    for (const feature of validFeatures) {
-      const pointer = await MemoryPointer.findOne({ feature: feature.type });
-      if (pointer) {
-        memoryPointers[feature.type] = {
-          address: pointer.address,
-          offsets: pointer.offsets
-        };
-      }
-    }
+for (const feature of validFeatures) {
+  const pointer = await MemoryPointer.findOne({ feature: feature.type });
+  if (pointer) {
+    memoryPointers[feature.type] = {
+      address: pointer.address,
+      offsets: pointer.offsets // Ensure this handles the array correctly
+    };
+  }
+}
 
     const settings = await Settings.find();
     const settingsObject = {};
