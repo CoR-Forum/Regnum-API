@@ -4,10 +4,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
 const argon2 = require('argon2');
-const jwt = require('jsonwebtoken');
 const { mail, notifyAdmins } = require('./notificator');
 const { validateUsername, validatePassword } = require('./validation');
-const { logActivity } = require('./utils');
+const { logActivity, generateToken } = require('./utils');
 const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
 const feedbackRoutes = require('./router/feedback');
@@ -15,6 +14,10 @@ const { validateToken, checkPermissions } = require('./middleware');
 const { User, UserSettings, MemoryPointer, Settings, Licenses, Token, SylentxFeature, initializeDatabase } = require('./models');
 const chatRoutes = require('./router/chat');
 require('./bot');
+
+const passport = require('passport');
+require('./auth/discord'); // Ensure this is added to initialize the Discord strategy
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,13 +42,13 @@ app.use(helmet.contentSecurityPolicy({
 
 app.use(express.json());
 
-const generateToken = async (user) => {
-  await Token.deleteMany({ userId: user._id });
-  const token = jwt.sign({ userId: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  await new Token({ userId: user._id, token }).save();
+app.use(passport.initialize());
 
-  return token;
-};
+app.get(`${BASE_PATH}/auth/discord`, passport.authenticate('discord'));
+
+app.get(`${BASE_PATH}/auth/discord/callback`, passport.authenticate('discord', { failureRedirect: '/', session: false }), (req, res) => {
+  res.json({ status: "success", message: "Login successful", token: req.user.token });
+});
 
 app.post(`${BASE_PATH}/login`, async (req, res) => {
   const { username, password } = req.body;
