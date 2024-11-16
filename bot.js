@@ -296,4 +296,6 @@ client.on('messageCreate', async (message) => {
     }
 });
 
-client.login(process.env.DISCORD_BOT_TOKEN);
+if (process.env.DISCORD_BOT == 'true') {
+    client.login(process.env.DISCORD_BOT_TOKEN);
+}
