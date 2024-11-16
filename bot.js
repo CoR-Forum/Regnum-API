@@ -169,13 +169,7 @@ const commands = {
 
             const licenseEmbed = new EmbedBuilder()
                 .setColor('#ff0000')
-                .setTitle('License Deleted')
-                .addFields(
-                    { name: 'License Key', value: license.key, inline: true },
-                    { name: 'Features', value: license.features.join(', '), inline: true },
-                    { name: 'Runtime', value: license.runtime, inline: true },
-                    { name: 'Expires At', value: license.expires_at.toISOString(), inline: true }
-                )
+                .setTitle('License ' + license.key + ' Deleted')
                 .setTimestamp();
 
             sendEmbed(message, licenseEmbed);
