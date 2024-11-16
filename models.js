@@ -55,31 +55,6 @@ const licensesSchema = new mongoose.Schema({
 
 const Licenses = mongoose.model('Licenses', licensesSchema);
 
-const defaultLicenses = [
-    {
-        key: 'beta11',
-        features: ["zoom", "posx", "posy"],
-        runtime: "1w",
-        expires_at: new Date('2024-12-31')
-    }
-];
-
-const initializeLicenses = async () => {
-    for (const license of defaultLicenses) {
-        const existingLicense = await Licenses.findOne({ key: license.key });
-        if (!existingLicense) {
-            await new Licenses(license).save();
-        } else {
-            existingLicense.features = license.features;
-            existingLicense.expires_at = license.expires_at;
-            await existingLicense.save();
-        }
-    }
-    console.log("Default licenses inserted or updated successfully.");
-}
-
-initializeLicenses();
-
 const userSettingsSchema = new mongoose.Schema({
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true },
     settings: { type: String },
@@ -92,7 +67,7 @@ const UserSettings = mongoose.model('UserSettings', userSettingsSchema);
 const memoryPointerSchema = new mongoose.Schema({
     feature: { type: String },
     address: { type: String },
-    offsets: { type: [String] } // Changed to an array of strings
+    offsets: { type: [String] }
 });
 
 const MemoryPointer = mongoose.model('MemoryPointer', memoryPointerSchema);
@@ -154,7 +129,7 @@ const Feedback = mongoose.model('Feedback', feedbackSchema);
 const tokenSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
     token: { type: String, required: true },
-    createdAt: { type: Date, default: Date.now, expires: '1h' } // Token will expire after 1 hour
+    createdAt: { type: Date, default: Date.now, expires: '1h' }
 });
 
 const Token = mongoose.model('Token', tokenSchema);
