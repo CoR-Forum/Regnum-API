@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
-const { User, Licenses, MemoryPointer } = require('./models');
+const { User, Licenses, MemoryPointer, SylentxFeature } = require('./models');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
@@ -36,7 +36,7 @@ const sendHelpMessage = (message) => {
 };
 
 const commands = {
-    '!u': async (message, args) => {
+    'u': async (message, args) => {
         const username = args[0];
         if (!username) return message.reply('Usage: !u <username>');
 
@@ -44,13 +44,17 @@ const commands = {
             const user = await User.findOne({ username });
             if (!user) return message.reply('User not found.');
 
+            const features = await SylentxFeature.find({ user_id: user._id });
+            const featureList = features.map(feature => `${feature.type} (expires at: ${feature.expires_at.toISOString()})`).join('\n');
+
             const userInfoEmbed = new EmbedBuilder()
                 .setColor('#0099ff')
                 .setTitle('User Info')
                 .addFields(
                     { name: 'Username', value: user.username, inline: true },
                     { name: 'Email', value: user.email, inline: true },
-                    { name: 'Nickname', value: user.nickname, inline: true }
+                    { name: 'Nickname', value: user.nickname, inline: true },
+                    { name: 'Features', value: featureList || 'No features', inline: false }
                 )
                 .setTimestamp();
 
@@ -59,7 +63,7 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!ul': async (message, args) => {
+    'ul': async (message, args) => {
         const pageSize = 10;
         const page = parseInt(args[0], 10) || 1;
 
@@ -74,63 +78,66 @@ const commands = {
                 .setColor('#0099ff')
                 .setTitle(`User List - Page ${page} of ${totalPages}`);
 
-            users.forEach((user, index) => {
+            for (const user of users) {
+                const features = await SylentxFeature.find({ user_id: user._id });
+                const featureList = features.map(feature => `${feature.type} (expires at: ${feature.expires_at.toISOString()})`).join('\n');
+
                 userListEmbed.addFields(
-                    { name: `${user.username}`, value: `Email: ${user.email}\nNickname: ${user.nickname}\nCreated At: ${user.created_at.toISOString()}` }
+                    { name: `${user.username}`, value: `Email: ${user.email}\nNickname: ${user.nickname}\nCreated At: ${user.created_at.toISOString()}\nFeatures:\n${featureList}` }
                 );
-            });
+            }
 
             sendEmbed(message, userListEmbed);
         } catch (error) {
             handleError(message, error);
         }
     },
-'!lg': async (message, args) => {
-    const [runtime, expiry, ...features] = args;
+    'lg': async (message, args) => {
+        const [runtime, expiry, ...features] = args;
 
-    if (!runtime || !expiry || features.length === 0) {
-        return message.reply('Usage: !lg <runtime> <expiry> <feature1> <feature2> ...\nExample: !lg 1d 2d feature1 feature2');
-    }
-
-    try {
-        const licenseKey = `license-${Math.random().toString(36).substr(2, 9)}`;
-        let expiresAt = new Date();
-
-        const expiryValue = parseInt(expiry.slice(0, -1), 10);
-        const expiryUnit = expiry.slice(-1);
-
-        if (isNaN(expiryValue) || !['h', 'd', 'w', 'm', 'y'].includes(expiryUnit)) {
-            return message.reply('Invalid expiry format. Use <number><unit> where unit is h, d, w, m, or y.');
+        if (!runtime || !expiry || features.length === 0) {
+            return message.reply('Usage: !lg <runtime> <expiry> <feature1> <feature2> ...\nExample: !lg 1d 2d feature1 feature2');
         }
 
-        switch (expiryUnit) {
-            case 'h': expiresAt.setHours(expiresAt.getHours() + expiryValue); break;
-            case 'd': expiresAt.setDate(expiresAt.getDate() + expiryValue); break;
-            case 'w': expiresAt.setDate(expiresAt.getDate() + (expiryValue * 7)); break;
-            case 'm': expiresAt.setMonth(expiresAt.getMonth() + expiryValue); break;
-            case 'y': expiresAt.setFullYear(expiresAt.getFullYear() + expiryValue); break;
+        try {
+            const licenseKey = `license-${Math.random().toString(36).substr(2, 9)}`;
+            let expiresAt = new Date();
+
+            const expiryValue = parseInt(expiry.slice(0, -1), 10);
+            const expiryUnit = expiry.slice(-1);
+
+            if (isNaN(expiryValue) || !['h', 'd', 'w', 'm', 'y'].includes(expiryUnit)) {
+                return message.reply('Invalid expiry format. Use <number><unit> where unit is h, d, w, m, or y.');
+            }
+
+            switch (expiryUnit) {
+                case 'h': expiresAt.setHours(expiresAt.getHours() + expiryValue); break;
+                case 'd': expiresAt.setDate(expiresAt.getDate() + expiryValue); break;
+                case 'w': expiresAt.setDate(expiresAt.getDate() + (expiryValue * 7)); break;
+                case 'm': expiresAt.setMonth(expiresAt.getMonth() + expiryValue); break;
+                case 'y': expiresAt.setFullYear(expiresAt.getFullYear() + expiryValue); break;
+            }
+
+            const newLicense = new Licenses({ key: licenseKey, features, runtime, expires_at: expiresAt });
+            await newLicense.save();
+
+            const licenseEmbed = new EmbedBuilder()
+                .setColor('#00ff00')
+                .setTitle('License Generated')
+                .addFields(
+                    { name: 'License Key', value: licenseKey, inline: true },
+                    { name: 'Features', value: features.join(', '), inline: true },
+                    { name: 'Runtime', value: runtime, inline: true },
+                    { name: 'Expires At', value: expiresAt.toISOString(), inline: true }
+                )
+                .setTimestamp();
+
+            sendEmbed(message, licenseEmbed);
+        } catch (error) {
+            handleError(message, error);
         }
-
-        const newLicense = new Licenses({ key: licenseKey, features, runtime, expires_at: expiresAt });
-        await newLicense.save();
-
-        const licenseEmbed = new EmbedBuilder()
-            .setColor('#00ff00')
-            .setTitle('License Generated')
-            .addFields(
-                { name: 'License Key', value: licenseKey, inline: true },
-                { name: 'Features', value: features.join(', '), inline: true },
-                { name: 'Runtime', value: runtime, inline: true },
-                { name: 'Expires At', value: expiresAt.toISOString(), inline: true }
-            )
-            .setTimestamp();
-
-        sendEmbed(message, licenseEmbed);
-    } catch (error) {
-        handleError(message, error);
-    }
-},
-    '!ll': async (message, args) => {
+    },
+    'll': async (message, args) => {
         const pageSize = 10;
         const page = parseInt(args[0], 10) || 1;
 
@@ -156,16 +163,15 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!ld': async (message, args) => {
+    'ld': async (message, args) => {
         const licenseKey = args[0];
         if (!licenseKey) return message.reply('Usage: !ld <license_key>');
-        
+
         try {
             const license = await Licenses.findOne({ key: licenseKey });
             if (!license) return message.reply('License not found.');
 
-            await Licenses.deleteOne
-            ({ key: licenseKey });
+            await Licenses.deleteOne({ key: licenseKey });
 
             const licenseEmbed = new EmbedBuilder()
                 .setColor('#ff0000')
@@ -177,7 +183,7 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!pl': async (message) => {
+    'pl': async (message) => {
         try {
             const pointers = await MemoryPointer.find();
 
@@ -203,7 +209,7 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!pd': async (message, args) => {
+    'pd': async (message, args) => {
         const pointerId = args[0];
         if (!pointerId) return message.reply('Usage: !pd <pointer_id>');
 
@@ -229,7 +235,7 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!pa': async (message, args) => {
+    'pa': async (message, args) => {
         const [feature, address, ...offsets] = args;
         if (!feature || !address) return message.reply('Usage: !pa <feature> <address> <offset1> <offset2> ...');
 
@@ -252,7 +258,7 @@ const commands = {
             handleError(message, error);
         }
     },
-    '!pe': async (message, args) => {
+    'pe': async (message, args) => {
         const pointerId = args[0];
         const [feature, address, ...offsets] = args.slice(1);
         if (!pointerId || !feature || !address) return message.reply('Usage: !pe <pointer_id> <feature> <address> <offset1> <offset2> ...');
@@ -281,15 +287,19 @@ const commands = {
         } catch (error) {
             handleError(message, error);
         }
-    },    
-    '!help': sendHelpMessage,
-    '!h': sendHelpMessage
+    },
+    'help': sendHelpMessage,
+    'h': sendHelpMessage
 };
+
+const prefix = process.env.NODE_ENV === 'development' ? '?' : '!';
 
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.member.permissions.has(PermissionsBitField.Flags.Administrator)) return;
 
-    const [command, ...args] = message.content.split(' ');
+    if (!message.content.startsWith(prefix)) return;
+
+    const [command, ...args] = message.content.slice(prefix.length).split(' ');
 
     if (commands[command]) {
         await commands[command](message, args);
