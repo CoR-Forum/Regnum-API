@@ -1,6 +1,6 @@
 const validator = require('validator');
-const { User } = require('./models'); // Import Mongoose models
-const hibp = require('hibp'); // Import hibp
+const { User } = require('./models');
+const hibp = require('hibp');
 
 const validateUsername = (username) => {
     const usernameRegex = /^[a-zA-Z0-9]{3,20}$/;
