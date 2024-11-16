@@ -24,6 +24,7 @@ const sendHelpMessage = (message) => {
             { name: '!ul [page]', value: 'List users.' },
             { name: '!lg <runtime> <feature1> <feature2> ...', value: 'Generate license.' },
             { name: '!ll [page]', value: 'List licenses.' },
+            { name: '!ld <license_key>', value: 'Delete license.' },
             { name: '!pl', value: 'List memory pointers.' },
             { name: '!pd <pointer_id>', value: 'Delete memory pointer.' },
             { name: '!pa <feature> <address> <offset1> <offset2> ...', value: 'Add memory pointer.' },
@@ -146,11 +147,38 @@ const commands = {
 
             licenses.forEach((license, index) => {
                 licenseListEmbed.addFields(
-                    { name: `License ${index + 1}`, value: `Key: ${license.key}\nFeatures: ${license.features.join(', ')}\nRuntime: ${license.runtime}\nExpires At: ${license.expires_at.toISOString()}\nActivated By: ${license.activated_by ? license.activated_by.username : 'N/A'}\nActivated At: ${license.activated_at ? license.activated_at.toISOString() : 'N/A'}` }
+                    { name: `${license.key}`, value: `Features: ${license.features.join(', ')}\nRuntime: ${license.runtime}\nExpires At: ${license.expires_at.toISOString()}\nActivated By: ${license.activated_by ? license.activated_by.username : 'N/A'}\nActivated At: ${license.activated_at ? license.activated_at.toISOString() : 'N/A'}` }
                 );
             });
 
             sendEmbed(message, licenseListEmbed);
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    '!ld': async (message, args) => {
+        const licenseKey = args[0];
+        if (!licenseKey) return message.reply('Usage: !ld <license_key>');
+        
+        try {
+            const license = await Licenses.findOne({ key: licenseKey });
+            if (!license) return message.reply('License not found.');
+
+            await Licenses.deleteOne
+            ({ key: licenseKey });
+
+            const licenseEmbed = new EmbedBuilder()
+                .setColor('#ff0000')
+                .setTitle('License Deleted')
+                .addFields(
+                    { name: 'License Key', value: license.key, inline: true },
+                    { name: 'Features', value: license.features.join(', '), inline: true },
+                    { name: 'Runtime', value: license.runtime, inline: true },
+                    { name: 'Expires At', value: license.expires_at.toISOString(), inline: true }
+                )
+                .setTimestamp();
+
+            sendEmbed(message, licenseEmbed);
         } catch (error) {
             handleError(message, error);
         }
