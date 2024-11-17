@@ -92,13 +92,10 @@ const notifyAdmins = async (message, type = 'discord_log') => {
 };
 
 const processNotificationQueue = async () => {
-    log('NOTIFIER: processNotificationQueue started');
     try {
         const notifications = await NotificationQueue.find({
             status: { $in: ['pending', 'failed'] }
         }).limit(3);
-
-        log(`NOTIFIER: Fetched ${notifications.length} pending notifications`);
 
         const processJob = async (job) => {
             log(`NOTIFIER: Processing job id: ${job._id}`);
