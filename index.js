@@ -151,6 +151,24 @@ app.use(`${BASE_PATH}`, passwordResetRoutes);
 app.use(`${BASE_PATH}/chat`, chatRoutes);
 app.use(`${BASE_PATH}`, feedbackRoutes);
 
+const parseRuntime = (runtime) => {
+  const unit = runtime.slice(-1);
+  const value = parseInt(runtime.slice(0, -1), 10);
+
+  switch (unit) {
+    case 'h':
+      return value * 60 * 60 * 1000; // hours to milliseconds
+    case 'd':
+      return value * 24 * 60 * 60 * 1000; // days to milliseconds
+    case 'm':
+      return value * 30 * 24 * 60 * 60 * 1000; // months to milliseconds (approx)
+    case 'y':
+      return value * 365 * 24 * 60 * 60 * 1000; // years to milliseconds (approx)
+    default:
+      throw new Error('Invalid runtime format');
+  }
+};
+
 app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
   const { licenseKey } = req.body;
 
@@ -170,6 +188,7 @@ app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
 
     license.activated_by = req.user._id;
     license.activated_at = new Date();
+    license.expires_at = new Date(Date.now() + parseRuntime(license.runtime));
     await license.save();
 
     const user = await User.findOne({ _id: req.user._id });

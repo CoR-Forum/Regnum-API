@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
-const { User, BannedUser, Licenses, MemoryPointer, SylentxFeature } = require('./models');
+const { User, BannedUser, Licenses, MemoryPointer } = require('./models');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
@@ -23,8 +23,8 @@ const commands = {
         try {
             const user = await User.findOne({ username });
             if (!user) return message.reply('User not found.');
-            const features = await SylentxFeature.find({ user_id: user._id });
-            const featureList = features.map(f => `${f.type} (expires at: ${f.expires_at.toISOString()})`).join('\n') || 'No features';
+            const features = await Licenses.find({ user_id: user._id });
+            const featureList = features.map(f => `${f.features.join(', ')} (expires at: ${f.expires_at.toISOString()})`).join('\n') || 'No features';
             const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
             const fields = [
                 { name: 'Username', value: user.username, inline: true },
@@ -45,8 +45,8 @@ const commands = {
             const totalUsers = await User.countDocuments();
             if (!users.length) return message.reply('No users found.');
             const fields = await Promise.all(users.map(async user => {
-                const features = await SylentxFeature.find({ user_id: user._id });
-                const featureList = features.map(f => `${f.type} (expires at: ${f.expires_at.toISOString()})`).join('\n');
+                const features = await Licenses.find({ user_id: user._id });
+                const featureList = features.map(f => `${f.features.join(', ')} (expires at: ${f.expires_at.toISOString()})`).join('\n');
                 const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
                 return { 
                     name: user.username + ' (' + user._id + ')', 
@@ -140,23 +140,16 @@ const commands = {
             handleError(message, error);
         }
     },
-    'lg': async (message, [runtime, expiry, ...features]) => {
-        if (!runtime || !expiry || !features.length) return message.reply('Usage: !lg <runtime> <expiry> <feature1> <feature2> ...');
+    'lg': async (message, [runtime, ...features]) => {
+        if (!runtime || !features.length) return message.reply('Usage: !lg <runtime> <feature1> <feature2> ...');
         try {
             const licenseKey = `license-${Math.random().toString(36).substr(2, 9)}`;
-            let expiresAt = new Date();
-            const expiryValue = parseInt(expiry.slice(0, -1), 10);
-            const expiryUnit = expiry.slice(-1);
-            if (isNaN(expiryValue) || !['h', 'd', 'w', 'm', 'y'].includes(expiryUnit)) return message.reply('Invalid expiry format.');
-            const expiryMap = { h: 'Hours', d: 'Date', w: 'Date', m: 'Month', y: 'FullYear' };
-            expiresAt[`set${expiryMap[expiryUnit]}`](expiresAt[`get${expiryMap[expiryUnit]}`]() + (expiryUnit === 'w' ? expiryValue * 7 : expiryValue));
-            const newLicense = new Licenses({ key: licenseKey, features, runtime, expires_at: expiresAt });
+            const newLicense = new Licenses({ key: licenseKey, features, runtime });
             await newLicense.save();
             const fields = [
                 { name: 'License Key', value: licenseKey, inline: true },
                 { name: 'Features', value: features.join(', '), inline: true },
-                { name: 'Runtime', value: runtime, inline: true },
-                { name: 'Expires At', value: expiresAt.toISOString(), inline: true }
+                { name: 'Runtime', value: runtime, inline: true }
             ];
             sendEmbed(message, createEmbed('License Generated', '#00ff00', fields));
         } catch (error) {
@@ -171,7 +164,7 @@ const commands = {
             if (!licenses.length) return message.reply('No licenses found.');
             const fields = licenses.map(license => ({
                 name: license.key,
-                value: `Features: ${license.features.join(', ')}\nRuntime: ${license.runtime}\nExpires At: ${license.expires_at.toISOString()}\nActivated By: ${license.activated_by ? license.activated_by.username : 'N/A'}\nActivated At: ${license.activated_at ? license.activated_at.toISOString() : 'N/A'}`
+                value: `Features: ${license.features.join(', ')}\nRuntime: ${license.runtime}\nExpires At: ${license.expires_at ? license.expires_at.toISOString() : 'N/A'}\nActivated By: ${license.activated_by ? license.activated_by.username : 'N/A'}\nActivated At: ${license.activated_at ? license.activated_at.toISOString() : 'N/A'}`
             }));
             sendEmbed(message, createEmbed(`License List - Page ${page} of ${Math.ceil(totalLicenses / pageSize)}`, '#0099ff', fields));
         } catch (error) {
