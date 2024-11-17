@@ -319,7 +319,7 @@ const commands = {
             { name: `${prefix}ll [page]`, value: 'List licenses.' },
             { name: `${prefix}ld <license_key>`, value: 'Delete license.' },
             { name: `${prefix}pl`, value: 'List memory pointers.' },
-            { name: `${prefix}pd <pointer_id>`, value: 'Delete memory pointer.' },
+            { name: `${prefix}pd <feature>`, value: 'Delete memory pointer.' },
             { name: `${prefix}pa <feature> <address> <offset1> <offset2> ...`, value: 'Add memory pointer.' },
             { name: `${prefix}pe <feature> <new_feature_name> <address> <offset1> <offset2> ...`, value: 'Edit memory pointer.' },
             { name: `${prefix}ss [new_status]`, value: 'Retrieve or update system status.' },
