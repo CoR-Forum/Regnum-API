@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
 const { User, BannedUser, Licenses, MemoryPointer, Settings } = require('./models');
+const { validateUsername, validateEmail, validateNickname } = require('./validation');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
@@ -33,6 +34,9 @@ const getUserInfoFields = async (user) => {
 const commands = {
     'u': async (message, [username]) => {
         if (!username) return message.reply('Usage: !u <username>');
+        const { valid, message: validationMessage } = validateUsername(username);
+        if (!valid) return message.reply(validationMessage);
+
         try {
             const user = await User.findOne({ username });
             if (!user) return message.reply('User not found.');
@@ -60,6 +64,9 @@ const commands = {
     'ub': async (message, [username, duration, ...reasonParts]) => {
         const reason = reasonParts.join(' ');
         if (!username || !duration || !reason) return message.reply('Usage: !ub <username> <duration> <reason>');
+        const { valid, message: validationMessage } = validateUsername(username);
+        if (!valid) return message.reply(validationMessage);
+
         try {
             const user = await User.findOne({ username });
             if (!user) return message.reply('User not found.');
@@ -91,6 +98,9 @@ const commands = {
     },
     'uu': async (message, [username]) => {
         if (!username) return message.reply('Usage: !uu <username>');
+        const { valid, message: validationMessage } = validateUsername(username);
+        if (!valid) return message.reply(validationMessage);
+
         try {
             const user = await User.findOne({ username });
             if (!user) return message.reply('User not found.');
@@ -107,6 +117,9 @@ const commands = {
     },
     'ubl': async (message, [username]) => {
         if (!username) return message.reply('Usage: !ubl <username>');
+        const { valid, message: validationMessage } = validateUsername(username);
+        if (!valid) return message.reply(validationMessage);
+
         try {
             const user = await User.findOne({ username });
             if (!user) return message.reply('User not found.');
