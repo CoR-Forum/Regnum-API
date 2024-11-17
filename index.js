@@ -4,14 +4,14 @@ const helmet = require('helmet');
 const argon2 = require('argon2');
 const { mail, notifyAdmins } = require('./notificator');
 const { logActivity, generateToken } = require('./utils');
+const { validateToken } = require('./middleware');
+const { User, BannedUser, UserSettings, MemoryPointer, Settings, Licenses, Token, initializeDatabase } = require('./models');
 const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
 const feedbackRoutes = require('./router/feedback');
-const { validateToken } = require('./middleware');
-const { User, BannedUser, UserSettings, MemoryPointer, Settings, Licenses, Token, initializeDatabase } = require('./models');
 const chatRoutes = require('./router/chat');
 const settingsRoutes = require('./router/settings');
-const { router: statusRoutes, updateStats } = require('./router/status'); // Import the new status route and updateStats function
+const { router: statusRoutes, updateStats } = require('./router/status');
 require('./bot');
 
 const passport = require('passport');
@@ -186,21 +186,22 @@ app.use(`${BASE_PATH}`, passwordResetRoutes);
 app.use(`${BASE_PATH}/chat`, chatRoutes);
 app.use(`${BASE_PATH}`, feedbackRoutes);
 app.use(`${BASE_PATH}`, settingsRoutes);
-app.use(`${BASE_PATH}/`, statusRoutes); // Use the new status route
+app.use(`${BASE_PATH}/`, statusRoutes);
 
 const parseRuntime = (runtime) => {
   const unit = runtime.slice(-1);
   const value = parseInt(runtime.slice(0, -1), 10);
 
+  // convert runtime to milliseconds
   switch (unit) {
     case 'h':
-      return value * 60 * 60 * 1000; // hours to milliseconds
+      return value * 60 * 60 * 1000;
     case 'd':
-      return value * 24 * 60 * 60 * 1000; // days to milliseconds
+      return value * 24 * 60 * 60 * 1000;
     case 'm':
-      return value * 30 * 24 * 60 * 60 * 1000; // months to milliseconds (approx)
+      return value * 30 * 24 * 60 * 60 * 1000;
     case 'y':
-      return value * 365 * 24 * 60 * 60 * 1000; // years to milliseconds (approx)
+      return value * 365 * 24 * 60 * 60 * 1000;
     default:
       throw new Error('Invalid runtime format');
   }
