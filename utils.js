@@ -1,3 +1,4 @@
+// utils.js
 const { ActivityLog, Token } = require('./models'); // Import Mongoose models
 const { notifyAdmins } = require('./notificator');
 const jwt = require('jsonwebtoken');
@@ -8,7 +9,7 @@ const generateToken = async (user) => {
     await new Token({ userId: user._id, token }).save();
   
     return token;
-  };
+};
 
 const logActivity = async (userId, activityType, description, ipAddress) => {
     try {
@@ -25,7 +26,26 @@ const logActivity = async (userId, activityType, description, ipAddress) => {
     }
 };
 
+const convertDurationToMilliseconds = (duration) => {
+    const unit = duration.slice(-1);
+    const value = parseInt(duration.slice(0, -1), 10);
+
+    switch (unit) {
+        case 'h':
+            return value * 60 * 60 * 1000;
+        case 'd':
+            return value * 24 * 60 * 60 * 1000;
+        case 'm':
+            return value * 30 * 24 * 60 * 60 * 1000;
+        case 'y':
+            return value * 365 * 24 * 60 * 60 * 1000;
+        default:
+            throw new Error('Invalid duration format');
+    }
+};
+
 module.exports = {
     logActivity,
-    generateToken
+    generateToken,
+    convertDurationToMilliseconds
 };

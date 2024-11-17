@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const helmet = require('helmet');
 const argon2 = require('argon2');
 const { mail, notifyAdmins } = require('./notificator');
-const { logActivity, generateToken } = require('./utils');
+const { logActivity, generateToken, convertDurationToMilliseconds } = require('./utils');
 const { validateToken } = require('./middleware');
 const { User, BannedUser, UserSettings, MemoryPointer, Settings, Licenses, Token, initializeDatabase } = require('./models');
 const registerRoutes = require('./router/register');
@@ -166,7 +166,7 @@ app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
 
     license.activated_by = req.user._id;
     license.activated_at = new Date();
-    license.expires_at = new Date(Date.now() + parseRuntime(license.runtime));
+    license.expires_at = new Date(Date.now() + convertDurationToMilliseconds(license.runtime));
     await license.save();
 
     const user = await User.findOne({ _id: req.user._id });
@@ -187,25 +187,6 @@ app.use(`${BASE_PATH}/chat`, chatRoutes);
 app.use(`${BASE_PATH}`, feedbackRoutes);
 app.use(`${BASE_PATH}`, settingsRoutes);
 app.use(`${BASE_PATH}/`, statusRoutes);
-
-const parseRuntime = (runtime) => {
-  const unit = runtime.slice(-1);
-  const value = parseInt(runtime.slice(0, -1), 10);
-
-  // convert runtime to milliseconds
-  switch (unit) {
-    case 'h':
-      return value * 60 * 60 * 1000;
-    case 'd':
-      return value * 24 * 60 * 60 * 1000;
-    case 'm':
-      return value * 30 * 24 * 60 * 60 * 1000;
-    case 'y':
-      return value * 365 * 24 * 60 * 60 * 1000;
-    default:
-      throw new Error('Invalid runtime format');
-  }
-};
 
 const server = app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
