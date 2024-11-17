@@ -54,7 +54,7 @@ const commands = {
             if (!users.length) return message.reply('No users found.');
             const fields = await Promise.all(users.map(async user => {
                 const userFields = await getUserInfoFields(user);
-                return { name: user.username + ' (' + user._id + ')', value: userFields.map(field => `${field.name}: ${field.value}`).join('\n') };
+                return { name: user.username, value: userFields.map(field => `**${field.name}:** ${field.value}`).join('\n') };
             }));
             sendEmbed(message, createEmbed(`User List - Page ${page} of ${Math.ceil(totalUsers / pageSize)}`, '#0099ff', fields));
         } catch (error) {
