@@ -18,46 +18,46 @@ const handleError = (message, error) => {
 const createEmbed = (title, color = '#0099ff', fields = []) => new EmbedBuilder().setColor(color).setTitle(title).addFields(fields).setTimestamp();
 
 const commands = {
-'u': async (message, [username]) => {
-    if (!username) return message.reply('Usage: !u <username>');
-    try {
-        const user = await User.findOne({ username });
-        if (!user) return message.reply('User not found.');
-        const licenses = await Licenses.find({ activated_by: user._id });
-        const featureList = licenses.map(license => `${license.features.join(', ')} (expires at: ${license.expires_at ? license.expires_at.toISOString() : 'N/A'})`).join('\n') || 'No features';
-        const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
-        const fields = [
-            { name: 'Username', value: user.username, inline: true },
-            { name: 'Email', value: user.email, inline: true },
-            { name: 'Nickname', value: user.nickname, inline: true },
-            { name: 'Ban Status', value: banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned', inline: false },
-            { name: 'Features', value: featureList, inline: false },
-        ];
-        sendEmbed(message, createEmbed('User Info', '#0099ff', fields));
-    } catch (error) {
-        handleError(message, error);
-    }
-},
-'ul': async (message, [page = 1]) => {
-    const pageSize = 10;
-    try {
-        const users = await User.find().skip((page - 1) * pageSize).limit(pageSize);
-        const totalUsers = await User.countDocuments();
-        if (!users.length) return message.reply('No users found.');
-        const fields = await Promise.all(users.map(async user => {
+    'u': async (message, [username]) => {
+        if (!username) return message.reply('Usage: !u <username>');
+        try {
+            const user = await User.findOne({ username });
+            if (!user) return message.reply('User not found.');
             const licenses = await Licenses.find({ activated_by: user._id });
             const featureList = licenses.map(license => `${license.features.join(', ')} (expires at: ${license.expires_at ? license.expires_at.toISOString() : 'N/A'})`).join('\n') || 'No features';
             const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
-            return { 
-                name: user.username + ' (' + user._id + ')', 
-                value: `Email: ${user.email}\nNickname: ${user.nickname}\nCreated At: ${user.created_at.toISOString()}\nFeatures:\n${featureList}\nBan Status: ${banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned'}` 
-            };
-        }));
-        sendEmbed(message, createEmbed(`User List - Page ${page} of ${Math.ceil(totalUsers / pageSize)}`, '#0099ff', fields));
-    } catch (error) {
-        handleError(message, error);
-    }
-},
+            const fields = [
+                { name: 'Username', value: user.username, inline: true },
+                { name: 'Email', value: user.email, inline: true },
+                { name: 'Nickname', value: user.nickname, inline: true },
+                { name: 'Ban Status', value: banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned', inline: false },
+                { name: 'Features', value: featureList, inline: false },
+            ];
+            sendEmbed(message, createEmbed('User Info', '#0099ff', fields));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    'ul': async (message, [page = 1]) => {
+        const pageSize = 10;
+        try {
+            const users = await User.find().skip((page - 1) * pageSize).limit(pageSize);
+            const totalUsers = await User.countDocuments();
+            if (!users.length) return message.reply('No users found.');
+            const fields = await Promise.all(users.map(async user => {
+                const licenses = await Licenses.find({ activated_by: user._id });
+                const featureList = licenses.map(license => `${license.features.join(', ')} (expires at: ${license.expires_at ? license.expires_at.toISOString() : 'N/A'})`).join('\n') || 'No features';
+                const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
+                return { 
+                    name: user.username + ' (' + user._id + ')', 
+                    value: `Email: ${user.email}\nNickname: ${user.nickname}\nCreated At: ${user.created_at.toISOString()}\nFeatures:\n${featureList}\nBan Status: ${banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned'}` 
+                };
+            }));
+            sendEmbed(message, createEmbed(`User List - Page ${page} of ${Math.ceil(totalUsers / pageSize)}`, '#0099ff', fields));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
     'ub': async (message, [username, duration, ...reasonParts]) => {
         const reason = reasonParts.join(' ');
         if (!username || !duration || !reason) return message.reply('Usage: !ub <username> <duration> <reason>');
@@ -140,28 +140,28 @@ const commands = {
             handleError(message, error);
         }
     },
-'lg': async (message, [runtime, ...features]) => {
-    if (!runtime) return message.reply('Usage: !lg <runtime> <feature1> <feature2> ... or !lg <runtime> _all');
-    try {
-        if (features.includes('_all')) {
-            const allPointers = await MemoryPointer.find();
-            features = allPointers.map(pointer => pointer.feature);
+    'lg': async (message, [runtime, ...features]) => {
+        if (!runtime) return message.reply('Usage: !lg <runtime> <feature1> <feature2> ... or !lg <runtime> _all');
+        try {
+            if (features.includes('_all')) {
+                const allPointers = await MemoryPointer.find();
+                features = allPointers.map(pointer => pointer.feature);
+            }
+            if (!features.length) return message.reply('No features available.');
+            
+            const licenseKey = `license-${Math.random().toString(36).substr(2, 9)}`;
+            const newLicense = new Licenses({ key: licenseKey, features, runtime });
+            await newLicense.save();
+            const fields = [
+                { name: 'License Key', value: licenseKey, inline: true },
+                { name: 'Features', value: features.join(', '), inline: true },
+                { name: 'Runtime', value: runtime, inline: true }
+            ];
+            sendEmbed(message, createEmbed('License Generated', '#00ff00', fields));
+        } catch (error) {
+            handleError(message, error);
         }
-        if (!features.length) return message.reply('No features available.');
-        
-        const licenseKey = `license-${Math.random().toString(36).substr(2, 9)}`;
-        const newLicense = new Licenses({ key: licenseKey, features, runtime });
-        await newLicense.save();
-        const fields = [
-            { name: 'License Key', value: licenseKey, inline: true },
-            { name: 'Features', value: features.join(', '), inline: true },
-            { name: 'Runtime', value: runtime, inline: true }
-        ];
-        sendEmbed(message, createEmbed('License Generated', '#00ff00', fields));
-    } catch (error) {
-        handleError(message, error);
-    }
-},
+    },
     'll': async (message, [page = 1]) => {
         const pageSize = 10;
         try {
@@ -249,7 +249,6 @@ const commands = {
             handleError(message, error);
         }
     },
-    // retrieve or update system status
     'ss': async (message, [newStatus]) => {
         try {
             if (newStatus) {
@@ -264,22 +263,25 @@ const commands = {
         }
     },
     'help': (message) => {
+        const prefix = process.env.NODE_ENV === 'development' ? '?' : '!';
+        const environment = process.env.NODE_ENV === 'development' ? 'Development' : 'Production';
         const fields = [
-            { name: '!u <username>', value: 'Get user info by username.' },
-            { name: '!ul [page]', value: 'List users.' },
-            { name: '!ub <username> <duration> <reason>', value: 'Ban user.' },
-            { name: '!uu <username>', value: 'Unban user.' },
-            { name: '!ubl <username>', value: 'List all previous bans for a user.' },
-            { name: '!ubla [page]', value: 'List all bans.' },
-            { name: '!lg <runtime> <feature1> <feature2> ... or !lg <runtime> _all', value: 'Generate license.' },
-            { name: '!ll [page]', value: 'List licenses.' },
-            { name: '!ld <license_key>', value: 'Delete license.' },
-            { name: '!pl', value: 'List memory pointers.' },
-            { name: '!pd <pointer_id>', value: 'Delete memory pointer.' },
-            { name: '!pa <feature> <address> <offset1> <offset2> ...', value: 'Add memory pointer.' },
-            { name: '!pe <pointer_id> <feature> <address> <offset1> <offset2> ...', value: 'Edit memory pointer.' },
-            { name: '!ss [new_status]', value: 'Retrieve or update system status.' },
-            { name: '!help', value: 'Show this help message.' }
+            { name: `${prefix}u <username>`, value: 'Get user info by username.' },
+            { name: `${prefix}ul [page]`, value: 'List users.' },
+            { name: `${prefix}ub <username> <duration> <reason>`, value: 'Ban user.' },
+            { name: `${prefix}uu <username>`, value: 'Unban user.' },
+            { name: `${prefix}ubl <username>`, value: 'List all previous bans for a user.' },
+            { name: `${prefix}ubla [page]`, value: 'List all bans.' },
+            { name: `${prefix}lg <runtime> <feature1> <feature2> ... or ${prefix}lg <runtime> _all`, value: 'Generate license.' },
+            { name: `${prefix}ll [page]`, value: 'List licenses.' },
+            { name: `${prefix}ld <license_key>`, value: 'Delete license.' },
+            { name: `${prefix}pl`, value: 'List memory pointers.' },
+            { name: `${prefix}pd <pointer_id>`, value: 'Delete memory pointer.' },
+            { name: `${prefix}pa <feature> <address> <offset1> <offset2> ...`, value: 'Add memory pointer.' },
+            { name: `${prefix}pe <pointer_id> <feature> <address> <offset1> <offset2> ...`, value: 'Edit memory pointer.' },
+            { name: `${prefix}ss [new_status]`, value: 'Retrieve or update system status.' },
+            { name: `${prefix}help`, value: 'Show this help message.' },
+            { name: 'Environment', value: environment }
         ];
         sendEmbed(message, createEmbed('Help', '#0099ff', fields));
     },
