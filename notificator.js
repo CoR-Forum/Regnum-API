@@ -1,15 +1,26 @@
 const nodemailer = require('nodemailer');
 const axios = require('axios');
-const { User, NotificationQueue } = require('./models');
+const { NotificationQueue } = require('./models');
 require('dotenv').config();
 
+const {
+    EMAIL_HOST,
+    EMAIL_PORT,
+    EMAIL_SECURE,
+    EMAIL_USER,
+    EMAIL_PASS,
+    EMAIL_NAME,
+    DISCORD_LOGIN_WEBHOOK_URL,
+    DISCORD_LOG_WEBHOOK_URL
+} = process.env;
+
 const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: process.env.EMAIL_SECURE === 'true',
+    host: EMAIL_HOST,
+    port: EMAIL_PORT,
+    secure: EMAIL_SECURE === 'true',
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+        user: EMAIL_USER,
+        pass: EMAIL_PASS
     }
 });
 
@@ -26,7 +37,7 @@ const sendEmail = async (to, subject, text) => {
     log(`NOTIFIER: sendEmail called with to: ${to}, subject: ${subject}`);
     try {
         const info = await transporter.sendMail({
-            from: `"${process.env.EMAIL_NAME}" <${process.env.EMAIL_USER}>`,
+            from: `"${EMAIL_NAME}" <${EMAIL_USER}>`,
             to,
             subject,
             text
@@ -40,8 +51,8 @@ const sendEmail = async (to, subject, text) => {
 
 const sendDiscordNotification = async (id, message, createdAt, type) => {
     const webhookUrls = {
-        discord_login: process.env.DISCORD_LOGIN_WEBHOOK_URL,
-        discord_log: process.env.DISCORD_LOG_WEBHOOK_URL
+        discord_login: DISCORD_LOGIN_WEBHOOK_URL,
+        discord_log: DISCORD_LOG_WEBHOOK_URL
     };
 
     const webhookUrl = webhookUrls[type];
