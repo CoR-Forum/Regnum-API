@@ -18,47 +18,256 @@ const handleError = (message, error) => {
 const createEmbed = (title, color = '#0099ff', fields = []) => new EmbedBuilder().setColor(color).setTitle(title).addFields(fields).setTimestamp();
 
 const commands = {
-    'u': async (message, [username]) => {
-        if (!username) return message.reply('Usage: !u <username>');
+'u': async (message, [username]) => {
+    if (!username) return message.reply('Usage: !u <username>');
+    try {
+        const user = await User.findOne({ username });
+        if (!user) return message.reply('User not found.');
+        const licenses = await Licenses.find({ activated_by: user._id });
+        const featureList = licenses.map(license => `${license.features.join(', ')} (expires at: ${license.expires_at ? license.expires_at.toISOString() : 'N/A'})`).join('\n') || 'No features';
+        const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
+        const fields = [
+            { name: 'Username', value: user.username, inline: true },
+            { name: 'Email', value: user.email, inline: true },
+            { name: 'Nickname', value: user.nickname, inline: true },
+            { name: 'Ban Status', value: banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned', inline: false },
+            { name: 'Features', value: featureList, inline: false },
+        ];
+        sendEmbed(message, createEmbed('User Info', '#0099ff', fields));
+    } catch (error) {
+        handleError(message, error);
+    }
+},
+'ul': async (message, [page = 1]) => {
+    const pageSize = 10;
+    try {
+        const users = await User.find().skip((page - 1) * pageSize).limit(pageSize);
+        const totalUsers = await User.countDocuments();
+        if (!users.length) return message.reply('No users found.');
+        const fields = await Promise.all(users.map(async user => {
+            const licenses = await Licenses.find({ activated_by: user._id });
+            const featureList = licenses.map(license => `${license.features.join(', ')} (expires at: ${license.expires_at ? license.expires_at.toISOString() : 'N/A'})`).join('\n') || 'No features';
+            const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
+            return { 
+                name: user.username + ' (' + user._id + ')', 
+                value: `Email: ${user.email}\nNickname: ${user.nickname}\nCreated At: ${user.created_at.toISOString()}\nFeatures:\n${featureList}\nBan Status: ${banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned'}` 
+            };
+        }));
+        sendEmbed(message, createEmbed(`User List - Page ${page} of ${Math.ceil(totalUsers / pageSize)}`, '#0099ff', fields));
+    } catch (error) {
+        handleError(message, error);
+    }
+},
+    'ub': async (message, [username, duration, ...reasonParts]) => {
+        const reason = reasonParts.join(' ');
+        if (!username || !duration || !reason) return message.reply('Usage: !ub <username> <duration> <reason>');
         try {
             const user = await User.findOne({ username });
             if (!user) return message.reply('User not found.');
-            const licenses = await Licenses.find({ activated_by: user._id });
-            const featureList = licenses.map(license => `${license.features.join(', ')} (License Key: ${license.key}, Expires at: ${license.expires_at ? license.expires_at.toISOString() : 'N/A'})`).join('\n') || 'No features';
-            const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
-            const fields = [
-                { name: 'Username', value: user.username, inline: true },
-                { name: 'Email', value: user.email, inline: true },
-                { name: 'Nickname', value: user.nickname, inline: true },
-                { name: 'Features', value: featureList, inline: false },
-                { name: 'Ban Status', value: banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned', inline: false }
-            ];
-            sendEmbed(message, createEmbed('User Info', '#0099ff', fields));
+
+            const existingBan = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
+            if (existingBan) return message.reply('User is already banned: ' + existingBan.reason + ' until ' + existingBan.expires_at.toISOString());
+
+            let expiresAt = new Date();
+            const durationValue = parseInt(duration.slice(0, -1), 10);
+            const durationUnit = duration.slice(-1);
+            if (isNaN(durationValue) || !['h', 'd', 'w', 'm', 'y'].includes(durationUnit)) return message.reply('Invalid duration format.');
+            const durationMap = { h: 'Hours', d: 'Date', w: 'Date', m: 'Month', y: 'FullYear' };
+            expiresAt[`set${durationMap[durationUnit]}`](expiresAt[`get${durationMap[durationUnit]}`]() + (durationUnit === 'w' ? durationValue * 7 : durationValue));
+
+            const bannedUser = new BannedUser({
+                user_id: user._id,
+                reason: reason,
+                banned_by: message.author.id,
+                banned_at: new Date(),
+                expires_at: expiresAt,
+                active: true
+            });
+
+            await bannedUser.save();
+            message.reply(`User ${user.username} has been banned for: ${reason} until ${expiresAt.toISOString()}`);
         } catch (error) {
             handleError(message, error);
         }
     },
-    'ul': async (message, [page = 1]) => {
+    'uu': async (message, [username]) => {
+        if (!username) return message.reply('Usage: !uu <username>');
+        try {
+            const user = await User.findOne({ username });
+            if (!user) return message.reply('User not found.');
+
+            const existingBan = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
+            if (!existingBan) return message.reply('User is not banned.');
+
+            existingBan.active = false;
+            await existingBan.save();
+            message.reply(`User ${user.username} has been unbanned.`);
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    'ubl': async (message, [username]) => {
+        if (!username) return message.reply('Usage: !ubl <username>');
+        try {
+            const user = await User.findOne({ username });
+            if (!user) return message.reply('User not found.');
+
+            const bans = await BannedUser.find({ user_id: user._id });
+            if (!bans.length) return message.reply('No bans found.');
+
+            const fields = bans.map(ban => ({
+                name: 'Ban Information',
+                value: `**Banned by:** ${ban.banned_by}\n**Banned at:** ${ban.banned_at.toISOString()}\n**Expires at:** ${ban.expires_at.toISOString()}\n**Reason:** ${ban.reason}\n**Status:** ${ban.active ? (ban.expires_at > new Date() ? 'Active' : 'Expired') : 'Unbanned'}`
+            }));
+            sendEmbed(message, createEmbed(`Bans for ${user.username}`, '#0099ff', fields));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    'ubla': async (message, [page = 1]) => {
         const pageSize = 10;
         try {
-            const users = await User.find().skip((page - 1) * pageSize).limit(pageSize);
-            const totalUsers = await User.countDocuments();
-            if (!users.length) return message.reply('No users found.');
-            const fields = await Promise.all(users.map(async user => {
-                const licenses = await Licenses.find({ activated_by: user._id });
-                const featureList = licenses.map(license => `${license.features.join(', ')} (License Key: ${license.key}, Expires at: ${license.expires_at ? license.expires_at.toISOString() : 'N/A'})`).join('\n') || 'No features';
-                const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
-                return { 
-                    name: user.username + ' (' + user._id + ')', 
-                    value: `Email: ${user.email}\nNickname: ${user.nickname}\nCreated At: ${user.created_at.toISOString()}\nBan Status: ${banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned'}\nFeatures:\n${featureList}` 
-                };
+            const bans = await BannedUser.find().populate('user_id', 'username').skip((page - 1) * pageSize).limit(pageSize);
+            const totalBans = await BannedUser.countDocuments();
+            if (!bans.length) return message.reply('No bans found.');
+
+            const fields = bans.map(ban => ({
+                name: 'Ban Information',
+                value: `**Username:** ${ban.user_id.username}\n**Banned by:** ${ban.banned_by}\n**Banned at:** ${ban.banned_at.toISOString()}\n**Expires at:** ${ban.expires_at.toISOString()}\n**Reason:** ${ban.reason}\n**Status:** ${ban.active ? (ban.expires_at > new Date() ? 'Active' : 'Expired') : 'Unbanned'}`
             }));
-            sendEmbed(message, createEmbed(`User List - Page ${page} of ${Math.ceil(totalUsers / pageSize)}`, '#0099ff', fields));
+            sendEmbed(message, createEmbed(`All Bans - Page ${page} of ${Math.ceil(totalBans / pageSize)}`, '#0099ff', fields));
         } catch (error) {
             handleError(message, error);
         }
     },
-    // ... other commands remain unchanged
+'lg': async (message, [runtime, ...features]) => {
+    if (!runtime) return message.reply('Usage: !lg <runtime> <feature1> <feature2> ... or !lg <runtime> _all');
+    try {
+        if (features.includes('_all')) {
+            const allPointers = await MemoryPointer.find();
+            features = allPointers.map(pointer => pointer.feature);
+        }
+        if (!features.length) return message.reply('No features available.');
+        
+        const licenseKey = `license-${Math.random().toString(36).substr(2, 9)}`;
+        const newLicense = new Licenses({ key: licenseKey, features, runtime });
+        await newLicense.save();
+        const fields = [
+            { name: 'License Key', value: licenseKey, inline: true },
+            { name: 'Features', value: features.join(', '), inline: true },
+            { name: 'Runtime', value: runtime, inline: true }
+        ];
+        sendEmbed(message, createEmbed('License Generated', '#00ff00', fields));
+    } catch (error) {
+        handleError(message, error);
+    }
+},
+    'll': async (message, [page = 1]) => {
+        const pageSize = 10;
+        try {
+            const licenses = await Licenses.find().populate('activated_by', 'username').skip((page - 1) * pageSize).limit(pageSize);
+            const totalLicenses = await Licenses.countDocuments();
+            if (!licenses.length) return message.reply('No licenses found.');
+            const fields = licenses.map(license => ({
+                name: license.key,
+                value: `Features: ${license.features.join(', ')}\nRuntime: ${license.runtime}\nExpires At: ${license.expires_at ? license.expires_at.toISOString() : 'N/A'}\nActivated By: ${license.activated_by ? license.activated_by.username : 'N/A'}\nActivated At: ${license.activated_at ? license.activated_at.toISOString() : 'N/A'}`
+            }));
+            sendEmbed(message, createEmbed(`License List - Page ${page} of ${Math.ceil(totalLicenses / pageSize)}`, '#0099ff', fields));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    'ld': async (message, [licenseKey]) => {
+        if (!licenseKey) return message.reply('Usage: !ld <license_key>');
+        try {
+            const license = await Licenses.findOne({ key: licenseKey });
+            if (!license) return message.reply('License not found.');
+            await Licenses.deleteOne({ key: licenseKey });
+            sendEmbed(message, createEmbed(`License ${license.key} Deleted`, '#ff0000'));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    'pl': async (message) => {
+        try {
+            const pointers = await MemoryPointer.find();
+            if (!pointers.length) return message.reply('No memory pointers found.');
+            const fields = pointers.map(pointer => ({
+                name: pointer.feature,
+                value: `ID: ${pointer._id}\nAddress: ${pointer.address}\nOffsets: ${pointer.offsets.join(', ')}`
+            }));
+            sendEmbed(message, createEmbed('Memory Pointer List', '#0099ff', fields));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    'pd': async (message, [pointerId]) => {
+        if (!pointerId) return message.reply('Usage: !pd <pointer_id>');
+        try {
+            const pointer = await MemoryPointer.findById(pointerId);
+            if (!pointer) return message.reply('Memory pointer not found.');
+            await MemoryPointer.deleteOne({ _id: pointerId });
+            const fields = [
+                { name: 'Feature', value: pointer.feature, inline: true },
+                { name: 'Address', value: pointer.address, inline: true },
+                { name: 'Offsets', value: pointer.offsets.join(', '), inline: true }
+            ];
+            sendEmbed(message, createEmbed('Memory Pointer Deleted', '#ff0000', fields));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    'pa': async (message, [feature, address, ...offsets]) => {
+        if (!feature || !address) return message.reply('Usage: !pa <feature> <address> <offset1> <offset2> ...');
+        try {
+            const newPointer = new MemoryPointer({ feature, address, offsets });
+            await newPointer.save();
+            const fields = [
+                { name: 'Feature', value: feature, inline: true },
+                { name: 'Address', value: address, inline: true },
+                { name: 'Offsets', value: offsets.join(', '), inline: true }
+            ];
+            sendEmbed(message, createEmbed('Memory Pointer Added', '#00ff00', fields));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    'pe': async (message, [pointerId, feature, address, ...offsets]) => {
+        if (!pointerId || !feature || !address) return message.reply('Usage: !pe <pointer_id> <feature> <address> <offset1> <offset2> ...');
+        try {
+            const pointer = await MemoryPointer.findById(pointerId);
+            if (!pointer) return message.reply('Memory pointer not found.');
+            Object.assign(pointer, { feature, address, offsets });
+            await pointer.save();
+            const fields = [
+                { name: 'Feature', value: feature, inline: true },
+                { name: 'Address', value: address, inline: true },
+                { name: 'Offsets', value: offsets.join(', '), inline: true }
+            ];
+            sendEmbed(message, createEmbed('Memory Pointer Edited', '#00ff00', fields));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    'help': (message) => {
+        const fields = [
+            { name: '!u <username>', value: 'Get user info by username.' },
+            { name: '!ul [page]', value: 'List users.' },
+            { name: '!ub <username> <duration> <reason>', value: 'Ban user.' },
+            { name: '!uu <username>', value: 'Unban user.' },
+            { name: '!ubl <username>', value: 'List all previous bans for a user.' },
+            { name: '!ubla [page]', value: 'List all bans.' },
+            { name: '!lg <runtime> <feature1> <feature2> ... or !lg <runtime> _all', value: 'Generate license.' },
+            { name: '!ll [page]', value: 'List licenses.' },
+            { name: '!ld <license_key>', value: 'Delete license.' },
+            { name: '!pl', value: 'List memory pointers.' },
+            { name: '!pd <pointer_id>', value: 'Delete memory pointer.' },
+            { name: '!pa <feature> <address> <offset1> <offset2> ...', value: 'Add memory pointer.' },
+            { name: '!pe <pointer_id> <feature> <address> <offset1> <offset2> ...', value: 'Edit memory pointer.' }
+        ];
+        sendEmbed(message, createEmbed('Help', '#0099ff', fields));
+    },
+    'h': (message) => commands.help(message)
 };
 
 const prefix = process.env.NODE_ENV === 'development' ? '?' : '!';
