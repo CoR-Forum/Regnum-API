@@ -18,46 +18,46 @@ const handleError = (message, error) => {
 const createEmbed = (title, color = '#0099ff', fields = []) => new EmbedBuilder().setColor(color).setTitle(title).addFields(fields).setTimestamp();
 
 const commands = {
-    'u': async (message, [username]) => {
-        if (!username) return message.reply('Usage: !u <username>');
-        try {
-            const user = await User.findOne({ username });
-            if (!user) return message.reply('User not found.');
-            const features = await Licenses.find({ user_id: user._id });
-            const featureList = features.map(f => `${f.features.join(', ')} (expires at: ${f.expires_at.toISOString()})`).join('\n') || 'No features';
+'u': async (message, [username]) => {
+    if (!username) return message.reply('Usage: !u <username>');
+    try {
+        const user = await User.findOne({ username });
+        if (!user) return message.reply('User not found.');
+        const licenses = await Licenses.find({ activated_by: user._id });
+        const featureList = licenses.map(license => `${license.features.join(', ')} (expires at: ${license.expires_at ? license.expires_at.toISOString() : 'N/A'})`).join('\n') || 'No features';
+        const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
+        const fields = [
+            { name: 'Username', value: user.username, inline: true },
+            { name: 'Email', value: user.email, inline: true },
+            { name: 'Nickname', value: user.nickname, inline: true },
+            { name: 'Features', value: featureList, inline: false },
+            { name: 'Ban Status', value: banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned', inline: false }
+        ];
+        sendEmbed(message, createEmbed('User Info', '#0099ff', fields));
+    } catch (error) {
+        handleError(message, error);
+    }
+},
+'ul': async (message, [page = 1]) => {
+    const pageSize = 10;
+    try {
+        const users = await User.find().skip((page - 1) * pageSize).limit(pageSize);
+        const totalUsers = await User.countDocuments();
+        if (!users.length) return message.reply('No users found.');
+        const fields = await Promise.all(users.map(async user => {
+            const licenses = await Licenses.find({ activated_by: user._id });
+            const featureList = licenses.map(license => `${license.features.join(', ')} (expires at: ${license.expires_at ? license.expires_at.toISOString() : 'N/A'})`).join('\n') || 'No features';
             const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
-            const fields = [
-                { name: 'Username', value: user.username, inline: true },
-                { name: 'Email', value: user.email, inline: true },
-                { name: 'Nickname', value: user.nickname, inline: true },
-                { name: 'Features', value: featureList, inline: false },
-                { name: 'Ban Status', value: banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned', inline: false }
-            ];
-            sendEmbed(message, createEmbed('User Info', '#0099ff', fields));
-        } catch (error) {
-            handleError(message, error);
-        }
-    },
-    'ul': async (message, [page = 1]) => {
-        const pageSize = 10;
-        try {
-            const users = await User.find().skip((page - 1) * pageSize).limit(pageSize);
-            const totalUsers = await User.countDocuments();
-            if (!users.length) return message.reply('No users found.');
-            const fields = await Promise.all(users.map(async user => {
-                const features = await Licenses.find({ user_id: user._id });
-                const featureList = features.map(f => `${f.features.join(', ')} (expires at: ${f.expires_at.toISOString()})`).join('\n');
-                const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
-                return { 
-                    name: user.username + ' (' + user._id + ')', 
-                    value: `Email: ${user.email}\nNickname: ${user.nickname}\nCreated At: ${user.created_at.toISOString()}\nBan Status: ${banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned'}\nFeatures:\n${featureList}` 
-                };
-            }));
-            sendEmbed(message, createEmbed(`User List - Page ${page} of ${Math.ceil(totalUsers / pageSize)}`, '#0099ff', fields));
-        } catch (error) {
-            handleError(message, error);
-        }
-    },
+            return { 
+                name: user.username + ' (' + user._id + ')', 
+                value: `Email: ${user.email}\nNickname: ${user.nickname}\nCreated At: ${user.created_at.toISOString()}\nBan Status: ${banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned'}\nFeatures:\n${featureList}` 
+            };
+        }));
+        sendEmbed(message, createEmbed(`User List - Page ${page} of ${Math.ceil(totalUsers / pageSize)}`, '#0099ff', fields));
+    } catch (error) {
+        handleError(message, error);
+    }
+},
     'ub': async (message, [username, duration, ...reasonParts]) => {
         const reason = reasonParts.join(' ');
         if (!username || !duration || !reason) return message.reply('Usage: !ub <username> <duration> <reason>');
