@@ -140,22 +140,28 @@ const commands = {
             handleError(message, error);
         }
     },
-    'lg': async (message, [runtime, ...features]) => {
-        if (!runtime || !features.length) return message.reply('Usage: !lg <runtime> <feature1> <feature2> ...');
-        try {
-            const licenseKey = `license-${Math.random().toString(36).substr(2, 9)}`;
-            const newLicense = new Licenses({ key: licenseKey, features, runtime });
-            await newLicense.save();
-            const fields = [
-                { name: 'License Key', value: licenseKey, inline: true },
-                { name: 'Features', value: features.join(', '), inline: true },
-                { name: 'Runtime', value: runtime, inline: true }
-            ];
-            sendEmbed(message, createEmbed('License Generated', '#00ff00', fields));
-        } catch (error) {
-            handleError(message, error);
+'lg': async (message, [runtime, ...features]) => {
+    if (!runtime) return message.reply('Usage: !lg <runtime> <feature1> <feature2> ... or !lg <runtime> _all');
+    try {
+        if (features.includes('_all')) {
+            const allPointers = await MemoryPointer.find();
+            features = allPointers.map(pointer => pointer.feature);
         }
-    },
+        if (!features.length) return message.reply('No features available.');
+        
+        const licenseKey = `license-${Math.random().toString(36).substr(2, 9)}`;
+        const newLicense = new Licenses({ key: licenseKey, features, runtime });
+        await newLicense.save();
+        const fields = [
+            { name: 'License Key', value: licenseKey, inline: true },
+            { name: 'Features', value: features.join(', '), inline: true },
+            { name: 'Runtime', value: runtime, inline: true }
+        ];
+        sendEmbed(message, createEmbed('License Generated', '#00ff00', fields));
+    } catch (error) {
+        handleError(message, error);
+    }
+},
     'll': async (message, [page = 1]) => {
         const pageSize = 10;
         try {
@@ -251,7 +257,7 @@ const commands = {
             { name: '!uu <username>', value: 'Unban user.' },
             { name: '!ubl <username>', value: 'List all previous bans for a user.' },
             { name: '!ubla [page]', value: 'List all bans.' },
-            { name: '!lg <runtime> <feature1> <feature2> ...', value: 'Generate license.' },
+            { name: '!lg <runtime> <feature1> <feature2> ... or !lg <runtime> _all', value: 'Generate license.' },
             { name: '!ll [page]', value: 'List licenses.' },
             { name: '!ld <license_key>', value: 'Delete license.' },
             { name: '!pl', value: 'List memory pointers.' },
