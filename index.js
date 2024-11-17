@@ -9,7 +9,7 @@ const { logActivity, generateToken } = require('./utils');
 const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
 const feedbackRoutes = require('./router/feedback');
-const { validateToken, checkPermissions } = require('./middleware');
+const { validateToken } = require('./middleware');
 const { User, BannedUser, UserSettings, MemoryPointer, Settings, Licenses, Token, SylentxFeature, initializeDatabase } = require('./models');
 const chatRoutes = require('./router/chat');
 require('./bot');
