@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { User, Token } = require('./models');
+const { User, Token, BannedUser } = require('./models');
 
 const validateToken = async (req, res, next) => {
     console.log("Headers:", req.headers); // Log all headers
@@ -21,6 +21,17 @@ const validateToken = async (req, res, next) => {
         if (!tokenExists) {
             return res.status(401).json({ status: "error", message: "Unauthorized: Invalid token" });
         }
+
+        // Check if the user is banned
+        const activeBan = await BannedUser.findOne({
+            user_id: user._id,
+            active: true,
+            expires_at: { $gt: new Date() }
+        });
+        if (activeBan) {
+            return res.status(403).json({ status: "error", message: `Forbidden: User is banned until ${activeBan.expires_at.toISOString()} for ${activeBan.reason}` });
+        }
+
         req.user = user;
         next();
     } catch (error) {

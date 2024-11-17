@@ -11,7 +11,7 @@ const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
 const feedbackRoutes = require('./router/feedback');
 const { validateToken, checkPermissions } = require('./middleware');
-const { User, UserSettings, MemoryPointer, Settings, Licenses, Token, SylentxFeature, initializeDatabase } = require('./models');
+const { User, BannedUser, UserSettings, MemoryPointer, Settings, Licenses, Token, SylentxFeature, initializeDatabase } = require('./models');
 const chatRoutes = require('./router/chat');
 require('./bot');
 
@@ -65,6 +65,16 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
     if (!passwordMatch) return res.status(401).json({ status: "error", message: "Invalid username or password" });
 
     if (user.activation_token) return res.status(403).json({ status: "error", message: "Account not activated" });
+
+    // Check if the user is banned
+    const activeBan = await BannedUser.findOne({
+      user_id: user._id,
+      active: true,
+      expires_at: { $gt: new Date() }
+    });
+    if (activeBan) {
+      return res.status(403).json({ status: "error", message: `Forbidden: User is banned until ${activeBan.expires_at.toISOString()} for ${activeBan.reason}` });
+    }
 
     const token = await generateToken(user);
 

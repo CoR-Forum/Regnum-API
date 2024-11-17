@@ -28,6 +28,17 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
+const bannedUserSchema = new mongoose.Schema({
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    reason: { type: String },
+    banned_by: { type: String },
+    banned_at: { type: Date, default: Date.now },
+    expires_at: { type: Date },
+    active: { type: Boolean, default: true }
+});
+
+const BannedUser = mongoose.model('BannedUser', bannedUserSchema);
+
 const sylentxFeatureSchema = new mongoose.Schema({
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     type: { type: String, default: 'zoom' },
@@ -136,6 +147,7 @@ const Token = mongoose.model('Token', tokenSchema);
 
 module.exports = {
     User,
+    BannedUser,
     PasswordReset,
     UserSettings,
     Licenses,

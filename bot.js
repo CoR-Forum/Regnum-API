@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
-const { User, Licenses, MemoryPointer, SylentxFeature } = require('./models');
+const { User, BannedUser, Licenses, MemoryPointer, SylentxFeature } = require('./models');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
@@ -25,11 +25,13 @@ const commands = {
             if (!user) return message.reply('User not found.');
             const features = await SylentxFeature.find({ user_id: user._id });
             const featureList = features.map(f => `${f.type} (expires at: ${f.expires_at.toISOString()})`).join('\n') || 'No features';
+            const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
             const fields = [
                 { name: 'Username', value: user.username, inline: true },
                 { name: 'Email', value: user.email, inline: true },
                 { name: 'Nickname', value: user.nickname, inline: true },
-                { name: 'Features', value: featureList, inline: false }
+                { name: 'Features', value: featureList, inline: false },
+                { name: 'Ban Status', value: banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned', inline: false }
             ];
             sendEmbed(message, createEmbed('User Info', '#0099ff', fields));
         } catch (error) {
@@ -45,9 +47,95 @@ const commands = {
             const fields = await Promise.all(users.map(async user => {
                 const features = await SylentxFeature.find({ user_id: user._id });
                 const featureList = features.map(f => `${f.type} (expires at: ${f.expires_at.toISOString()})`).join('\n');
-                return { name: user.username, value: `Email: ${user.email}\nNickname: ${user.nickname}\nCreated At: ${user.created_at.toISOString()}\nFeatures:\n${featureList}` };
+                const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
+                return { 
+                    name: user.username + ' (' + user._id + ')', 
+                    value: `Email: ${user.email}\nNickname: ${user.nickname}\nCreated At: ${user.created_at.toISOString()}\nBan Status: ${banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned'}\nFeatures:\n${featureList}` 
+                };
             }));
             sendEmbed(message, createEmbed(`User List - Page ${page} of ${Math.ceil(totalUsers / pageSize)}`, '#0099ff', fields));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    'ub': async (message, [username, duration, ...reasonParts]) => {
+        const reason = reasonParts.join(' ');
+        if (!username || !duration || !reason) return message.reply('Usage: !ub <username> <duration> <reason>');
+        try {
+            const user = await User.findOne({ username });
+            if (!user) return message.reply('User not found.');
+
+            const existingBan = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
+            if (existingBan) return message.reply('User is already banned: ' + existingBan.reason + ' until ' + existingBan.expires_at.toISOString());
+
+            let expiresAt = new Date();
+            const durationValue = parseInt(duration.slice(0, -1), 10);
+            const durationUnit = duration.slice(-1);
+            if (isNaN(durationValue) || !['h', 'd', 'w', 'm', 'y'].includes(durationUnit)) return message.reply('Invalid duration format.');
+            const durationMap = { h: 'Hours', d: 'Date', w: 'Date', m: 'Month', y: 'FullYear' };
+            expiresAt[`set${durationMap[durationUnit]}`](expiresAt[`get${durationMap[durationUnit]}`]() + (durationUnit === 'w' ? durationValue * 7 : durationValue));
+
+            const bannedUser = new BannedUser({
+                user_id: user._id,
+                reason: reason,
+                banned_by: message.author.id,
+                banned_at: new Date(),
+                expires_at: expiresAt,
+                active: true
+            });
+
+            await bannedUser.save();
+            message.reply(`User ${user.username} has been banned for: ${reason} until ${expiresAt.toISOString()}`);
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    'uu': async (message, [username]) => {
+        if (!username) return message.reply('Usage: !uu <username>');
+        try {
+            const user = await User.findOne({ username });
+            if (!user) return message.reply('User not found.');
+
+            const existingBan = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
+            if (!existingBan) return message.reply('User is not banned.');
+
+            existingBan.active = false;
+            await existingBan.save();
+            message.reply(`User ${user.username} has been unbanned.`);
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    'ubl': async (message, [username]) => {
+        if (!username) return message.reply('Usage: !ubl <username>');
+        try {
+            const user = await User.findOne({ username });
+            if (!user) return message.reply('User not found.');
+
+            const bans = await BannedUser.find({ user_id: user._id });
+            if (!bans.length) return message.reply('No bans found.');
+
+            const fields = bans.map(ban => ({
+                name: 'Ban Information',
+                value: `**Banned by:** ${ban.banned_by}\n**Banned at:** ${ban.banned_at.toISOString()}\n**Expires at:** ${ban.expires_at.toISOString()}\n**Reason:** ${ban.reason}\n**Status:** ${ban.active ? (ban.expires_at > new Date() ? 'Active' : 'Expired') : 'Unbanned'}`
+            }));
+            sendEmbed(message, createEmbed(`Bans for ${user.username}`, '#0099ff', fields));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    'ubla': async (message, [page = 1]) => {
+        const pageSize = 10;
+        try {
+            const bans = await BannedUser.find().populate('user_id', 'username').skip((page - 1) * pageSize).limit(pageSize);
+            const totalBans = await BannedUser.countDocuments();
+            if (!bans.length) return message.reply('No bans found.');
+
+            const fields = bans.map(ban => ({
+                name: 'Ban Information',
+                value: `**Username:** ${ban.user_id.username}\n**Banned by:** ${ban.banned_by}\n**Banned at:** ${ban.banned_at.toISOString()}\n**Expires at:** ${ban.expires_at.toISOString()}\n**Reason:** ${ban.reason}\n**Status:** ${ban.active ? (ban.expires_at > new Date() ? 'Active' : 'Expired') : 'Unbanned'}`
+            }));
+            sendEmbed(message, createEmbed(`All Bans - Page ${page} of ${Math.ceil(totalBans / pageSize)}`, '#0099ff', fields));
         } catch (error) {
             handleError(message, error);
         }
@@ -166,7 +254,10 @@ const commands = {
         const fields = [
             { name: '!u <username>', value: 'Get user info by username.' },
             { name: '!ul [page]', value: 'List users.' },
-            { name: '!lg <runtime> <feature1> <feature2> ...', value: 'Generate license.' },
+            { name: '!ub <username> <duration> <reason>', value: 'Ban user.' },
+            { name: '!uu <username>', value: 'Unban user.' },
+            { name: '!ubl <username>', value: 'List all previous bans for a user.' },
+            { name: '!lg <runtime> <expiry> <feature1> <feature2> ...', value: 'Generate license.' },
             { name: '!ll [page]', value: 'List licenses.' },
             { name: '!ld <license_key>', value: 'Delete license.' },
             { name: '!pl', value: 'List memory pointers.' },
