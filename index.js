@@ -12,6 +12,7 @@ const feedbackRoutes = require('./router/feedback');
 const { validateToken } = require('./middleware');
 const { User, BannedUser, UserSettings, MemoryPointer, Settings, Licenses, Token, initializeDatabase } = require('./models');
 const chatRoutes = require('./router/chat');
+const settingsRoutes = require('./router/settings');
 require('./bot');
 
 const passport = require('passport');
@@ -150,6 +151,7 @@ app.use(`${BASE_PATH}`, registerRoutes);
 app.use(`${BASE_PATH}`, passwordResetRoutes);
 app.use(`${BASE_PATH}/chat`, chatRoutes);
 app.use(`${BASE_PATH}`, feedbackRoutes);
+app.use(`${BASE_PATH}`, settingsRoutes);
 
 const parseRuntime = (runtime) => {
   const unit = runtime.slice(-1);
@@ -200,32 +202,6 @@ app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
     res.json({ status: "success", message: "License activated successfully" });
   } catch (error) {
     res.status(500).json({ status: "error", message: "Internal server error: " + error.message });
-  }
-});
-
-app.put(`${BASE_PATH}/save-settings`, validateToken, async (req, res) => {
-  const { settings } = req.body;
-  const userSettings = settings;
-
-  if (!userSettings) {
-    return res.status(400).json({ status: "error", message: "Invalid settings" });
-  }
-
-  try {
-    const existingSettings = await UserSettings.findOne({ user_id: req.user._id });
-    if (!existingSettings) {
-      await new UserSettings({ user_id: req.user._id, settings: userSettings }).save();
-    } else {
-      console.log('Settings found for user:', req.user._id, existingSettings);
-      existingSettings.settings = userSettings;
-      await existingSettings.save();
-      console.log('Settings updated for user:', req.user._id, existingSettings);
-    }
-    logActivity(req.user._id, 'settings_save', 'Settings saved', req.ip);
-    res.json({ status: "success", message: "Settings saved successfully" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ status: "error", message: "Internal server error" });
   }
 });
 
