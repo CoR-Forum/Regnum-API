@@ -2,6 +2,20 @@ const express = require('express');
 const os = require('os');
 const disk = require('diskusage');
 const mongoose = require('mongoose');
+const {
+  User,
+  BannedUser,
+  PasswordReset,
+  UserSettings,
+  Licenses,
+  MemoryPointer,
+  Settings,
+  ActivityLog,
+  NotificationQueue,
+  PublicChat,
+  Feedback,
+  Token
+} = require('../models'); // Adjust the path as necessary
 
 const router = express.Router();
 
@@ -26,6 +40,20 @@ router.get('/', async (req, res) => {
 
   // Fetch database stats
   const dbStats = await mongoose.connection.db.stats();
+
+  // Fetch detailed stats for each model
+  const userCount = await User.countDocuments();
+  const bannedUserCount = await BannedUser.countDocuments();
+  const passwordResetCount = await PasswordReset.countDocuments();
+  const userSettingsCount = await UserSettings.countDocuments();
+  const licensesCount = await Licenses.countDocuments();
+  const memoryPointerCount = await MemoryPointer.countDocuments();
+  const settingsCount = await Settings.countDocuments();
+  const activityLogCount = await ActivityLog.countDocuments();
+  const notificationQueueCount = await NotificationQueue.countDocuments();
+  const publicChatCount = await PublicChat.countDocuments();
+  const feedbackCount = await Feedback.countDocuments();
+  const tokenCount = await Token.countDocuments();
 
   res.json({
     status: "success",
@@ -54,7 +82,21 @@ router.get('/', async (req, res) => {
       dataSize: dbStats.dataSize,
       storageSize: dbStats.storageSize,
       indexes: dbStats.indexes,
-      indexSize: dbStats.indexSize
+      indexSize: dbStats.indexSize,
+      detailedStats: {
+        userCount: userCount,
+        bannedUserCount: bannedUserCount,
+        passwordResetCount: passwordResetCount,
+        userSettingsCount: userSettingsCount,
+        licensesCount: licensesCount,
+        memoryPointerCount: memoryPointerCount,
+        settingsCount: settingsCount,
+        activityLogCount: activityLogCount,
+        notificationQueueCount: notificationQueueCount,
+        publicChatCount: publicChatCount,
+        feedbackCount: feedbackCount,
+        tokenCount: tokenCount
+      }
     }
   });
 });
