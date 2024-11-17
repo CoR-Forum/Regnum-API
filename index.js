@@ -1,5 +1,3 @@
-require('dotenv').config();
-
 const express = require('express');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
@@ -13,6 +11,7 @@ const { validateToken } = require('./middleware');
 const { User, BannedUser, UserSettings, MemoryPointer, Settings, Licenses, Token, initializeDatabase } = require('./models');
 const chatRoutes = require('./router/chat');
 const settingsRoutes = require('./router/settings');
+const statusRoutes = require('./router/status'); // Import the new status route
 require('./bot');
 
 const passport = require('passport');
@@ -152,6 +151,7 @@ app.use(`${BASE_PATH}`, passwordResetRoutes);
 app.use(`${BASE_PATH}/chat`, chatRoutes);
 app.use(`${BASE_PATH}`, feedbackRoutes);
 app.use(`${BASE_PATH}`, settingsRoutes);
+app.use(`${BASE_PATH}/status`, statusRoutes); // Use the new status route
 
 const parseRuntime = (runtime) => {
   const unit = runtime.slice(-1);
@@ -203,62 +203,6 @@ app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
   } catch (error) {
     res.status(500).json({ status: "error", message: "Internal server error: " + error.message });
   }
-});
-
-const os = require('os');
-const disk = require('diskusage');
-
-const startTime = Date.now();
-app.get(`${BASE_PATH}`, async (req, res) => {
-  const load = os.loadavg();
-  const uptime = os.uptime();
-  const apiUptime = Date.now() - startTime;
-  const freeMemory = os.freemem();
-  const totalMemory = os.totalmem();
-  const cpus = os.cpus().length;
-  const nodeVersion = process.version;
-  const envVariables = {
-      NODE_ENV: process.env.NODE_ENV,
-      BASE_URL: process.env.BASE_URL,
-      BASE_PATH: process.env.BASE_PATH
-  };
-
-  // Fetch disk usage
-  const diskUsage = await disk.check('/');
-
-  // Fetch database stats
-  const dbStats = await mongoose.connection.db.stats();
-
-  res.json({
-      status: "success",
-      message: "API is running",
-      api: {
-        uptime: apiUptime / 1000
-    },
-      system: {
-          load: load,
-          uptime: uptime,
-          freeMemory: freeMemory,
-          totalMemory: totalMemory,
-          cpus: cpus,
-          diskUsage: {
-              free: diskUsage.free,
-              total: diskUsage.total,
-              available: diskUsage.available
-          },
-          nodeVersion: nodeVersion,
-          envVariables: envVariables
-      },
-      database: {
-          collections: dbStats.collections,
-          objects: dbStats.objects,
-          avgObjSize: dbStats.avgObjSize,
-          dataSize: dbStats.dataSize,
-          storageSize: dbStats.storageSize,
-          indexes: dbStats.indexes,
-          indexSize: dbStats.indexSize
-      }
-    });
 });
 
 const server = app.listen(PORT, () => {
