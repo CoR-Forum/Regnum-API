@@ -5,7 +5,6 @@ const mongoose = require('mongoose');
 const helmet = require('helmet');
 const argon2 = require('argon2');
 const { mail, notifyAdmins } = require('./notificator');
-const { validateUsername, validatePassword } = require('./validation');
 const { logActivity, generateToken } = require('./utils');
 const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
@@ -16,8 +15,7 @@ const chatRoutes = require('./router/chat');
 require('./bot');
 
 const passport = require('passport');
-require('./auth/discord'); // Ensure this is added to initialize the Discord strategy
-
+require('./auth/discord');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -142,7 +140,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
 app.post(`${BASE_PATH}/logout`, validateToken, async (req, res) => {
   try {
-    await Token.deleteOne({ token: req.headers['authorization'] }); // Delete the token from MongoDB
+    await Token.deleteOne({ token: req.headers['authorization'] });
     res.json({ status: "success", message: "Logout successful" });
   } catch (error) {
     res.status(500).json({ status: "error", message: "Internal server error" });
@@ -249,7 +247,7 @@ app.put(`${BASE_PATH}/save-settings`, validateToken, async (req, res) => {
 });
 
 const os = require('os');
-const disk = require('diskusage'); // You may need to install this package
+const disk = require('diskusage');
 
 const startTime = Date.now();
 app.get(`${BASE_PATH}`, async (req, res) => {
@@ -267,7 +265,7 @@ app.get(`${BASE_PATH}`, async (req, res) => {
   };
 
   // Fetch disk usage
-  const diskUsage = await disk.check('/'); // Adjust the path as needed
+  const diskUsage = await disk.check('/');
 
   // Fetch database stats
   const dbStats = await mongoose.connection.db.stats();
