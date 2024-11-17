@@ -84,7 +84,6 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
     notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`, 'discord_login');
 
     const features = await SylentxFeature.find({ user_id: user._id });
-    console.log('Fetched features:', features); // Debugging line
 
     const memoryPointers = {};
     const validFeatures = features.filter(feature => {
@@ -93,14 +92,13 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
       console.log(`Feature expires at: ${expiresAt}, Current time: ${now}`);
       return expiresAt > now;
     });
-    console.log('Valid features:', validFeatures); // Debugging line
 
     for (const feature of validFeatures) {
       const pointer = await MemoryPointer.findOne({ feature: feature.type });
       if (pointer) {
         memoryPointers[feature.type] = {
           address: pointer.address,
-          offsets: pointer.offsets // Ensure this handles the array correctly
+          offsets: pointer.offsets
         };
       } else {
         console.log(`No pointer found for feature type: ${feature.type}`);
