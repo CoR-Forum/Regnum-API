@@ -68,7 +68,7 @@ const userSettingsSchema = new mongoose.Schema({
 const UserSettings = mongoose.model('UserSettings', userSettingsSchema);
 
 const memoryPointerSchema = new mongoose.Schema({
-    feature: { type: String },
+    feature: { type: String, unique: true },
     address: { type: String },
     offsets: { type: [String] }
 });
