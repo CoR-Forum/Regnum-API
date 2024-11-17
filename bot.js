@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
-const { User, BannedUser, Licenses, MemoryPointer } = require('./models');
+const { User, BannedUser, Licenses, MemoryPointer, Settings } = require('./models');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
@@ -249,6 +249,20 @@ const commands = {
             handleError(message, error);
         }
     },
+    // retrieve or update system status
+    'ss': async (message, [newStatus]) => {
+        try {
+            if (newStatus) {
+                await Settings.updateOne({ name: 'status' }, { value: newStatus }, { upsert: true });
+                sendEmbed(message, createEmbed('System Status Updated', '#00ff00', [{ name: 'New Status', value: newStatus }]));
+            } else {
+                const status = await Settings.findOne({ name: 'status' });
+                sendEmbed(message, createEmbed('System Status', '#0099ff', [{ name: 'Status', value: status ? status.value : 'Not set' }]));
+            }
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
     'help': (message) => {
         const fields = [
             { name: '!u <username>', value: 'Get user info by username.' },
@@ -263,7 +277,9 @@ const commands = {
             { name: '!pl', value: 'List memory pointers.' },
             { name: '!pd <pointer_id>', value: 'Delete memory pointer.' },
             { name: '!pa <feature> <address> <offset1> <offset2> ...', value: 'Add memory pointer.' },
-            { name: '!pe <pointer_id> <feature> <address> <offset1> <offset2> ...', value: 'Edit memory pointer.' }
+            { name: '!pe <pointer_id> <feature> <address> <offset1> <offset2> ...', value: 'Edit memory pointer.' },
+            { name: '!ss [new_status]', value: 'Retrieve or update system status.' },
+            { name: '!help', value: 'Show this help message.' }
         ];
         sendEmbed(message, createEmbed('Help', '#0099ff', fields));
     },
