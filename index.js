@@ -208,12 +208,9 @@ const parseRuntime = (runtime) => {
 
 const server = app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
-  notifyAdmins(`API server started at port ${PORT}`);
-  // Call updateStats initially and set interval
 });
 
 initializeDatabase().then(() => {
-  // Initialization logic if needed
   updateStats();
   setInterval(updateStats, 5000);
 });
