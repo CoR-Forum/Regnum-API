@@ -151,7 +151,7 @@ app.use(`${BASE_PATH}`, passwordResetRoutes);
 app.use(`${BASE_PATH}/chat`, chatRoutes);
 app.use(`${BASE_PATH}`, feedbackRoutes);
 app.use(`${BASE_PATH}`, settingsRoutes);
-app.use(`${BASE_PATH}/status`, statusRoutes); // Use the new status route
+app.use(`${BASE_PATH}/`, statusRoutes); // Use the new status route
 
 const parseRuntime = (runtime) => {
   const unit = runtime.slice(-1);
