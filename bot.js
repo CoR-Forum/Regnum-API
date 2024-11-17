@@ -207,7 +207,7 @@ const commands = {
             if (!pointers.length) return message.reply('No memory pointers found.');
             const fields = pointers.map(pointer => ({
                 name: pointer.feature,
-                value: `ID: ${pointer._id}\nAddress: ${pointer.address}\nOffsets: ${pointer.offsets.join(', ')}`
+                value: `Address: ${pointer.address}\nOffsets: ${pointer.offsets.join(', ')}`
             }));
             sendEmbed(message, createEmbed('Memory Pointer List', '#0099ff', fields));
         } catch (error) {
