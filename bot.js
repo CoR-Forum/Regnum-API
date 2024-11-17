@@ -279,15 +279,28 @@ const commands = {
             handleError(message, error);
         }
     },
-    // send email to all users
-    'se': async (message, [subject, ...text]) => {
-        if (!subject || !text) return message.reply('Usage: !se <subject> <text>');
+    'e': async (message, [username, subject, ...text]) => {
+        if (!username || !subject || !text) return message.reply('Usage: !e <username> <subject> <text>');
+        const { valid, message: validationMessage } = validateUsername(username);
+        if (!valid) return message.reply(validationMessage);
+
+        try {
+            const user = await User.findOne({ username });
+            if (!user) return message.reply('User not found.');
+            mail(user.email, subject, text.join(' '));
+            sendEmbed(message, createEmbed('Email to user ' + user.username + ' queued', '#00ff00'));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    'ea': async (message, [subject, ...text]) => {
+        if (!subject || !text) return message.reply('Usage: !ea <subject> <text>');
         try {
             const users = await User.find();
             users.forEach(user => {
                 mail(user.email, subject, text.join(' '));
             });
-            sendEmbed(message, createEmbed('Email Sent', '#00ff00'));
+            sendEmbed(message, createEmbed('Email for users ' + users.map(user => user.username).join(', ') + ' queued', '#00ff00'));
         } catch (error) {
             handleError(message, error);
         }
@@ -310,7 +323,8 @@ const commands = {
             { name: `${prefix}pa <feature> <address> <offset1> <offset2> ...`, value: 'Add memory pointer.' },
             { name: `${prefix}pe <feature> <new_feature_name> <address> <offset1> <offset2> ...`, value: 'Edit memory pointer.' },
             { name: `${prefix}ss [new_status]`, value: 'Retrieve or update system status.' },
-            { name: `${prefix}se <subject> <text>`, value: 'Send email to all users.' },
+            { name: `${prefix}e <username> <subject> <text>`, value: 'Send email to user.' },
+            { name: `${prefix}ea <subject> <text>`, value: 'Send email to all users.' },
             { name: `${prefix}help / ${prefix}h`, value: 'Show this help message.' },
             { name: 'Environment', value: environment }
         ];
