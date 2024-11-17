@@ -39,14 +39,6 @@ const bannedUserSchema = new mongoose.Schema({
 
 const BannedUser = mongoose.model('BannedUser', bannedUserSchema);
 
-const sylentxFeatureSchema = new mongoose.Schema({
-    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    type: { type: String, default: 'zoom' },
-    expires_at: { type: Date }
-});
-
-const SylentxFeature = mongoose.model('SylentxFeature', sylentxFeatureSchema);
-
 const passwordResetSchema = new mongoose.Schema({
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     reset_token: { type: String },
@@ -158,6 +150,5 @@ module.exports = {
     PublicChat,
     Feedback,
     Token,
-    SylentxFeature,
     initializeDatabase
 };

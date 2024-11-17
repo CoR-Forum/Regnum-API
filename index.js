@@ -10,7 +10,7 @@ const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
 const feedbackRoutes = require('./router/feedback');
 const { validateToken } = require('./middleware');
-const { User, BannedUser, UserSettings, MemoryPointer, Settings, Licenses, Token, SylentxFeature, initializeDatabase } = require('./models');
+const { User, BannedUser, UserSettings, MemoryPointer, Settings, Licenses, Token, initializeDatabase } = require('./models');
 const chatRoutes = require('./router/chat');
 require('./bot');
 
@@ -83,25 +83,27 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
     notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`, 'discord_login');
 
-    const features = await SylentxFeature.find({ user_id: user._id });
+    const licenses = await Licenses.find({ activated_by: user._id });
 
     const memoryPointers = {};
-    const validFeatures = features.filter(feature => {
-      const expiresAt = new Date(feature.expires_at);
-      const now = new Date();
-      console.log(`Feature expires at: ${expiresAt}, Current time: ${now}`);
-      return expiresAt > now;
-    });
+    const validFeatures = licenses.flatMap(license => 
+      license.features.filter(feature => {
+        const expiresAt = new Date(license.expires_at);
+        const now = new Date();
+        console.log(`Feature expires at: ${expiresAt}, Current time: ${now}`);
+        return expiresAt > now;
+      })
+    );
 
     for (const feature of validFeatures) {
-      const pointer = await MemoryPointer.findOne({ feature: feature.type });
+      const pointer = await MemoryPointer.findOne({ feature });
       if (pointer) {
-        memoryPointers[feature.type] = {
+        memoryPointers[feature] = {
           address: pointer.address,
           offsets: pointer.offsets
         };
       } else {
-        console.log(`No pointer found for feature type: ${feature.type}`);
+        console.log(`No pointer found for feature: ${feature}`);
       }
     }
 
@@ -123,9 +125,8 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
         nickname: user.nickname,
         settings: userSettings ? userSettings.settings : null,
         features: validFeatures.map(feature => ({
-          name: feature.type,
-          expires_at: feature.expires_at,
-          pointer: memoryPointers[feature.type] || null
+          name: feature,
+          pointer: memoryPointers[feature] || null
         }))
       },
       system: settingsObject
@@ -174,41 +175,6 @@ app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
     const user = await User.findOne({ _id: req.user._id });
     if (!user) {
       return res.status(404).json({ status: "error", message: "User not found" });
-    }
-
-    if (Array.isArray(license.features)) {
-      for (const feature of license.features) {
-        const [type, runtime] = feature.split(':');
-        const expires_at = new Date();
-        if (runtime && typeof runtime === 'string') {
-          const value = parseInt(runtime.slice(0, -1), 10);
-          const unit = runtime.slice(-1);
-          switch (unit) {
-            case 'h':
-              expires_at.setHours(expires_at.getHours() + value);
-              break;
-            case 'd':
-              expires_at.setDate(expires_at.getDate() + value);
-              break;
-            case 'w':
-              expires_at.setDate(expires_at.getDate() + (value * 7));
-              break;
-            case 'm':
-              expires_at.setMonth(expires_at.getMonth() + value);
-              break;
-            case 'y':
-              expires_at.setFullYear(expires_at.getFullYear() + value);
-              break;
-            default:
-              expires_at.setDate(expires_at.getDate() + 1); // Default to 1 day if runtime is not recognized
-          }
-        }
-
-        // Delete the existing feature if the user already has it
-        await SylentxFeature.deleteMany({ user_id: user._id, type });
-
-        await new SylentxFeature({ user_id: user._id, type, expires_at, license_id: license._id }).save();
-      }
     }
 
     logActivity(req.user._id, 'license_activate', 'License activated', req.ip);
