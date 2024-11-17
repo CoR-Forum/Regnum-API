@@ -220,6 +220,8 @@ const commands = {
     'pa': async (message, [feature, address, ...offsets]) => {
         if (!feature || !address) return message.reply('Usage: !pa <feature> <address> <offset1> <offset2> ...');
         try {
+            const existingPointer = await MemoryPointer.findOne({ feature });
+            if (existingPointer) return message.reply('Memory pointer with this feature already exists.');
             const newPointer = new MemoryPointer({ feature, address, offsets });
             await newPointer.save();
             const fields = [
@@ -235,6 +237,8 @@ const commands = {
     'pe': async (message, [pointerId, feature, address, ...offsets]) => {
         if (!pointerId || !feature || !address) return message.reply('Usage: !pe <pointer_id> <feature> <address> <offset1> <offset2> ...');
         try {
+            const existingPointer = await MemoryPointer.findOne({ feature });
+            if (existingPointer && existingPointer._id.toString() !== pointerId) return message.reply('Memory pointer with this feature already exists.');
             const pointer = await MemoryPointer.findById(pointerId);
             if (!pointer) return message.reply('Memory pointer not found.');
             Object.assign(pointer, { feature, address, offsets });
