@@ -17,22 +17,26 @@ const handleError = (message, error) => {
 
 const createEmbed = (title, color = '#0099ff', fields = []) => new EmbedBuilder().setColor(color).setTitle(title).addFields(fields).setTimestamp();
 
+const getUserInfoFields = async (user) => {
+    const licenses = await Licenses.find({ activated_by: user._id });
+    const featureList = licenses.map(license => `${license.features.join(', ')} (expires at: ${license.expires_at ? license.expires_at.toISOString() : 'N/A'})`).join('\n') || 'No features';
+    const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
+    return [
+        { name: 'Username', value: user.username, inline: true },
+        { name: 'Email', value: user.email, inline: true },
+        { name: 'Nickname', value: user.nickname, inline: true },
+        { name: 'Ban Status', value: banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned', inline: false },
+        { name: 'Features', value: featureList, inline: false },
+    ];
+};
+
 const commands = {
     'u': async (message, [username]) => {
         if (!username) return message.reply('Usage: !u <username>');
         try {
             const user = await User.findOne({ username });
             if (!user) return message.reply('User not found.');
-            const licenses = await Licenses.find({ activated_by: user._id });
-            const featureList = licenses.map(license => `${license.features.join(', ')} (expires at: ${license.expires_at ? license.expires_at.toISOString() : 'N/A'})`).join('\n') || 'No features';
-            const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
-            const fields = [
-                { name: 'Username', value: user.username, inline: true },
-                { name: 'Email', value: user.email, inline: true },
-                { name: 'Nickname', value: user.nickname, inline: true },
-                { name: 'Ban Status', value: banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned', inline: false },
-                { name: 'Features', value: featureList, inline: false },
-            ];
+            const fields = await getUserInfoFields(user);
             sendEmbed(message, createEmbed('User Info', '#0099ff', fields));
         } catch (error) {
             handleError(message, error);
@@ -45,13 +49,8 @@ const commands = {
             const totalUsers = await User.countDocuments();
             if (!users.length) return message.reply('No users found.');
             const fields = await Promise.all(users.map(async user => {
-                const licenses = await Licenses.find({ activated_by: user._id });
-                const featureList = licenses.map(license => `${license.features.join(', ')} (expires at: ${license.expires_at ? license.expires_at.toISOString() : 'N/A'})`).join('\n') || 'No features';
-                const banStatus = await BannedUser.findOne({ user_id: user._id, expires_at: { $gt: new Date() }, active: true });
-                return { 
-                    name: user.username + ' (' + user._id + ')', 
-                    value: `Email: ${user.email}\nNickname: ${user.nickname}\nCreated At: ${user.created_at.toISOString()}\nFeatures:\n${featureList}\nBan Status: ${banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned'}` 
-                };
+                const userFields = await getUserInfoFields(user);
+                return { name: user.username + ' (' + user._id + ')', value: userFields.map(field => `${field.name}: ${field.value}`).join('\n') };
             }));
             sendEmbed(message, createEmbed(`User List - Page ${page} of ${Math.ceil(totalUsers / pageSize)}`, '#0099ff', fields));
         } catch (error) {
