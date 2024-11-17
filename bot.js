@@ -214,12 +214,12 @@ const commands = {
             handleError(message, error);
         }
     },
-    'pd': async (message, [pointerId]) => {
-        if (!pointerId) return message.reply('Usage: !pd <pointer_id>');
+    'pd': async (message, [feature]) => {
+        if (!feature) return message.reply('Usage: !pd <feature>');
         try {
-            const pointer = await MemoryPointer.findById(pointerId);
+            const pointer = await MemoryPointer.findOne({ feature });
             if (!pointer) return message.reply('Memory pointer not found.');
-            await MemoryPointer.deleteOne({ _id: pointerId });
+            await MemoryPointer.deleteOne({ feature });
             const fields = [
                 { name: 'Feature', value: pointer.feature, inline: true },
                 { name: 'Address', value: pointer.address, inline: true },
