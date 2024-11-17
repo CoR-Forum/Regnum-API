@@ -234,17 +234,17 @@ const commands = {
             handleError(message, error);
         }
     },
-    'pe': async (message, [pointerId, feature, address, ...offsets]) => {
-        if (!pointerId || !feature || !address) return message.reply('Usage: !pe <pointer_id> <feature> <address> <offset1> <offset2> ...');
+    'pe': async (message, [feature, newFeature, address, ...offsets]) => {
+        if (!feature || !newFeature || !address) return message.reply('Usage: !pe <feature> <new_feature_name> <address> <offset1> <offset2> ...');
         try {
-            const existingPointer = await MemoryPointer.findOne({ feature });
-            if (existingPointer && existingPointer._id.toString() !== pointerId) return message.reply('Memory pointer with this feature already exists.');
-            const pointer = await MemoryPointer.findById(pointerId);
+            const pointer = await MemoryPointer.findOne({ feature });
             if (!pointer) return message.reply('Memory pointer not found.');
-            Object.assign(pointer, { feature, address, offsets });
+            const existingPointer = await MemoryPointer.findOne({ feature: newFeature });
+            if (existingPointer && existingPointer._id.toString() !== pointer._id.toString()) return message.reply('Memory pointer with this feature already exists.');
+            Object.assign(pointer, { feature: newFeature, address, offsets });
             await pointer.save();
             const fields = [
-                { name: 'Feature', value: feature, inline: true },
+                { name: 'Feature', value: newFeature, inline: true },
                 { name: 'Address', value: address, inline: true },
                 { name: 'Offsets', value: offsets.join(', '), inline: true }
             ];
@@ -282,9 +282,9 @@ const commands = {
             { name: `${prefix}pl`, value: 'List memory pointers.' },
             { name: `${prefix}pd <pointer_id>`, value: 'Delete memory pointer.' },
             { name: `${prefix}pa <feature> <address> <offset1> <offset2> ...`, value: 'Add memory pointer.' },
-            { name: `${prefix}pe <pointer_id> <feature> <address> <offset1> <offset2> ...`, value: 'Edit memory pointer.' },
+            { name: `${prefix}pe <feature> <new_feature_name> <address> <offset1> <offset2> ...`, value: 'Edit memory pointer.' },
             { name: `${prefix}ss [new_status]`, value: 'Retrieve or update system status.' },
-            { name: `${prefix}help`, value: 'Show this help message.' },
+            { name: `${prefix}help / ${prefix}h`, value: 'Show this help message.' },
             { name: 'Environment', value: environment }
         ];
         sendEmbed(message, createEmbed('Help', '#0099ff', fields));
