@@ -2,6 +2,7 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
 const { User, BannedUser, Licenses, MemoryPointer, Settings } = require('./models');
 const { validateUsername, validateEmail, validateNickname } = require('./validation');
+const { mail } = require('./notificator');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 
@@ -278,6 +279,19 @@ const commands = {
             handleError(message, error);
         }
     },
+    // send email to all users
+    'se': async (message, [subject, ...text]) => {
+        if (!subject || !text) return message.reply('Usage: !se <subject> <text>');
+        try {
+            const users = await User.find();
+            users.forEach(user => {
+                mail(user.email, subject, text.join(' '));
+            });
+            sendEmbed(message, createEmbed('Email Sent', '#00ff00'));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
     'help': (message) => {
         const prefix = process.env.NODE_ENV === 'development' ? '?' : '!';
         const environment = process.env.NODE_ENV === 'development' ? 'Development' : 'Production';
@@ -296,6 +310,7 @@ const commands = {
             { name: `${prefix}pa <feature> <address> <offset1> <offset2> ...`, value: 'Add memory pointer.' },
             { name: `${prefix}pe <feature> <new_feature_name> <address> <offset1> <offset2> ...`, value: 'Edit memory pointer.' },
             { name: `${prefix}ss [new_status]`, value: 'Retrieve or update system status.' },
+            { name: `${prefix}se <subject> <text>`, value: 'Send email to all users.' },
             { name: `${prefix}help / ${prefix}h`, value: 'Show this help message.' },
             { name: 'Environment', value: environment }
         ];
