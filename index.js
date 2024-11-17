@@ -11,7 +11,7 @@ const { validateToken } = require('./middleware');
 const { User, BannedUser, UserSettings, MemoryPointer, Settings, Licenses, Token, initializeDatabase } = require('./models');
 const chatRoutes = require('./router/chat');
 const settingsRoutes = require('./router/settings');
-const statusRoutes = require('./router/status'); // Import the new status route
+const { router: statusRoutes, updateStats } = require('./router/status'); // Import the new status route and updateStats function
 require('./bot');
 
 const passport = require('passport');
@@ -77,6 +77,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
     const token = await generateToken(user);
 
     const loginNotificationText = `Hello ${user.username},\n\nYou have successfully logged in to your Sylent-X Account.\n\nDate: ${new Date().toLocaleString()}\nIP address: ${req.ip}\n\nIf this wasn't you, please change your password immediately and contact support.`;
+
     await mail(user.email, 'Login Notification', loginNotificationText);
 
     logActivity(user._id, 'login', 'User logged in', req.ip);
@@ -146,31 +147,6 @@ app.post(`${BASE_PATH}/logout`, validateToken, async (req, res) => {
   }
 });
 
-app.use(`${BASE_PATH}`, registerRoutes);
-app.use(`${BASE_PATH}`, passwordResetRoutes);
-app.use(`${BASE_PATH}/chat`, chatRoutes);
-app.use(`${BASE_PATH}`, feedbackRoutes);
-app.use(`${BASE_PATH}`, settingsRoutes);
-app.use(`${BASE_PATH}/`, statusRoutes); // Use the new status route
-
-const parseRuntime = (runtime) => {
-  const unit = runtime.slice(-1);
-  const value = parseInt(runtime.slice(0, -1), 10);
-
-  switch (unit) {
-    case 'h':
-      return value * 60 * 60 * 1000; // hours to milliseconds
-    case 'd':
-      return value * 24 * 60 * 60 * 1000; // days to milliseconds
-    case 'm':
-      return value * 30 * 24 * 60 * 60 * 1000; // months to milliseconds (approx)
-    case 'y':
-      return value * 365 * 24 * 60 * 60 * 1000; // years to milliseconds (approx)
-    default:
-      throw new Error('Invalid runtime format');
-  }
-};
-
 app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
   const { licenseKey } = req.body;
 
@@ -205,13 +181,41 @@ app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
   }
 });
 
+app.use(`${BASE_PATH}`, registerRoutes);
+app.use(`${BASE_PATH}`, passwordResetRoutes);
+app.use(`${BASE_PATH}/chat`, chatRoutes);
+app.use(`${BASE_PATH}`, feedbackRoutes);
+app.use(`${BASE_PATH}`, settingsRoutes);
+app.use(`${BASE_PATH}/`, statusRoutes); // Use the new status route
+
+const parseRuntime = (runtime) => {
+  const unit = runtime.slice(-1);
+  const value = parseInt(runtime.slice(0, -1), 10);
+
+  switch (unit) {
+    case 'h':
+      return value * 60 * 60 * 1000; // hours to milliseconds
+    case 'd':
+      return value * 24 * 60 * 60 * 1000; // days to milliseconds
+    case 'm':
+      return value * 30 * 24 * 60 * 60 * 1000; // months to milliseconds (approx)
+    case 'y':
+      return value * 365 * 24 * 60 * 60 * 1000; // years to milliseconds (approx)
+    default:
+      throw new Error('Invalid runtime format');
+  }
+};
+
 const server = app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
   notifyAdmins(`API server started at port ${PORT}`);
+  // Call updateStats initially and set interval
 });
 
 initializeDatabase().then(() => {
   // Initialization logic if needed
+  updateStats();
+  setInterval(updateStats, 5000);
 });
 
 const gracefulShutdown = () => {
