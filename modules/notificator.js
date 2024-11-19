@@ -121,9 +121,11 @@ const notifyAdmins = async (message, type = 'discord_log') => {
 };
 
 const processNotificationQueue = async () => {
+    const MAX_FAILURES = 3;
+
     try {
         const notifications = await NotificationQueue.find({
-            status: { $in: ['pending', 'failed'] }
+            status: { $in: ['pending', 'failed', 'retry'] }
         }).limit(3);
 
         const processJob = async (job) => {
@@ -147,6 +149,14 @@ const processNotificationQueue = async () => {
                 job.status = 'failed';
                 log(`NOTIFIER: Job id: ${job._id} failed: ${error.message}`, error);
                 await addLogEntry(job._id, 'error', `Processing failed: ${error.message}`);
+
+                const failureLogs = job.logs.filter(log => log.type === 'error').length;
+                if (failureLogs >= MAX_FAILURES) {
+                    log(`NOTIFIER: Job id: ${job._id} has failed multiple times and will not be processed again`);
+                    await notifyAdmins(`Notification ID: ${job._id} has failed multiple times and will not be processed again`);
+                } else {
+                    job.status = 'retry';
+                }
             }
             await job.save();
         };
