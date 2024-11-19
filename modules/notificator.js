@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
 const axios = require('axios');
-const { NotificationQueue } = require('./models');
+const { NotificationQueue } = require('../models');
 require('dotenv').config();
 
 const {

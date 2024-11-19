@@ -13,7 +13,7 @@ const {
     checkNicknameExists
 } = require('../validation');
 const { logActivity } = require('../utils');
-const { mail, notifyAdmins } = require('../notificator');
+const { mail, notifyAdmins } = require('../modules/notificator');
 const { User } = require('../models');
 const { RateLimiter } = require('../modules/rateLimiter');
 

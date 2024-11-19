@@ -2,7 +2,7 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
 const { User, BannedUser, Licenses, MemoryPointer, Settings } = require('./models');
 const { validateUsername, validateEmail, validateNickname } = require('./validation');
-const { mail } = require('./notificator');
+const { mail } = require('./modules/notificator');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 

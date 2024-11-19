@@ -1,6 +1,6 @@
 // utils.js
 const { ActivityLog, Token } = require('./models'); // Import Mongoose models
-const { notifyAdmins } = require('./notificator');
+const { notifyAdmins } = require('./modules/notificator');
 const jwt = require('jsonwebtoken');
 
 const generateToken = async (user) => {

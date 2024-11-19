@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const argon2 = require('argon2');
 const { validateEmail, validatePassword } = require('../validation');
 const { logActivity } = require('../utils');
-const { mail } = require('../notificator');
+const { mail } = require('../modules/notificator');
 const { User, PasswordReset } = require('../models');
 const { RateLimiter } = require('../modules/rateLimiter');
 
