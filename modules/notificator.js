@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const axios = require('axios');
+const Bottleneck = require('bottleneck');
 const { NotificationQueue } = require('../models');
 require('dotenv').config();
 
@@ -67,7 +68,11 @@ const sendEmail = async (to, subject, text) => {
     }
 };
 
-const sendDiscordNotification = async (id, message, createdAt, type) => {
+const limiter = new Bottleneck({
+    minTime: 1000 // Minimum time between requests in milliseconds
+});
+
+const sendDiscordNotification = limiter.wrap(async (id, message, createdAt, type) => {
     const webhookUrls = {
         discord_login: DISCORD_LOGIN_WEBHOOK_URL,
         discord_log: DISCORD_LOG_WEBHOOK_URL
@@ -94,7 +99,7 @@ const sendDiscordNotification = async (id, message, createdAt, type) => {
         log(`NOTIFIER: Error sending Discord notification: ${error.message}`, error);
         throw new Error(`Failed to send Discord notification: ${error.message}`);
     }
-};
+});
 
 const queueNotification = async (to, subject, text, type) => {
     log(`NOTIFIER: queueNotification called with type: ${type}`);
