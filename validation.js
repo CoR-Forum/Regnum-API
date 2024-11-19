@@ -15,10 +15,14 @@ const validatePassword = async (password) => {
         return { valid: false, message: 'Password must be at least 8 characters long.' };
     }
 
-    // Check if the password has been pwned
-    const pwnedCount = await hibp.pwnedPassword(password);
-    if (pwnedCount > 0) {
-        return { valid: false, message: `This password has been seen ${pwnedCount} times before on haveibeenpwned.com. Please choose a more secure password.` };
+    try {
+        // Check if the password has been pwned
+        const pwnedCount = await hibp.pwnedPassword(password);
+        if (pwnedCount > 0) {
+            return { valid: false, message: `This password has been seen ${pwnedCount} times before on haveibeenpwned.com. Please choose a more secure password.` };
+        }
+    } catch (error) {
+        throw new Error('We are unable to check the security of your password at this time, likely due to an issue with the haveibeenpwned.com service. Please try again later.');
     }
 
     return { valid: true };
