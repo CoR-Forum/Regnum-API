@@ -1,5 +1,4 @@
-// utils.js
-const { ActivityLog, Token } = require('./models'); // Import Mongoose models
+const { ActivityLog, Token } = require('./models');
 const { notifyAdmins } = require('./modules/notificator');
 const jwt = require('jsonwebtoken');
 
@@ -7,7 +6,6 @@ const generateToken = async (user) => {
     await Token.deleteMany({ userId: user._id });
     const token = jwt.sign({ userId: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
     await new Token({ userId: user._id, token }).save();
-  
     return token;
 };
 
