@@ -62,7 +62,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
     const passwordMatch = await argon2.verify(user.password, password);
     if (!passwordMatch) return res.status(401).json({ status: "error", message: "Invalid username or password" });
 
-    if (user.activation_token) return res.status(403).json({ status: "error", message: "Account not activated" });
+    if (user.activation_token) return res.status(403).json({ status: "error", message: "Account not activated. Please check your email for the activation link." });
 
     // Check if the user is banned
     const activeBan = await BannedUser.findOne({

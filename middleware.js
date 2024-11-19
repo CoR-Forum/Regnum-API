@@ -15,7 +15,7 @@ const validateToken = async (req, res, next) => {
             return res.status(401).json({ status: "error", message: "Unauthorized: Invalid session" });
         }
         if (user.activation_token) {
-            return res.status(403).json({ status: "error", message: "Forbidden: Account not activated" });
+            return res.status(403).json({ status: "error", message: "Forbidden: Account not activated. Please check your email for the activation link." });
         }
         const tokenExists = await Token.findOne({ token });
         if (!tokenExists) {
