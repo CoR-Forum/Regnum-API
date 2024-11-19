@@ -19,7 +19,7 @@ require('./auth/discord');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const BASE_PATH = process.env.BASE_PATH || '/api';
+const BASE_PATH = process.env.BASE_PATH || '/v2';
 
 mongoose.connect(process.env.MONGO_URI).then(() => {
   console.log('MongoDB connected');

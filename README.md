@@ -27,5 +27,5 @@ MONGO_URI=mongodb://admin:password@mongo.domain.net:27017/
 NODE_ENV=development
 DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=
-DISCORD_CALLBACK_URL=https://domain.com/api/v2/auth/discord/callback
+DISCORD_CALLBACK_URL=https://api.domain.com/v2/auth/discord/callback
 ```
