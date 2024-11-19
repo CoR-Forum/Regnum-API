@@ -97,7 +97,7 @@ router.post('/register', [
 
         await newUser.save();
 
-        const activationLink = `${process.env.BASE_URL}:${process.env.PORT}${process.env.BASE_PATH}/activate/${activationToken}`;
+        const activationLink = `${process.env.BASE_URL}/${process.env.BASE_PATH}/activate/${activationToken}`;
         await mail(email, 'Activate your account', `Click here to activate your account: ${activationLink}`);
 
         logActivity(newUser._id, 'registration', 'User registered', req.ip);
