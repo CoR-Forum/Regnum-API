@@ -33,6 +33,24 @@ const log = (message, error = null) => {
     }
 };
 
+const addLogEntry = async (notificationId, type, message) => {
+    log(`NOTIFIER: addLogEntry called with notificationId: ${notificationId}, type: ${type}, message: ${message}`);
+    try {
+        await NotificationQueue.findByIdAndUpdate(notificationId, {
+            $push: {
+                logs: {
+                    date: new Date(),
+                    type,
+                    message
+                }
+            }
+        });
+        log(`NOTIFIER: Log entry added for notificationId: ${notificationId}`);
+    } catch (error) {
+        log(`NOTIFIER: Error adding log entry for notificationId: ${notificationId}: ${error.message}`, error);
+    }
+};
+
 const sendEmail = async (to, subject, text) => {
     log(`NOTIFIER: sendEmail called with to: ${to}, subject: ${subject}`);
     try {
@@ -112,6 +130,7 @@ const processNotificationQueue = async () => {
             log(`NOTIFIER: Processing job id: ${job._id}`);
             job.status = 'processing';
             await job.save();
+            await addLogEntry(job._id, 'info', 'Processing started');
 
             try {
                 if (job.type === 'email') {
@@ -123,9 +142,11 @@ const processNotificationQueue = async () => {
                     job.status = 'completed';
                 }
                 log(`NOTIFIER: Job id: ${job._id} completed`);
+                await addLogEntry(job._id, 'info', 'Processing completed');
             } catch (error) {
                 job.status = 'failed';
                 log(`NOTIFIER: Job id: ${job._id} failed: ${error.message}`, error);
+                await addLogEntry(job._id, 'error', `Processing failed: ${error.message}`);
             }
             await job.save();
         };

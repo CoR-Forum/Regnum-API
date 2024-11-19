@@ -7,7 +7,12 @@ const notificationQueueSchema = new mongoose.Schema({
     type: { type: String },
     status: { type: String, default: 'pending' },
     created_at: { type: Date, default: Date.now },
-    updated_at: { type: Date, default: Date.now }
+    updated_at: { type: Date, default: Date.now },
+    logs: [{
+        date: { type: Date, default: Date.now },
+        type: { type: String },
+        message: { type: String }
+    }]
 });
 
 const NotificationQueue = mongoose.model('NotificationQueue', notificationQueueSchema);
