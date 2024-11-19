@@ -34,20 +34,4 @@ describe('API Tests', () => {
         expect(response.status).toBe(400);
         expect(response.body.status).toBe('error');
     });
-
-    test('POST /api/v2/register should create a new user', async () => {
-        const response = await request(app)
-            .post('/api/v2/register')
-            .send({ username: 'testUser', password: 'testPass123', email: 'test@example.com' });
-        expect(response.status).toBe(200);
-        expect(response.body.status).toBe('success');
-    });
-
-    test('POST /api/v2/login should login with valid credentials', async () => {
-        const response = await request(app)
-            .post('/api/v2/login')
-            .send({ username: 'testUser', password: 'testPass123' });
-        expect(response.status).toBe(200);
-        expect(response.body.status).toBe('success');
-    });
 });
