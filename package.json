@@ -27,7 +27,7 @@
     "hibp": "^14.1.2",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.10.0",
+    "mongodb": "^6.11.0",
     "mongoose": "^8.8.2",
     "nodemailer": "^6.9.16",
     "passport": "^0.7.0",
