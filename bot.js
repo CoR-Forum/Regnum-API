@@ -345,8 +345,8 @@ const commands = {
 
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
-    if (!adminIds.includes(message.author.id)) return message.reply('You do not have permission to use this bot.');
     if (!message.content.startsWith(prefix)) return;
+    if (!adminIds.includes(message.author.id)) return message.reply('You do not have permission to use this bot.');
     const [command, ...args] = message.content.slice(prefix.length).split(' ');
     if (commands[command]) await commands[command](message, args);
 });
