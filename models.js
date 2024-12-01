@@ -81,7 +81,7 @@ const memoryPointerSchema = new mongoose.Schema({
 const MemoryPointer = mongoose.model('MemoryPointer', memoryPointerSchema);
 
 const settingsSchema = new mongoose.Schema({
-    name: { type: String, enum: ['status', 'latest_version'], unique: true },
+    name: { type: String, enum: ['status', 'api_version', 'sylentx_version'], unique: true },
     value: { type: String },
 });
 
@@ -108,7 +108,8 @@ const PublicChat = mongoose.model('PublicChat', publicChatSchema);
 const initializeDatabase = async () => {
     const defaultSettings = [
         { name: 'status', value: 'online' },
-        { name: 'latest_version', value: '0.0.0' }
+        { name: 'api_version', value: '0.0.0' },
+        { name: 'sylentx_version', value: '0.0.0' }
     ];
 
     for (const setting of defaultSettings) {

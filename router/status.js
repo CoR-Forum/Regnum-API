@@ -56,12 +56,16 @@ const updateStats = async () => {
     const publicChatCount = await PublicChat.countDocuments();
     const feedbackCount = await Feedback.countDocuments();
     const tokenCount = await Token.countDocuments();
+    const apiVersion = await Settings.findOne({ name: 'api_version' });
+    const sylentxVersion = await Settings.findOne({ name: 'sylentx_version' });
 
     cachedStats = {
         status: "success",
         message: "API is running",
         api: {
-            uptime: apiUptime / 1000
+            uptime: apiUptime / 1000,
+            version: apiVersion ? apiVersion.value : "0.0.0",
+            sylentxVersion: sylentxVersion ? sylentxVersion.value : "0.0.0"
         },
         system: {
             load: load,
