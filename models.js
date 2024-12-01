@@ -18,7 +18,7 @@ const notificationQueueSchema = new mongoose.Schema({
 const NotificationQueue = mongoose.model('NotificationQueue', notificationQueueSchema);
 
 const userSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true },
+    username: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: false },
     email: { type: String, required: true, unique: true },
     nickname: { type: String },
