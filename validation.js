@@ -16,7 +16,6 @@ const validatePassword = async (password) => {
     }
 
     try {
-        // Check if the password has been pwned
         const pwnedCount = await hibp.pwnedPassword(password);
         if (pwnedCount > 0) {
             return { valid: false, message: `This password has been seen ${pwnedCount} times before on haveibeenpwned.com. Please choose a more secure password.` };
