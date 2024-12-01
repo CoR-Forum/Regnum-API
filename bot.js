@@ -92,7 +92,12 @@ const commands = {
             });
 
             await bannedUser.save();
-            message.reply(`User ${user.username} has been banned for: ${reason} until ${expiresAt.toISOString()}`);
+            const fields = [
+                { name: 'Username', value: user.username, inline: true },
+                { name: 'Reason', value: reason, inline: true },
+                { name: 'Banned Until', value: expiresAt.toISOString(), inline: true }
+            ];
+            sendEmbed(message, createEmbed('User Banned', '#ff0000', fields));
         } catch (error) {
             handleError(message, error);
         }
