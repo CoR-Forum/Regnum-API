@@ -9,10 +9,13 @@ jobs:
   build:
 #    runs-on: ubuntu-latest
     runs-on: self-hosted
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Install dependencies for g++ and make
+      run: sudo apt-get update && sudo apt-get install -y make g++
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
@@ -34,4 +37,4 @@ jobs:
         echo "$SSH_PRIVATE_KEY" > private_key
         chmod 600 private_key
         rsync -avz -e "ssh -i private_key -p ${{ vars.SERVER_PORT }}" --exclude='.git' --exclude='node_modules' ./ ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }}:${{ vars.DEPLOY_PATH }}
-        ssh -i private_key -p ${{ vars.SERVER_PORT }} ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} "curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs make g++ && sudo npm install -g pm2 && pm2 update && cd ${{ vars.DEPLOY_PATH }} && npm install && pm2 restart sylent-x-api || pm2 start index.js --name sylent-x-api --update-env --watch"
+        ssh -i private_key -p ${{ vars.SERVER_PORT }} ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} "curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs && sudo npm install -g pm2 && pm2 update && cd ${{ vars.DEPLOY_PATH }} && npm install && pm2 restart sylent-x-api || pm2 start index.js --name sylent-x-api --update-env --watch"
