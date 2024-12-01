@@ -2,9 +2,7 @@ const jwt = require('jsonwebtoken');
 const { User, Token, BannedUser } = require('./models');
 
 const validateToken = async (req, res, next) => {
-    console.log("Headers:", req.headers); // Log all headers
     const token = req.headers['authorization'];
-    console.log("Token:", token);
     if (!token) {
         return res.status(401).json({ status: "error", message: "Unauthorized: No token provided" });
     }
