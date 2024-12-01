@@ -116,7 +116,11 @@ const commands = {
 
             existingBan.active = false;
             await existingBan.save();
-            message.reply(`User ${user.username} has been unbanned.`);
+            const fields = [
+                { name: 'Username', value: user.username, inline: true },
+                { name: 'Status', value: 'Unbanned', inline: true }
+            ];
+            sendEmbed(message, createEmbed('User Unbanned', '#00ff00', fields));
         } catch (error) {
             handleError(message, error);
         }
