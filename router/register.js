@@ -88,10 +88,10 @@ router.post('/register', [
         const hashedPassword = await argon2.hash(password);
 
         const newUser = new User({
-            username,
+            username: username.toLowerCase(),
             nickname,
             password: hashedPassword,
-            email,
+            email: email.toLowerCase(),
             activation_token: activationToken
         });
 
