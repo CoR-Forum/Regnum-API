@@ -5,6 +5,7 @@ const { validateUsername, validateEmail, validateNickname } = require('./validat
 const { mail } = require('./modules/notificator');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+const prefix = process.env.NODE_ENV === 'development' ? '?' : '!';
 
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
@@ -306,7 +307,6 @@ const commands = {
         }
     },
     'help': (message) => {
-        const prefix = process.env.NODE_ENV === 'development' ? '?' : '!';
         const environment = process.env.NODE_ENV === 'development' ? 'Development' : 'Production';
         const fields = [
             { name: `${prefix}u <username>`, value: 'Get user info by username.' },
@@ -332,8 +332,6 @@ const commands = {
     },
     'h': (message) => commands.help(message)
 };
-
-const prefix = process.env.NODE_ENV === 'development' ? '?' : '!';
 
 client.on('messageCreate', async (message) => {
     if (message.author.bot || !message.member.permissions.has(PermissionsBitField.Flags.Administrator)) return;
