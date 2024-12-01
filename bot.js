@@ -235,12 +235,12 @@ const commands = {
         try {
             const existingPointer = await MemoryPointer.findOne({ feature });
             if (existingPointer) return message.reply('Memory pointer with this feature already exists.');
-            const newPointer = new MemoryPointer({ feature, address, offsets });
+            const newPointer = new MemoryPointer({ feature, address, offsets: offsets.length ? offsets : undefined });
             await newPointer.save();
             const fields = [
                 { name: 'Feature', value: feature, inline: true },
                 { name: 'Address', value: address, inline: true },
-                { name: 'Offsets', value: offsets.join(', '), inline: true }
+                { name: 'Offsets', value: offsets.length ? offsets.join(', ') : 'None', inline: true }
             ];
             sendEmbed(message, createEmbed('Memory Pointer Added', '#00ff00', fields));
         } catch (error) {
