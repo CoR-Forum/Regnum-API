@@ -12,6 +12,7 @@ const feedbackRoutes = require('./router/feedback');
 const chatRoutes = require('./router/chat');
 const settingsRoutes = require('./router/settings');
 const { router: statusRoutes, updateStats } = require('./router/status');
+const { validateUsername } = require('./validation');
 require('./bot');
 
 const passport = require('passport');
@@ -53,6 +54,12 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
   if (!username || !password) {
     return res.status(400).json({ status: "error", message: "Username and password are required" });
+  }
+
+  const usernameValidation = validateUsername(username);
+
+  if (!usernameValidation.valid) {
+    return res.status(400).json({ status: "error", message: usernameValidation.message });
   }
 
   try {
