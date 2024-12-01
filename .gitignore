@@ -4,9 +4,6 @@
 # VSCode
 .vscode
 
-# config
-config/config.js
-
 # nodejs
 node_modules
 
