@@ -8,8 +8,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBit
 const prefix = process.env.NODE_ENV === 'development' ? '?' : '!';
 
 client.once('ready', () => {
-    console.log(`Logged in as ${client.user.tag}!`);
-    client.user.setActivity('your status message here', { type: 'WATCHING' });
+    console.log(`Discord bot logged in as ${client.user.tag}`);
 });
 
 const sendEmbed = (message, embed) => message.reply({ embeds: [embed] });
