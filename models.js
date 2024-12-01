@@ -20,7 +20,7 @@ const NotificationQueue = mongoose.model('NotificationQueue', notificationQueueS
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: false },
-    email: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true, lowercase: true },
     nickname: { type: String },
     discordId: { type: String, unique: true },
     activation_token: { type: String },
