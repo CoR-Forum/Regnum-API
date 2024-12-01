@@ -189,7 +189,7 @@ app.use(`${BASE_PATH}`, settingsRoutes);
 app.use(`${BASE_PATH}/`, statusRoutes);
 
 const server = app.listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
+  console.log(`Server is running at http://localhost:${PORT}` + BASE_PATH);
 });
 
 initializeDatabase().then(() => {
