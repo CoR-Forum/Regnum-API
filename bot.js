@@ -7,6 +7,8 @@ const { mail } = require('./modules/notificator');
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 const prefix = process.env.NODE_ENV === 'development' ? '?' : '!';
 
+const adminIds = process.env.DISCORD_ADMINS ? process.env.DISCORD_ADMINS.split(',') : [];
+
 client.once('ready', () => {
     console.log(`Discord bot logged in as ${client.user.tag}`);
 });
@@ -342,7 +344,8 @@ const commands = {
 };
 
 client.on('messageCreate', async (message) => {
-    if (message.author.bot || !message.member.permissions.has(PermissionsBitField.Flags.Administrator)) return;
+    if (message.author.bot) return;
+    if (!adminIds.includes(message.author.id)) return message.reply('You do not have permission to use this bot.');
     if (!message.content.startsWith(prefix)) return;
     const [command, ...args] = message.content.slice(prefix.length).split(' ');
     if (commands[command]) await commands[command](message, args);
