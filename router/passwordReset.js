@@ -56,20 +56,19 @@ router.post('/reset-password/:token', RateLimiter(10, 60), async (req, res) => {
     if (!passwordValidation.valid) return handleError(res, 400, passwordValidation.message);
 
     try {
-        const resetRecord = await PasswordReset.findOne({ reset_token: req.params.token, expires_at: { $gt: Date.now() }, disabled: false }).populate('user_id');
-        if (!resetRecord || resetRecord.used) {
-            const user = resetRecord ? resetRecord.user_id : await User.findOne({ email: req.body.email });
-            if (!user) return handleError(res, 404, "User not found");
+        const resetRecords = await PasswordReset.find({ expires_at: { $gt: Date.now() }, disabled: false }).populate('user_id');
+        let resetRecord = null;
 
-            await disableOldTokens(user._id);
-            const resetToken = await createResetToken(user._id);
-            await mail(user.email, 'Reset your password', `Use the following token to reset your password: ${resetToken}`);
-            logActivity(user._id, 'password_reset_request', 'Password reset requested', req.ip);
-            return handleSuccess(res, "A new password reset token has been sent");
+        for (const record of resetRecords) {
+            if (await argon2.verify(record.reset_token, req.params.token)) {
+                resetRecord = record;
+                break;
+            }
         }
 
-        const isTokenValid = await argon2.verify(resetRecord.reset_token, req.params.token);
-        if (!isTokenValid) return handleError(res, 400, "Invalid reset token");
+        if (!resetRecord || resetRecord.used) {
+            return handleError(res, 400, "Invalid or expired reset token");
+        }
 
         const hashedPassword = await argon2.hash(password);
         const user = resetRecord.user_id;
