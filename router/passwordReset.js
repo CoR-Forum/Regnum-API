@@ -63,8 +63,32 @@ router.post('/reset-password/:token', RateLimiter(1, 60), async (req, res) => {
     }
 
     try {
-        const resetRecord = await PasswordReset.findOne({ reset_token: req.params.token, expires_at: { $gt: Date.now() }, disabled: false }).populate('user_id');
-        if (!resetRecord) return handleError(res, 404, "Reset token not found or expired");
+        let resetRecord = await PasswordReset.findOne({ reset_token: req.params.token, expires_at: { $gt: Date.now() }, disabled: false }).populate('user_id');
+        
+        if (!resetRecord || resetRecord.used) {
+            // If token is not found, expired, or already used, create a new token
+            const user = resetRecord ? resetRecord.user_id : await User.findOne({ email: req.body.email });
+            if (!user) return handleError(res, 404, "User not found");
+
+            // Disable older tokens
+            await PasswordReset.updateMany({ user_id: user._id, disabled: false }, { disabled: true });
+
+            const resetToken = crypto.randomBytes(32).toString('hex');
+            const hashedToken = await argon2.hash(resetToken);
+            const expiryDate = Date.now() + 3600000; // 1 hour expiry
+
+            resetRecord = await PasswordReset.create({
+                user_id: user._id,
+                reset_token: hashedToken,
+                expires_at: expiryDate
+            });
+
+            await mail(user.email, 'Reset your password', `Use the following token to reset your password: ${resetToken}`);
+
+            logActivity(user._id, 'password_reset_request', 'Password reset requested', req.ip);
+
+            return handleSuccess(res, "A new password reset token has been sent");
+        }
 
         const isTokenValid = await argon2.verify(resetRecord.reset_token, req.params.token);
         if (!isTokenValid) return handleError(res, 400, "Invalid reset token");
