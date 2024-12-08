@@ -80,6 +80,10 @@ router.post('/reset-password/:token', RateLimiter(10, 60), async (req, res) => {
         await resetRecord.save();
 
         logActivity(user._id, 'password_reset', 'Password reset', req.ip);
+
+        // Send email notification
+        await mail(user.email, 'Your password has been reset', `Hi ${user.username},\n\nYour password has been successfully reset.\n\nIf you didn't request this change, please contact us immediately by simply responding to this email.`);
+
         handleSuccess(res, "Password reset successfully");
     } catch (error) {
         console.error(error);
