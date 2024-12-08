@@ -1,5 +1,7 @@
 # Sylent-X Node.js API
 
+## Setup
+
 Requires Node 22.x+
 
 ```
