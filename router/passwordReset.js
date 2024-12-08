@@ -50,7 +50,7 @@ router.post('/reset-password', RateLimiter(3, 60), async (req, res) => {
     }
 });
 
-router.post('/reset-password/:token', RateLimiter(1, 60), async (req, res) => {
+router.post('/reset-password/:token', RateLimiter(10, 60), async (req, res) => {
     const { password } = req.body;
     const passwordValidation = await validatePassword(password);
     if (!passwordValidation.valid) return handleError(res, 400, passwordValidation.message);
