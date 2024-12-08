@@ -6,7 +6,7 @@ const { generateToken } = require('../utils'); // Assuming generateToken is move
 passport.use(new DiscordStrategy({
   clientID: process.env.DISCORD_CLIENT_ID,
   clientSecret: process.env.DISCORD_CLIENT_SECRET,
-  callbackURL: process.env.DISCORD_CALLBACK_URL,
+  callbackURL: process.env.BASE_URL + '/auth/discord/callback',
   scope: ['identify', 'email']
 }, async (accessToken, refreshToken, profile, done) => {
   try {
