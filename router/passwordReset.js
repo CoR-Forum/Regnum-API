@@ -17,7 +17,7 @@ const disableOldTokens = async (userId) => {
 };
 
 const createResetToken = async (userId) => {
-    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetToken = crypto.randomBytes(16).toString('hex');
     const hashedToken = await argon2.hash(resetToken);
     const expiryDate = Date.now() + 3600000; // 1 hour expiry
 
