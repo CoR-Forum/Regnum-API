@@ -54,12 +54,14 @@ const addLogEntry = async (notificationId, type, message) => {
 
 const sendEmail = async (to, subject, text) => {
     log(`NOTIFIER: sendEmail called with to: ${to}, subject: ${subject}`);
+    const signature = "\n\nBest regards,\n" + EMAIL_NAME;
+    const emailBody = `${text}${signature}`;
     try {
         const info = await transporter.sendMail({
             from: `"${EMAIL_NAME}" <${EMAIL_USER}>`,
             to,
             subject,
-            text
+            text: emailBody
         });
         log(`NOTIFIER: Message sent: ${info.messageId}`);
     } catch (error) {
