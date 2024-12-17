@@ -1,6 +1,5 @@
 const express = require('express');
 const os = require('os');
-const disk = require('diskusage');
 const mongoose = require('mongoose');
 const {
     User,
@@ -35,8 +34,6 @@ const updateStats = async () => {
         BASE_URL: process.env.BASE_URL,
         BASE_PATH: process.env.BASE_PATH
     };
-
-    const diskUsage = await disk.check('/');
 
     if (!mongoose.connection.readyState) {
         return;
@@ -73,11 +70,6 @@ const updateStats = async () => {
             freeMemory: freeMemory,
             totalMemory: totalMemory,
             cpus: cpus,
-            diskUsage: {
-                free: diskUsage.free,
-                total: diskUsage.total,
-                available: diskUsage.available
-            },
             nodeVersion: nodeVersion,
             envVariables: envVariables
         },

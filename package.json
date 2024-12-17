@@ -17,7 +17,6 @@
     "bottleneck": "^2.19.5",
     "connect-mongo": "^5.1.0",
     "discord.js": "^14.16.3",
-    "diskusage": "^1.2.0",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "express-rate-limit": "^7.4.1",
