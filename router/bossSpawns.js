@@ -15,11 +15,6 @@ const bossRespawns = {};
 
 const getCurrentTimestamp = () => Math.floor(Date.now() / 1000);
 
-const unixstamp2human = (unixstamp) => {
-    const dt = new Date(unixstamp * 1000);
-    return dt.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-};
-
 const calculateNextRespawns = (boss) => {
     let triedRespawn = firstRespawns[boss];
     const now = getCurrentTimestamp();
@@ -37,7 +32,6 @@ const calculateNextRespawns = (boss) => {
     }
 
     bossRespawns[boss].previousRespawn = bossRespawns[boss].nextRespawns[0] - respawnTime;
-    console.log(`${boss} previous respawn should be ${unixstamp2human(bossRespawns[boss].previousRespawn)}`);
 };
 
 const initializeBossRespawns = () => {
@@ -53,8 +47,8 @@ router.get('/bossRespawns', (req, res) => {
     for (const boss in firstRespawns) {
         calculateNextRespawns(boss);
         allRespawns[boss] = {
-            nextRespawns: bossRespawns[boss].nextRespawns.map(unixstamp2human),
-            previousRespawn: unixstamp2human(bossRespawns[boss].previousRespawn)
+            nextRespawns: bossRespawns[boss].nextRespawns,
+            previousRespawn: bossRespawns[boss].previousRespawn
         };
     }
     res.json({
