@@ -24,7 +24,8 @@ router.post('/send', validateToken, RateLimiter(1, 5), async (req, res) => {
     }
 
     const { message } = req.body;
-    const { userId } = req.user;
+    console.log(req.body);
+    const userId = req.user._id;
 
     const sanitizedMessage = sanitizeHtml(message);
 
@@ -39,23 +40,16 @@ router.post('/send', validateToken, RateLimiter(1, 5), async (req, res) => {
     }
 });
 
-router.get('/receive', validateToken, async (req, res) => {
+router.get('/receive', async (req, res) => {
     try {
         const messages = await PublicChat.find()
             .sort({ timestamp: -1 })
-            .limit(50);
-
-        const userIds = messages.map(message => message.user_id);
-        const users = await User.find({ _id: { $in: userIds } });
-
-        const userMap = users.reduce((acc, user) => {
-            acc[user._id] = user.nickname;
-            return acc;
-        }, {});
+            .limit(500)
+            .populate('user_id', 'nickname');
 
         const formattedMessages = messages.map(({ _id, user_id, timestamp, message }) => ({
             id: _id,
-            nickname: userMap[user_id],
+            nickname: user_id.nickname,
             timestamp,
             message
         }));
