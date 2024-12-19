@@ -11,6 +11,7 @@ const passwordResetRoutes = require('./router/passwordReset');
 const feedbackRoutes = require('./router/feedback');
 const chatRoutes = require('./router/chat');
 const settingsRoutes = require('./router/settings');
+const bossSpawnsRoutes = require('./router/bossSpawns');
 const { router: statusRoutes, updateStats } = require('./router/status');
 const { validateUsername } = require('./validation');
 require('./bot');
@@ -194,6 +195,7 @@ app.use(`${BASE_PATH}/chat`, chatRoutes);
 app.use(`${BASE_PATH}`, feedbackRoutes);
 app.use(`${BASE_PATH}`, settingsRoutes);
 app.use(`${BASE_PATH}/`, statusRoutes);
+app.use(`${BASE_PATH}/`, bossSpawnsRoutes);
 
 const server = app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}` + BASE_PATH);
