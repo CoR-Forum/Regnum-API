@@ -128,17 +128,6 @@ const initializeDatabase = async () => {
     console.log("Default settings inserted or updated successfully.");
 };
 
-const feedbackSchema = new mongoose.Schema({
-    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    type: { type: String, maxlength: 20 },
-    message: { type: String, required: true },
-    logs: { type: String },
-    timestamp: { type: Date, default: Date.now },
-    seen: { type: Boolean, default: false }
-});
-
-const Feedback = mongoose.model('Feedback', feedbackSchema);
-
 const tokenSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'User' },
     token: { type: String, required: true },
@@ -158,7 +147,6 @@ module.exports = {
     ActivityLog,
     NotificationQueue,
     PublicChat,
-    Feedback,
     Token,
     initializeDatabase
 };

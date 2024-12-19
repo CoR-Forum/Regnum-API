@@ -12,7 +12,6 @@ const {
     ActivityLog,
     NotificationQueue,
     PublicChat,
-    Feedback,
     Token
 } = require('../models');
 
@@ -51,7 +50,6 @@ const updateStats = async () => {
     const activityLogCount = await ActivityLog.countDocuments();
     const notificationQueueCount = await NotificationQueue.countDocuments();
     const publicChatCount = await PublicChat.countDocuments();
-    const feedbackCount = await Feedback.countDocuments();
     const tokenCount = await Token.countDocuments();
     const apiVersion = await Settings.findOne({ name: 'api_version' });
     const sylentxVersion = await Settings.findOne({ name: 'sylentx_version' });
@@ -92,7 +90,6 @@ const updateStats = async () => {
                 activityLogCount: activityLogCount,
                 notificationQueueCount: notificationQueueCount,
                 publicChatCount: publicChatCount,
-                feedbackCount: feedbackCount,
                 tokenCount: tokenCount
             }
         },

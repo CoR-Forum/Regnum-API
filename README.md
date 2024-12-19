@@ -30,7 +30,6 @@ EMAIL_SURE=true
 EMAIL_USER=support@sylent-x.com
 
 # Discord Webhook Configuration
-DISCORD_FEEDBACK_WEBHOOK_URL=<discord_feedback_webhook_url>
 DISCORD_LOG_WEBHOOK_URL=<discord_log_webhook_url>
 DISCORD_LOGIN_WEBHOOK_URL=<discord_login_webhook_url>
 

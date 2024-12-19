@@ -8,7 +8,6 @@ const { validateToken } = require('./middleware');
 const { User, BannedUser, UserSettings, MemoryPointer, Settings, Licenses, Token, initializeDatabase } = require('./models');
 const registerRoutes = require('./router/register');
 const passwordResetRoutes = require('./router/passwordReset');
-const feedbackRoutes = require('./router/feedback');
 const chatRoutes = require('./router/chat');
 const settingsRoutes = require('./router/settings');
 const bossSpawnsRoutes = require('./router/bossSpawns');
@@ -192,7 +191,6 @@ app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
 app.use(`${BASE_PATH}`, registerRoutes);
 app.use(`${BASE_PATH}`, passwordResetRoutes);
 app.use(`${BASE_PATH}/chat`, chatRoutes);
-app.use(`${BASE_PATH}`, feedbackRoutes);
 app.use(`${BASE_PATH}`, settingsRoutes);
 app.use(`${BASE_PATH}/`, statusRoutes);
 app.use(`${BASE_PATH}/`, bossSpawnsRoutes);
