@@ -128,14 +128,14 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
       message: "Login successful",
       token,
       user: {
-        id: user._id,
-        username: user.username,
-        nickname: user.nickname,
-        settings: userSettings ? userSettings.settings : null,
-        features: validFeatures.map(feature => ({
-          name: feature,
-          pointer: memoryPointers[feature] || null
-        }))
+      id: user._id,
+      username: user.username,
+      nickname: user.nickname,
+      settings: userSettings && userSettings.settings ? userSettings.settings : '{"SoundVolume":0.5,"enableMusic":true,"enableSoundEffects":true,"excludeFromCapture":false,"regnumInstallPath":"","showIntro":true,"showLoadingScreen":true,"textColor":[1.0,1.0,1.0,1.0]}',
+      features: validFeatures.length > 0 ? validFeatures.map(feature => ({
+        name: feature,
+        pointer: memoryPointers[feature] || null
+      })) : [{"name":"fov","pointer":{"address":"0x70BB7C","offsets":[]}}]
       },
       system: settingsObject
     });
