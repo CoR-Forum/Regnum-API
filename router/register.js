@@ -126,7 +126,7 @@ router.get('/activate/:token', RateLimiter(10, 900), async (req, res) => {
             activated_at: new Date(),
             features: ['fov', 'zoom'],
             runtime: '10y',
-            expires_at: new Date(Date.now() + convertDurationToMilliseconds('unlimited')) // Adjust runtime as needed
+            expires_at: new Date(Date.now() + convertDurationToMilliseconds('10y')) // Adjust runtime as needed
         });
 
         await newLicense.save();
