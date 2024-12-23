@@ -14,7 +14,7 @@ const {
 } = require('../validation');
 const { logActivity } = require('../utils');
 const { mail, notifyAdmins } = require('../modules/notificator');
-const { User } = require('../models');
+const { User, Licenses } = require('../models');
 const { RateLimiter } = require('../modules/rateLimiter');
 
 const router = express.Router();
@@ -119,8 +119,21 @@ router.get('/activate/:token', RateLimiter(10, 900), async (req, res) => {
 
         await user.save();
 
-        logActivity(user._id, 'account_activation', 'Account activated', req.ip);
-        res.json({ status: "success", message: "Account activated successfully" });
+        // Create a license for the user
+        const licenseKey = crypto.randomBytes(16).toString('hex');
+        const newLicense = new Licenses({
+            key: licenseKey,
+            activated_by: user._id,
+            activated_at: new Date(),
+            features: ['fov', 'zoom'],
+            runtime: 'unlimited',
+            expires_at: null // or set an expiration date if needed
+        });
+
+        await newLicense.save();
+
+        logActivity(user._id, 'account_activation', 'Account activated and license created', req.ip);
+        res.json({ status: "success", message: "Account activated successfully and license created" });
     } catch (error) {
         console.error(error);
         res.status(500).json({ status: "error", message: "Internal server error" });
