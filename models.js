@@ -120,9 +120,6 @@ const initializeDatabase = async () => {
         const existingSetting = await Settings.findOne({ name: setting.name });
         if (!existingSetting) {
             await new Settings(setting).save();
-        } else {
-            existingSetting.value = setting.value;
-            await existingSetting.save();
         }
     }
     console.log("Default settings inserted or updated successfully.");
