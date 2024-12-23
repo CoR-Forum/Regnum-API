@@ -12,7 +12,7 @@ const {
     checkEmailExists,
     checkNicknameExists
 } = require('../validation');
-const { logActivity } = require('../utils');
+const { logActivity, convertDurationToMilliseconds } = require('../utils');
 const { mail, notifyAdmins } = require('../modules/notificator');
 const { User, Licenses } = require('../models');
 const { RateLimiter } = require('../modules/rateLimiter');
@@ -116,7 +116,6 @@ router.get('/activate/:token', RateLimiter(10, 900), async (req, res) => {
         if (!user) return res.status(404).json({ status: "error", message: "Activation token not found" });
 
         user.activation_token = null;
-
         await user.save();
 
         // Create a license for the user
@@ -126,8 +125,8 @@ router.get('/activate/:token', RateLimiter(10, 900), async (req, res) => {
             activated_by: user._id,
             activated_at: new Date(),
             features: ['fov', 'zoom'],
-            runtime: 'unlimited',
-            expires_at: null // or set an expiration date if needed
+            runtime: '10y',
+            expires_at: new Date(Date.now() + convertDurationToMilliseconds('unlimited')) // Adjust runtime as needed
         });
 
         await newLicense.save();
