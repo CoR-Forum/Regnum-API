@@ -123,22 +123,28 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
     const userSettings = await UserSettings.findOne({ user_id: user._id });
 
-    res.json({
+    const response = {
       status: "success",
       message: "Login successful",
       token,
       user: {
-      id: user._id,
-      username: user.username,
-      nickname: user.nickname,
-      settings: userSettings && userSettings.settings ? userSettings.settings : '{"SoundVolume":0.5,"enableMusic":true,"enableSoundEffects":true,"excludeFromCapture":false,"regnumInstallPath":"","showIntro":true,"showLoadingScreen":true,"textColor":[1.0,1.0,1.0,1.0]}',
-      features: validFeatures.map(feature => ({
-        name: feature,
-        pointer: memoryPointers[feature] || null
-      }))
+        id: user._id,
+        username: user.username,
+        nickname: user.nickname,
+        settings: userSettings && userSettings.settings ? userSettings.settings : '{"SoundVolume":0.5,"enableMusic":true,"enableSoundEffects":true,"excludeFromCapture":false,"regnumInstallPath":"","showIntro":true,"showLoadingScreen":true,"textColor":[1.0,1.0,1.0,1.0]}',
+        features: []
       },
       system: settingsObject
-    });
+    };
+
+    if (settingsObject.status !== "detected") {
+      response.user.features = validFeatures.map(feature => ({
+        name: feature,
+        pointer: memoryPointers[feature] || null
+      }));
+    }
+
+    res.json(response);
   } catch (error) {
     console.error(error);
     res.status(500).json({ status: "error", message: "Internal server error" });

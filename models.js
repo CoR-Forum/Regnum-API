@@ -1,5 +1,12 @@
 const mongoose = require('mongoose');
 
+const settingsSchema = new mongoose.Schema({
+    name: { type: String, enum: ['status', 'api_version', 'sylentx_version'], unique: true },
+    value: { type: String },
+});
+
+const Settings = mongoose.model('Settings', settingsSchema);
+
 const notificationQueueSchema = new mongoose.Schema({
     to_email: { type: String },
     subject: { type: String },
@@ -83,13 +90,6 @@ const memoryPointerSchema = new mongoose.Schema({
 });
 
 const MemoryPointer = mongoose.model('MemoryPointer', memoryPointerSchema);
-
-const settingsSchema = new mongoose.Schema({
-    name: { type: String, enum: ['status', 'api_version', 'sylentx_version'], unique: true },
-    value: { type: String },
-});
-
-const Settings = mongoose.model('Settings', settingsSchema);
 
 const activityLogSchema = new mongoose.Schema({
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
