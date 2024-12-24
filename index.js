@@ -83,10 +83,6 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
     const token = await generateToken(user);
 
-    const loginNotificationText = `Hello ${user.username},\n\nYou have successfully logged in to your Sylent-X Account.\n\nDate: ${new Date().toLocaleString()}\nIP address: ${req.ip}\n\nIf this wasn't you, please change your password immediately and contact support.`;
-
-    await mail(user.email, 'Login Notification', loginNotificationText);
-
     logActivity(user._id, 'login', 'User logged in', req.ip);
 
     notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`, 'discord_login');
