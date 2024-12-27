@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
+const cors = require('cors'); // Import the cors package
 const argon2 = require('argon2');
 const { mail, notifyAdmins } = require('./modules/notificator');
 const { logActivity, generateToken, convertDurationToMilliseconds } = require('./utils');
@@ -28,6 +29,11 @@ mongoose.connect(process.env.MONGO_URI).then(() => {
   console.error('MongoDB connection error:', error);
   process.exit(1);
 });
+
+// Use CORS middleware
+app.use(cors({
+  origin: 'https://sylent-x.com' // Allow requests from sylent-x.com
+}));
 
 app.use(helmet());
 
