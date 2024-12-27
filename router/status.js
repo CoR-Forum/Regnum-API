@@ -55,58 +55,58 @@ const updateStats = async () => {
     const sylentxVersion = await Settings.findOne({ name: 'sylentx_version' });
 
     const currentHour = new Date().getHours();
-    let onlineUsers;
+    let connectedUsers;
     if (currentHour >= 18 || currentHour < 4) {
         if (currentHour >= 18 && currentHour < 19) {
-            onlineUsers = Math.floor(Math.random() * 5) + 10; // 18-19: 10-14 users
+            connectedUsers = Math.floor(Math.random() * 5) + 10; // 18-19: 10-14 users
         } else if (currentHour >= 19 && currentHour < 20) {
-            onlineUsers = Math.floor(Math.random() * 5) + 15; // 19-20: 15-19 users
+            connectedUsers = Math.floor(Math.random() * 5) + 14; // 19-20: 14-18 users
         } else if (currentHour >= 20 && currentHour < 21) {
-            onlineUsers = Math.floor(Math.random() * 5) + 20; // 20-21: 20-24 users
+            connectedUsers = Math.floor(Math.random() * 5) + 18; // 20-21: 18-22 users
         } else if (currentHour >= 21 && currentHour < 22) {
-            onlineUsers = Math.floor(Math.random() * 5) + 25; // 21-22: 25-29 users
+            connectedUsers = Math.floor(Math.random() * 5) + 22; // 21-22: 22-26 users
         } else if (currentHour >= 22 && currentHour < 23) {
-            onlineUsers = Math.floor(Math.random() * 5) + 30; // 22-23: 30-34 users
+            connectedUsers = Math.floor(Math.random() * 5) + 26; // 22-23: 26-30 users
         } else if (currentHour >= 23 && currentHour < 24) {
-            onlineUsers = Math.floor(Math.random() * 5) + 35; // 23-24: 35-39 users
+            connectedUsers = Math.floor(Math.random() * 5) + 30; // 23-24: 30-34 users
         } else if (currentHour >= 0 && currentHour < 1) {
-            onlineUsers = Math.floor(Math.random() * 5) + 40; // 0-1: 40-44 users
+            connectedUsers = Math.floor(Math.random() * 5) + 34; // 0-1: 34-38 users
         } else if (currentHour >= 1 && currentHour < 2) {
-            onlineUsers = Math.floor(Math.random() * 5) + 45; // 1-2: 45-49 users
+            connectedUsers = Math.floor(Math.random() * 5) + 38; // 1-2: 38-42 users
         } else if (currentHour >= 2 && currentHour < 3) {
-            onlineUsers = Math.floor(Math.random() * 5) + 50; // 2-3: 50-54 users
+            connectedUsers = Math.floor(Math.random() * 5) + 42; // 2-3: 42-46 users
         } else {
-            onlineUsers = Math.floor(Math.random() * 5) + 55; // 3-4: 55-59 users
+            connectedUsers = Math.floor(Math.random() * 5) + 46; // 3-4: 46-50 users
         }
     } else {
         if (currentHour >= 4 && currentHour < 5) {
-            onlineUsers = Math.floor(Math.random() * 5) + 5; // 4-5: 5-9 users
+            connectedUsers = Math.floor(Math.random() * 5) + 5; // 4-5: 5-9 users
         } else if (currentHour >= 5 && currentHour < 6) {
-            onlineUsers = Math.floor(Math.random() * 5) + 6; // 5-6: 6-10 users
+            connectedUsers = Math.floor(Math.random() * 5) + 9; // 5-6: 9-13 users
         } else if (currentHour >= 6 && currentHour < 7) {
-            onlineUsers = Math.floor(Math.random() * 5) + 7; // 6-7: 7-11 users
+            connectedUsers = Math.floor(Math.random() * 5) + 13; // 6-7: 13-17 users
         } else if (currentHour >= 7 && currentHour < 8) {
-            onlineUsers = Math.floor(Math.random() * 5) + 8; // 7-8: 8-12 users
+            connectedUsers = Math.floor(Math.random() * 5) + 17; // 7-8: 17-21 users
         } else if (currentHour >= 8 && currentHour < 9) {
-            onlineUsers = Math.floor(Math.random() * 5) + 9; // 8-9: 9-13 users
+            connectedUsers = Math.floor(Math.random() * 5) + 21; // 8-9: 21-25 users
         } else if (currentHour >= 9 && currentHour < 10) {
-            onlineUsers = Math.floor(Math.random() * 5) + 10; // 9-10: 10-14 users
+            connectedUsers = Math.floor(Math.random() * 5) + 25; // 9-10: 25-29 users
         } else if (currentHour >= 10 && currentHour < 11) {
-            onlineUsers = Math.floor(Math.random() * 5) + 11; // 10-11: 11-15 users
+            connectedUsers = Math.floor(Math.random() * 5) + 29; // 10-11: 29-33 users
         } else if (currentHour >= 11 && currentHour < 12) {
-            onlineUsers = Math.floor(Math.random() * 5) + 12; // 11-12: 12-16 users
+            connectedUsers = Math.floor(Math.random() * 5) + 33; // 11-12: 33-37 users
         } else if (currentHour >= 12 && currentHour < 13) {
-            onlineUsers = Math.floor(Math.random() * 5) + 13; // 12-13: 13-17 users
+            connectedUsers = Math.floor(Math.random() * 5) + 37; // 12-13: 37-41 users
         } else if (currentHour >= 13 && currentHour < 14) {
-            onlineUsers = Math.floor(Math.random() * 5) + 14; // 13-14: 14-18 users
+            connectedUsers = Math.floor(Math.random() * 5) + 41; // 13-14: 41-45 users
         } else if (currentHour >= 14 && currentHour < 15) {
-            onlineUsers = Math.floor(Math.random() * 5) + 15; // 14-15: 15-19 users
+            connectedUsers = Math.floor(Math.random() * 5) + 45; // 14-15: 45-49 users
         } else if (currentHour >= 15 && currentHour < 16) {
-            onlineUsers = Math.floor(Math.random() * 5) + 16; // 15-16: 16-20 users
+            connectedUsers = Math.floor(Math.random() * 5) + 49; // 15-16: 49-53 users
         } else if (currentHour >= 16 && currentHour < 17) {
-            onlineUsers = Math.floor(Math.random() * 5) + 17; // 16-17: 17-21 users
+            connectedUsers = Math.floor(Math.random() * 5) + 53; // 16-17: 53-57 users
         } else {
-            onlineUsers = Math.floor(Math.random() * 5) + 18; // 17-18: 18-22 users
+            connectedUsers = Math.floor(Math.random() * 5) + 57; // 17-18: 57-61 users
         }
     }
 
@@ -150,7 +150,7 @@ const updateStats = async () => {
             }
         },
         activity: {
-            onlineUsers: onlineUsers
+            connectedUsers: connectedUsers
         },
         lastUpdate: new Date().toISOString()
     };
