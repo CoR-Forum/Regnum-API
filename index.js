@@ -59,7 +59,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
   }
 
   try {
-    const response = await axios.post(process.env.WOLTLAB_API_URL `username=${username}&password=${password}`, {
+    const response = await axios.post(process.env.WOLTLAB_API_URL + "/login", `username=${username}&password=${password}`, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'X-API-KEY': process.env.WOLTLAB_API_KEY
@@ -73,7 +73,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
     }
 
     const forumUser = response.data;
-    let user = await User.findOne({ corforum_userID: forumUser.userID });
+    let user = await User.findOne({ woltlab_userID: forumUser.userID });
     if (!user) {
       user = new User({
         username: forumUser.username.toLowerCase(),
@@ -85,7 +85,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
         banned: false,
         last_activity: new Date(),
         deleted: false,
-        corforum_userID: forumUser.userID
+        woltlab_userID: forumUser.userID
       });
       await user.save();
 
