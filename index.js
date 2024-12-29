@@ -62,7 +62,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
     const response = await axios.post('https://cor-forum.de/api.php/login', `username=${username}&password=${password}`, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'X-API-KEY': 'eez1ahyie7heiGiex0tieshohmee0siedomieZ0cheih4eiVaay2suit6ooc'
+        'X-API-KEY': process.env.CORFORUM_API_KEY
       }
     });
 
