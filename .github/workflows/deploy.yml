@@ -39,7 +39,7 @@ jobs:
         MAX_RETRIES=5
         SLEEP_TIME=5
 
-        until ssh -i private_key -p ${{ vars.SERVER_PORT }} ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} "curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs && sudo npm install -g pm2 && pm2 update && cd ${{ vars.DEPLOY_PATH }} && npm install && pm2 restart sylent-x-api || pm2 start index.js --name sylent-x-api --update-env --watch"; do
+        until ssh -i private_key -p ${{ vars.SERVER_PORT }} ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} "curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs && sudo npm install -g pm2 && pm2 update && cd ${{ vars.DEPLOY_PATH }} && npm install && pm2 restart regnumstarter-api || pm2 start index.js --name regnumstarter-api --update-env --watch"; do
           RETRY_COUNT=$((RETRY_COUNT+1))
           if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
             echo "Max retries reached. Exiting."

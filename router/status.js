@@ -50,7 +50,7 @@ const updateStats = async () => {
     const publicChatCount = await PublicChat.countDocuments();
     const tokenCount = await Token.countDocuments();
     const apiVersion = await Settings.findOne({ name: 'api_version' });
-    const sylentxVersion = await Settings.findOne({ name: 'sylentx_version' });
+    const regnumstarterVersion = await Settings.findOne({ name: 'regnumstarter_version' });
 
     const currentHour = new Date().getHours();
     let connectedUsers;
@@ -114,7 +114,7 @@ const updateStats = async () => {
         api: {
             uptime: apiUptime / 1000,
             version: apiVersion ? apiVersion.value : "0.0.0",
-            sylentxVersion: sylentxVersion ? sylentxVersion.value : "0.0.0"
+            regnumstarterVersion: regnumstarterVersion ? regnumstarterVersion.value : "0.0.0"
         },
         system: {
             load: load,

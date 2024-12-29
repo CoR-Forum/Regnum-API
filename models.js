@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const settingsSchema = new mongoose.Schema({
-    name: { type: String, enum: ['status', 'api_version', 'sylentx_version'], unique: true },
+    name: { type: String, enum: ['status', 'api_version', 'regnumstarter_version'], unique: true },
     value: { type: String },
 });
 
@@ -101,7 +101,7 @@ const initializeDatabase = async () => {
     const defaultSettings = [
         { name: 'status', value: 'online' },
         { name: 'api_version', value: '0.0.0' },
-        { name: 'sylentx_version', value: '0.0.0' }
+        { name: 'regnumstarter_version', value: '0.0.0' }
     ];
 
     for (const setting of defaultSettings) {

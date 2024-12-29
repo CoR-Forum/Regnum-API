@@ -1,4 +1,4 @@
-# Sylent-X Node.js API
+# regnumstarter Node.js API
 
 ## Setup
 

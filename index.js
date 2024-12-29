@@ -28,7 +28,7 @@ mongoose.connect(process.env.MONGO_URI).then(() => {
 
 // Use CORS middleware
 app.use(cors({
-  origin: 'https://sylent-x.com' // Allow requests from sylent-x.com
+  origin: 'https://cor-forum.de'
 }));
 
 app.use(helmet());
