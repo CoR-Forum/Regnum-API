@@ -51,18 +51,6 @@ const bannedUserSchema = new mongoose.Schema({
 
 const BannedUser = mongoose.model('BannedUser', bannedUserSchema);
 
-const passwordResetSchema = new mongoose.Schema({
-    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    reset_token: { type: String },
-    expires_at: { type: Date },
-    used: { type: Boolean, default: false },
-    used_at: { type: Date },
-    created_at: { type: Date, default: Date.now },
-    disabled: { type: Boolean, default: false }
-});
-
-const PasswordReset = mongoose.model('PasswordReset', passwordResetSchema);
-
 const licensesSchema = new mongoose.Schema({
     key: { type: String, required: true, unique: true },
     activated_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -136,7 +124,6 @@ const Token = mongoose.model('Token', tokenSchema);
 module.exports = {
     User,
     BannedUser,
-    PasswordReset,
     UserSettings,
     Licenses,
     MemoryPointer,

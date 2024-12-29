@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const {
     User,
     BannedUser,
-    PasswordReset,
     UserSettings,
     Licenses,
     MemoryPointer,
@@ -42,7 +41,6 @@ const updateStats = async () => {
 
     const userCount = await User.countDocuments();
     const bannedUserCount = await BannedUser.countDocuments();
-    const passwordResetCount = await PasswordReset.countDocuments();
     const userSettingsCount = await UserSettings.countDocuments();
     const licensesCount = await Licenses.countDocuments();
     const memoryPointerCount = await MemoryPointer.countDocuments();
@@ -138,7 +136,6 @@ const updateStats = async () => {
             detailedStats: {
                 userCount: userCount,
                 bannedUserCount: bannedUserCount,
-                passwordResetCount: passwordResetCount,
                 userSettingsCount: userSettingsCount,
                 licensesCount: licensesCount,
                 memoryPointerCount: memoryPointerCount,

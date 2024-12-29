@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
-const { User, BannedUser, Licenses, MemoryPointer, Settings, UserSettings, ActivityLog, PublicChat, PasswordReset } = require('./models');
+const { User, BannedUser, Licenses, MemoryPointer, Settings, UserSettings, ActivityLog, PublicChat } = require('./models');
 const { validateUsername, validateEmail, validateNickname } = require('./validation');
 const { mail } = require('./modules/notificator');
 
@@ -335,7 +335,6 @@ const commands = {
             await UserSettings.deleteMany({ user_id: user._id });
             await ActivityLog.deleteMany({ user_id: user._id });
             await PublicChat.deleteMany({ user_id: user._id });
-            await PasswordReset.deleteMany({ user_id: user._id });
             await User.deleteOne({ username });
 
             sendEmbed(message, createEmbed('User and related data deleted', '#ff0000', [{ name: 'Username', value: username }]));

@@ -8,7 +8,6 @@ const crypto = require('crypto');
 const { logActivity, generateToken, convertDurationToMilliseconds } = require('./utils');
 const { validateToken } = require('./middleware');
 const { User, BannedUser, UserSettings, MemoryPointer, Settings, Licenses, Token, initializeDatabase } = require('./models');
-const passwordResetRoutes = require('./router/passwordReset');
 const chatRoutes = require('./router/chat');
 const settingsRoutes = require('./router/settings');
 const bossSpawnsRoutes = require('./router/bossSpawns');
@@ -205,7 +204,6 @@ app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
   }
 });
 
-app.use(`${BASE_PATH}`, passwordResetRoutes);
 app.use(`${BASE_PATH}/chat`, chatRoutes);
 app.use(`${BASE_PATH}`, settingsRoutes);
 app.use(`${BASE_PATH}/`, statusRoutes);
@@ -215,6 +213,8 @@ app.use(`${BASE_PATH}/`, bossSpawnsRoutes);
 app.get(`${BASE_PATH}/register`, (req, res) => {
   res.redirect(302, 'https://cor-forum.de/board/register/');
 });
+
+
 
 const server = app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}` + BASE_PATH);
