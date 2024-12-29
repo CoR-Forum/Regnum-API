@@ -29,7 +29,6 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: false },
     email: { type: String, required: true, unique: true, lowercase: true },
     nickname: { type: String },
-    discordId: { type: String, unique: true },
     activation_token: { type: String },
     permissions: { type: [String], default: [] },
     created_at: { type: Date, default: Date.now },

@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const helmet = require('helmet');
 const cors = require('cors'); // Import the cors package
 const argon2 = require('argon2');
-const { mail, notifyAdmins } = require('./modules/notificator');
 const { logActivity, generateToken, convertDurationToMilliseconds } = require('./utils');
 const { validateToken } = require('./middleware');
 const { User, BannedUser, UserSettings, MemoryPointer, Settings, Licenses, Token, initializeDatabase } = require('./models');
@@ -15,9 +14,6 @@ const bossSpawnsRoutes = require('./router/bossSpawns');
 const { router: statusRoutes, updateStats } = require('./router/status');
 const { validateUsername } = require('./validation');
 require('./bot');
-
-const passport = require('passport');
-require('./auth/discord');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -46,14 +42,6 @@ app.use(helmet.contentSecurityPolicy({
 }));
 
 app.use(express.json());
-
-app.use(passport.initialize());
-
-app.get(`${BASE_PATH}/auth/discord`, passport.authenticate('discord'));
-
-app.get(`${BASE_PATH}/auth/discord/callback`, passport.authenticate('discord', { failureRedirect: '/', session: false }), (req, res) => {
-  res.json({ status: "success", message: "Login successful", token: req.user.token });
-});
 
 app.post(`${BASE_PATH}/login`, async (req, res) => {
   const { username, password } = req.body;
