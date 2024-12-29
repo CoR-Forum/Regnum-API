@@ -214,6 +214,10 @@ app.get(`${BASE_PATH}/register`, (req, res) => {
   res.redirect(302, 'https://cor-forum.de/board/register/');
 });
 
+// /reset-password 302 redirect
+app.get(`${BASE_PATH}/reset-password`, (req, res) => {
+  res.redirect(302, 'https://cor-forum.de/board/lost-password/');
+});
 
 
 const server = app.listen(PORT, () => {
