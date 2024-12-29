@@ -59,10 +59,10 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
   }
 
   try {
-    const response = await axios.post('https://cor-forum.de/api.php/login', `username=${username}&password=${password}`, {
+    const response = await axios.post(process.env.WOLTLAB_API_URL `username=${username}&password=${password}`, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'X-API-KEY': process.env.CORFORUM_API_KEY
+        'X-API-KEY': process.env.WOLTLAB_API_KEY
       }
     });
 

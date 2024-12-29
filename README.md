@@ -84,15 +84,16 @@ Everything here is mandatory.
     # MongoDB Configuration
     MONGO_URI=mongodb://<mongodb_user>:<mongodb_password>@cax.treudler.net:27017/
 
-    # CoR Forum MySQL Configuration
+    # Woltlab MySQL Configuration
     MYSQL_HOST=cax.treudler.net
     MYSQL_PORT=3307
     MYSQL_USER=<mysql_user>
     MYSQL_PASSWORD=<mysql_password>
     MYSQL_DATABASE=corforum
 
-    # CoR Forum API Key
-    CORFORUM_API_KEY=<corforum_api_key>
+    # Woltlab API Configuration
+    WOLTLAB_API_URL=<woltlab_api_url>
+    WOLTLAB_API_KEY=<woltlab_api_key>
 
     # Application Configuration
     NODE_ENV=development
