@@ -1,4 +1,4 @@
-const { ActivityLog, Token } = require('./models');
+const { ActivityLog, Token, User } = require('./models');
 const { notifyAdmins } = require('./modules/notificator');
 const jwt = require('jsonwebtoken');
 
@@ -11,6 +11,9 @@ const generateToken = async (user) => {
 
 const logActivity = async (userId, activityType, description, ipAddress) => {
     try {
+        const user = await User.findById(userId);
+        const userIdentifier = user ? `${user.username} (${user.nickname || 'no nickname'})` : 'Unknown User';
+        
         const activityLog = new ActivityLog({
             user_id: userId,
             activity_type: activityType,
@@ -18,7 +21,7 @@ const logActivity = async (userId, activityType, description, ipAddress) => {
             ip_address: ipAddress
         });
         await activityLog.save();
-        notifyAdmins(`User activity: ${description}, User ID: ${userId}, IP: ${ipAddress}`, 'discord_log');
+        notifyAdmins(`User activity: ${description}, User: ${userIdentifier}, IP: ${ipAddress}`, 'discord_log');
     } catch (error) {
         console.error("Error logging activity:", error);
     }
