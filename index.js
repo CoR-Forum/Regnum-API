@@ -91,8 +91,6 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
     logActivity(user._id, 'login', 'User logged in', req.ip);
 
-    notifyAdmins(`User logged in: ${user.username}, IP: ${req.ip}, Email: ${user.email}, Nickname: ${user.nickname}`, 'discord_login');
-
     const licenses = await Licenses.find({ activated_by: user._id });
 
     const memoryPointers = {};
