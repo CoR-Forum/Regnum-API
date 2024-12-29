@@ -28,7 +28,7 @@ mongoose.connect(process.env.MONGO_URI).then(() => {
 
 // Use CORS middleware
 app.use(cors({
-  origin: 'https://cor-forum.de'
+  origin: 'https://patch.regnumstarter.cor-forum.de'
 }));
 
 app.use(helmet());
