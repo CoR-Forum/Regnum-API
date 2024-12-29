@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
-const { User, BannedUser, Licenses, MemoryPointer, Settings } = require('./models');
+const { User, BannedUser, Licenses, MemoryPointer, Settings, UserSettings, ActivityLog, PublicChat, PasswordReset } = require('./models');
 const { validateUsername, validateEmail, validateNickname } = require('./validation');
 const { mail } = require('./modules/notificator');
 
@@ -316,6 +316,33 @@ const commands = {
             handleError(message, error);
         }
     },
+    'ud': async (message, [username, confirmation]) => {
+        if (!username) return message.reply('Usage: ' + prefix + 'ud <username>');
+        const { valid, message: validationMessage } = validateUsername(username);
+        if (!valid) return message.reply(validationMessage);
+
+        try {
+            const user = await User.findOne({ username });
+            if (!user) return message.reply('User not found.');
+
+            if (confirmation !== 'confirm') {
+                return message.reply(`Are you sure you want to delete user ${username}? This action cannot be undone. Type \` ${prefix}ud ${username} confirm\` to confirm.`);
+            }
+
+            await BannedUser.deleteMany({ user_id: user._id });
+            await Licenses.deleteMany({ activated_by: user._id });
+            await MemoryPointer.deleteMany({ user_id: user._id });
+            await UserSettings.deleteMany({ user_id: user._id });
+            await ActivityLog.deleteMany({ user_id: user._id });
+            await PublicChat.deleteMany({ user_id: user._id });
+            await PasswordReset.deleteMany({ user_id: user._id });
+            await User.deleteOne({ username });
+
+            sendEmbed(message, createEmbed('User and related data deleted', '#ff0000', [{ name: 'Username', value: username }]));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
     'help': (message) => {
         const environment = process.env.NODE_ENV === 'development' ? 'Development' : 'Production';
         const fields = [
@@ -325,6 +352,7 @@ const commands = {
             { name: `${prefix}uu <username>`, value: 'Unban user.' },
             { name: `${prefix}ubl <username>`, value: 'List all previous bans for a user.' },
             { name: `${prefix}ubla [page]`, value: 'List all bans.' },
+            { name: `${prefix}ud <username>`, value: 'Delete user and related data.' },
             { name: `${prefix}lg <runtime> <feature1> <feature2> ... or ${prefix}lg <runtime> _all`, value: 'Generate license.' },
             { name: `${prefix}ll [page]`, value: 'List licenses.' },
             { name: `${prefix}ld <license_key>`, value: 'Delete license.' },
