@@ -12,7 +12,7 @@ const generateToken = async (user) => {
 const logActivity = async (userId, activityType, description, ipAddress) => {
     try {
         const user = await User.findById(userId);
-        const userIdentifier = user ? `${user.username} (${user.nickname || 'no nickname'})` : 'Unknown User';
+        const userIdentifier = user ? `${user.username} (${user.nickname || 'no nickname'} [${user._id})` : 'Unknown User';
         
         const activityLog = new ActivityLog({
             user_id: userId,
@@ -21,7 +21,7 @@ const logActivity = async (userId, activityType, description, ipAddress) => {
             ip_address: ipAddress
         });
         await activityLog.save();
-        notifyAdmins(`User activity: ${description}, User: ${userIdentifier}, IP: ${ipAddress}`, 'discord_log');
+        notifyAdmins(`User activity: ${description}\nUser: ${userIdentifier}\nIP: ${ipAddress}`, 'discord_log');
     } catch (error) {
         console.error("Error logging activity:", error);
     }
