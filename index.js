@@ -1,8 +1,10 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
-const cors = require('cors'); // Import the cors package
-const argon2 = require('argon2');
+const cors = require('cors');
+const axios = require('axios');
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const { logActivity, generateToken, convertDurationToMilliseconds } = require('./utils');
 const { validateToken } = require('./middleware');
 const { User, BannedUser, UserSettings, MemoryPointer, Settings, Licenses, Token, initializeDatabase } = require('./models');
@@ -57,22 +59,47 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ username });
-    if (!user) return res.status(401).json({ status: "error", message: "Invalid username or password" });
-
-    const passwordMatch = await argon2.verify(user.password, password);
-    if (!passwordMatch) return res.status(401).json({ status: "error", message: "Invalid username or password" });
-
-    if (user.activation_token) return res.status(403).json({ status: "error", message: "Account not activated. Please check your email for the activation link." });
-
-    // Check if the user is banned
-    const activeBan = await BannedUser.findOne({
-      user_id: user._id,
-      active: true,
-      expires_at: { $gt: new Date() }
+    const response = await axios.post('https://cor-forum.de/api.php/login', `username=${username}&password=${password}`, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-API-KEY': 'eez1ahyie7heiGiex0tieshohmee0siedomieZ0cheih4eiVaay2suit6ooc'
+      }
     });
-    if (activeBan) {
-      return res.status(403).json({ status: "error", message: `Forbidden: User is banned until ${activeBan.expires_at.toISOString()} for ${activeBan.reason}` });
+
+    console.log(response.data);
+
+    if (response.data.success !== true) {
+      return res.status(401).json({ status: "error", message: "CoR-Forum account not found. Error: " + response.data.message });
+    }
+
+    const forumUser = response.data;
+    let user = await User.findOne({ corforum_userID: forumUser.userID });
+    if (!user) {
+      user = new User({
+        username: forumUser.username.toLowerCase(),
+        nickname: forumUser.username,
+        email: forumUser.email.toLowerCase(),
+        activation_token: null,
+        permissions: [],
+        created_at: new Date(),
+        banned: false,
+        last_activity: new Date(),
+        deleted: false,
+        corforum_userID: forumUser.userID
+      });
+      await user.save();
+
+      // Generate a license for the new user
+      const licenseKey = crypto.randomBytes(16).toString('hex');
+      const newLicense = new Licenses({
+        key: licenseKey,
+        activated_by: user._id,
+        activated_at: new Date(),
+        features: ['fov', 'zoom'],
+        runtime: '10y',
+        expires_at: new Date(Date.now() + convertDurationToMilliseconds('10y'))
+      });
+      await newLicense.save();
     }
 
     const token = await generateToken(user);
@@ -86,7 +113,6 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
       license.features.filter(feature => {
         const expiresAt = new Date(license.expires_at);
         const now = new Date();
-        console.log(`Feature expires at: ${expiresAt}, Current time: ${now}`);
         return expiresAt > now;
       })
     );
@@ -98,8 +124,6 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
           address: pointer.address,
           offsets: pointer.offsets
         };
-      } else {
-        console.log(`No pointer found for feature: ${feature}`);
       }
     }
 
@@ -111,7 +135,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
 
     const userSettings = await UserSettings.findOne({ user_id: user._id });
 
-    const response = {
+    const responsePayload = {
       status: "success",
       message: "Login successful",
       token,
@@ -126,13 +150,13 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
     };
 
     if (settingsObject.status !== "detected") {
-      response.user.features = validFeatures.map(feature => ({
+      responsePayload.user.features = validFeatures.map(feature => ({
         name: feature,
         pointer: memoryPointers[feature] || null
       }));
     }
 
-    res.json(response);
+    res.json(responsePayload);
   } catch (error) {
     console.error(error);
     res.status(500).json({ status: "error", message: "Internal server error" });

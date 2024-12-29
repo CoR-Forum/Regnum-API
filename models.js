@@ -34,7 +34,8 @@ const userSchema = new mongoose.Schema({
     created_at: { type: Date, default: Date.now },
     banned: { type: Boolean, default: false },
     last_activity: { type: Date },
-    deleted: { type: Boolean, default: false }
+    deleted: { type: Boolean, default: false },
+    corforum_userID: { type: String }
 });
 
 const User = mongoose.model('User', userSchema);
