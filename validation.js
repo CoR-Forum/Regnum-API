@@ -3,9 +3,10 @@ const { User } = require('./models');
 const hibp = require('hibp');
 
 const validateUsername = (username) => {
-    const usernameRegex = /^[a-zA-Z0-9]{3,20}$/;
-    if (!username || typeof username !== 'string' || !usernameRegex.test(username)) {
-        return { valid: false, message: 'Username must be a string between 3 and 20 characters, containing only letters and numbers.' };
+    const usernameRegex = /^[a-zA-Z0-9 ]{3,20}$/;
+    const spaceCount = (username.match(/ /g) || []).length;
+    if (!username || typeof username !== 'string' || !usernameRegex.test(username) || spaceCount > 2) {
+        return { valid: false, message: 'Username must be a string between 3 and 20 characters, containing only letters, numbers, and up to 2 spaces.' };
     }
     return { valid: true };
 };
