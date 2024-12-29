@@ -211,6 +211,11 @@ app.use(`${BASE_PATH}`, settingsRoutes);
 app.use(`${BASE_PATH}/`, statusRoutes);
 app.use(`${BASE_PATH}/`, bossSpawnsRoutes);
 
+// /register 302 redirect
+app.get(`${BASE_PATH}/register`, (req, res) => {
+  res.redirect(302, 'https://cor-forum.de/board/register/');
+});
+
 const server = app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}` + BASE_PATH);
 });
