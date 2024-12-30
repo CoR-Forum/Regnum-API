@@ -93,7 +93,7 @@ app.post(`${BASE_PATH}/login`, async (req, res) => {
         key: licenseKey,
         activated_by: user._id,
         activated_at: new Date(),
-        features: ['fov', 'zoom'],
+        features: ['fov', 'zoom', 'moonwalk'],
         runtime: '10y',
         expires_at: new Date(Date.now() + convertDurationToMilliseconds('10y'))
       });
