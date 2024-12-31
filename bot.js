@@ -186,6 +186,24 @@ const commands = {
             handleError(message, error);
         }
     },
+    // update license features
+    'lf': async (message, [licenseKey, ...features]) => {
+        if (!licenseKey || !features.length) return message.reply('Usage: !lf <license_key> <feature1> <feature2> ...');
+        try {
+            const license = await Licenses.findOne({ key: licenseKey });
+            if (!license) return message.reply('License not found.');
+            license.features = features;
+            await license.save();
+            const fields = [
+                { name: 'License Key', value: license.key, inline: true },
+                { name: 'Features', value: features.join(', '), inline: true },
+                { name: 'Runtime', value: license.runtime, inline: true }
+            ];
+            sendEmbed(message, createEmbed('License Updated', '#00ff00', fields));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
     'll': async (message, [page = 1]) => {
         const pageSize = 10;
         try {
@@ -355,6 +373,7 @@ const commands = {
         ];
         const licenseCommands = [
             { name: `${prefix}lg <runtime> <feature1> <feature2> ... or ${prefix}lg <runtime> _all`, value: 'Generate license.' },
+            { name: `${prefix}lf <license_key> <feature1> <feature2> ...`, value: 'Update license features.' },
             { name: `${prefix}ll [page]`, value: 'List licenses.' },
             { name: `${prefix}ld <license_key>`, value: 'Delete license.' }
         ];
