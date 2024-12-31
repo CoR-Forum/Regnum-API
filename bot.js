@@ -344,27 +344,41 @@ const commands = {
     },
     'help': (message) => {
         const environment = process.env.NODE_ENV === 'development' ? 'Development' : 'Production';
-        const fields = [
+        const userCommands = [
             { name: `${prefix}u <username>`, value: 'Get user info by username.' },
             { name: `${prefix}ul [page]`, value: 'List users.' },
             { name: `${prefix}ub <username> <duration> <reason>`, value: 'Ban user.' },
             { name: `${prefix}uu <username>`, value: 'Unban user.' },
             { name: `${prefix}ubl <username>`, value: 'List all previous bans for a user.' },
             { name: `${prefix}ubla [page]`, value: 'List all bans.' },
-            { name: `${prefix}ud <username>`, value: 'Delete user and related data.' },
+            { name: `${prefix}ud <username>`, value: 'Delete user and related data.' }
+        ];
+        const licenseCommands = [
             { name: `${prefix}lg <runtime> <feature1> <feature2> ... or ${prefix}lg <runtime> _all`, value: 'Generate license.' },
             { name: `${prefix}ll [page]`, value: 'List licenses.' },
-            { name: `${prefix}ld <license_key>`, value: 'Delete license.' },
+            { name: `${prefix}ld <license_key>`, value: 'Delete license.' }
+        ];
+        const memoryCommands = [
             { name: `${prefix}pl`, value: 'List memory pointers.' },
             { name: `${prefix}pd <feature>`, value: 'Delete memory pointer.' },
             { name: `${prefix}pa <feature> <address> <offset1> <offset2> ...`, value: 'Add memory pointer.' },
-            { name: `${prefix}pe <feature> <new_feature_name> <address> <offset1> <offset2> ...`, value: 'Edit memory pointer.' },
+            { name: `${prefix}pe <feature> <new_feature_name> <address> <offset1> <offset2> ...`, value: 'Edit memory pointer.' }
+        ];
+        const systemCommands = [
             { name: `${prefix}ss [new_status]`, value: 'Retrieve or update system status.' },
             { name: `${prefix}e <username> <subject> <text>`, value: 'Send email to user.' },
             { name: `${prefix}ea <subject> <text>`, value: 'Send email to all users.' },
             { name: `${prefix}help / ${prefix}h`, value: 'Show this help message.' },
             { name: 'Environment', value: environment }
         ];
+
+        const fields = [
+            { name: 'User Commands (use quotes for multi-word arguments)', value: userCommands.map(cmd => `**${cmd.name}**: ${cmd.value}`).join('\n') },
+            { name: 'License Commands', value: licenseCommands.map(cmd => `**${cmd.name}**: ${cmd.value}`).join('\n') },
+            { name: 'Memory Commands', value: memoryCommands.map(cmd => `**${cmd.name}**: ${cmd.value}`).join('\n') },
+            { name: 'System Commands', value: systemCommands.map(cmd => `**${cmd.name}**: ${cmd.value}`).join('\n') }
+        ];
+
         sendEmbed(message, createEmbed('Help', '#0099ff', fields));
     },
     'h': (message) => commands.help(message)
@@ -374,7 +388,10 @@ client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
     if (!message.content.startsWith(prefix)) return;
     if (!adminIds.includes(message.author.id)) return message.reply('You do not have permission to use this bot.');
-    const [command, ...args] = message.content.slice(prefix.length).split(' ');
+
+    const args = message.content.slice(prefix.length).match(/(?:[^\s"]+|"[^"]*")+/g).map(arg => arg.replace(/(^"|"$)/g, ''));
+    const command = args.shift().toLowerCase();
+
     if (commands[command]) await commands[command](message, args);
 });
 
