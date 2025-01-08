@@ -1,5 +1,7 @@
 # regnumstarter Node.js API
 
+API for the new [RegnumStarter v6](https://github.com/CoR-Forum/RegnumStarter)
+
 ## Setup
 
 Everything here is mandatory.
