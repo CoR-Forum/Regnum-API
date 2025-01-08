@@ -15,6 +15,7 @@ const { router: statusRoutes, updateStats } = require('./router/status');
 const { validateUsername } = require('./validation');
 require('./bot');
 const { RateLimiter } = require('./modules/rateLimiter');
+const warstatusRoutes = require('./router/warstatus');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -209,6 +210,7 @@ app.use(`${BASE_PATH}/chat`, chatRoutes);
 app.use(`${BASE_PATH}`, settingsRoutes);
 app.use(`${BASE_PATH}/`, statusRoutes);
 app.use(`${BASE_PATH}/`, bossSpawnsRoutes);
+app.use(`${BASE_PATH}/`, warstatusRoutes);
 
 // /register 302 redirect
 app.get(`${BASE_PATH}/register`, (req, res) => {
