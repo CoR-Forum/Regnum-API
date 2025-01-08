@@ -14,6 +14,7 @@ const bossSpawnsRoutes = require('./router/bossSpawns');
 const { router: statusRoutes, updateStats } = require('./router/status');
 const { validateUsername } = require('./validation');
 require('./bot');
+const { RateLimiter } = require('./modules/rateLimiter');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,7 +44,7 @@ app.use(helmet.contentSecurityPolicy({
 
 app.use(express.json());
 
-app.post(`${BASE_PATH}/login`, async (req, res) => {
+app.post(`${BASE_PATH}/login`, RateLimiter(1, 3), async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
