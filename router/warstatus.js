@@ -100,7 +100,7 @@ router.get('/warstatus', (req, res) => {
 });
 
 router.get('/warstatus/history', async (req, res) => {
-    const history = await WarstatusHistory.find().sort({ timestamp: -1 }).limit(10);
+    const history = await WarstatusHistory.find().sort({ timestamp: -1 }).limit(50);
     res.json({ history });
 });
 
