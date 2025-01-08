@@ -1,3 +1,4 @@
+const { time } = require('discord.js');
 const mongoose = require('mongoose');
 
 const settingsSchema = new mongoose.Schema({
@@ -97,6 +98,16 @@ const publicChatSchema = new mongoose.Schema({
 
 const PublicChat = mongoose.model('PublicChat', publicChatSchema);
 
+const warstatusHistorySchema = new mongoose.Schema({
+    timestamp: { type: Date, default: Date.now },
+    realm: { type: String, required: true },
+    buildings: { type: [Object], required: true },
+    relics: { type: [Object], required: true },
+    gems: { type: [Object], required: true }
+});
+
+const WarstatusHistory = mongoose.model('WarstatusHistory', warstatusHistorySchema);
+
 const initializeDatabase = async () => {
     const defaultSettings = [
         { name: 'status', value: 'online' },
@@ -132,5 +143,6 @@ module.exports = {
     NotificationQueue,
     PublicChat,
     Token,
+    WarstatusHistory,
     initializeDatabase
 };
