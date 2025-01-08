@@ -5,7 +5,7 @@ const { logActivity } = require('../utils');
 const sanitizeHtml = require('sanitize-html');
 const Joi = require('joi');
 const helmet = require('helmet');
-const { RateLimiter } = require('../modules/rateLimiter'); // Import the RateLimiter function
+const { RateLimiter } = require('../modules/rateLimiter');
 
 const router = express.Router();
 
