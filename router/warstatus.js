@@ -32,13 +32,7 @@ const assetMap = {
     }
 };
 
-router.get('/warstatus', async (req, res) => {
-    const now = Date.now();
-    if (cachedData && (now - cacheTimestamp < 30000)) {
-        console.log('Returning cached data');
-        return res.json({ warStatus: cachedData });
-    }
-
+const fetchWarStatus = async () => {
     try {
         const { data } = await axios.get('https://www.championsofregnum.com/index.php?l=1&sec=3&world=ra');
         console.log('Fetched data:', data); // Log fetched data
@@ -80,11 +74,24 @@ router.get('/warstatus', async (req, res) => {
 
         console.log('Parsed war status:', warStatus); // Log parsed war status
         cachedData = warStatus;
-        cacheTimestamp = now;
-        res.json({ warStatus });
+        cacheTimestamp = Date.now();
     } catch (error) {
         console.error('Error fetching war status data:', error);
-        res.status(500).json({ status: 'error', message: 'Failed to fetch war status data' });
+    }
+};
+
+// Fetch data every minute
+setInterval(fetchWarStatus, 30000);
+
+// Initial fetch
+fetchWarStatus();
+
+router.get('/warstatus', (req, res) => {
+    if (cachedData) {
+        console.log('Returning cached data');
+        return res.json({ warStatus: cachedData });
+    } else {
+        res.status(500).json({ status: 'error', message: 'No data available' });
     }
 });
 
