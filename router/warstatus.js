@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
+const { WarstatusHistory } = require('../models'); // Import WarstatusHistory model
 
 const router = express.Router();
 
@@ -75,6 +76,9 @@ const fetchWarStatus = async () => {
         console.log('Parsed war status:', warStatus); // Log parsed war status
         cachedData = warStatus;
         cacheTimestamp = Date.now();
+
+        // Store the war status in the database
+        await new WarstatusHistory({ data: warStatus }).save();
     } catch (error) {
         console.error('Error fetching war status data:', error);
     }
@@ -93,6 +97,11 @@ router.get('/warstatus', (req, res) => {
     } else {
         res.status(500).json({ status: 'error', message: 'No data available' });
     }
+});
+
+router.get('/warstatus/history', async (req, res) => {
+    const history = await WarstatusHistory.find().sort({ timestamp: -1 }).limit(10);
+    res.json({ history });
 });
 
 module.exports = router;

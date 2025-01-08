@@ -100,10 +100,7 @@ const PublicChat = mongoose.model('PublicChat', publicChatSchema);
 
 const warstatusHistorySchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now },
-    realm: { type: String, required: true },
-    buildings: { type: [Object], required: true },
-    relics: { type: [Object], required: true },
-    gems: { type: [Object], required: true }
+    data: { type: Object }
 });
 
 const WarstatusHistory = mongoose.model('WarstatusHistory', warstatusHistorySchema);
