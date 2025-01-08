@@ -72,7 +72,7 @@ router.get('/warstatus', async (req, res) => {
                 let buildingName = $(building).find('.war-status-bulding-name').text().trim();
                 buildingName = buildingName.replace(/\s\(\d+\)$/, ''); // Remove trailing numbers in parentheses
                 const buildingIcon = $(building).find('img').attr('src').split('/').pop();
-                realmStatus.buildings.push({ name: buildingName, icon: buildingMap[buildingIcon] || 'unknown' });
+                realmStatus.buildings.push({ name: buildingName, owner: buildingMap[buildingIcon] || 'unknown' });
             });
 
             warStatus[realmName] = realmStatus;
