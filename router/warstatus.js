@@ -35,11 +35,10 @@ const fetchWarStatus = async () => {
         const { data } = await axios.get('https://www.championsofregnum.com/index.php?l=1&sec=3&world=ra');
         const $ = cheerio.load(data);
 
-        const realms = ['Syrtis', 'Ignis', 'Alsius'];
         const warStatus = {};
 
         $('#connectivity-box-content .war-status-realm').each((index, element) => {
-            const realmName = $(element).find('div[style="float: left;"]').text().trim();
+            const realmName = $(element).find('div[style="float: left;"]').text().trim().toLowerCase().replace('realm of ', '');
             const realmStatus = {
                 buildings: [],
                 relics: [],
