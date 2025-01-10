@@ -35,7 +35,8 @@ const normalizeBuildingName = (name) => {
         .replace('fort ', '')
         .replace('castle ', '')
         .replace('great wall of ', '')
-        .replace(/\s+/g, '_');
+        .replace(/\s+/g, '_')
+        .replace('_castle', ''); // Remove trailing "_castle" if present
 };
 
 const fetchWarStatus = async () => {
