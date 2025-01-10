@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
-const { WarstatusHistory } = require('../models'); // Import WarstatusHistory model
+const { WarstatusHistory, WarstatusEvents } = require('../models'); // Import WarstatusHistory and WarstatusEvents models
 
 const router = express.Router();    
 
@@ -82,6 +82,51 @@ const fetchWarStatus = async () => {
         if (!latestEntry || (Date.now() - new Date(latestEntry.timestamp).getTime()) > 30000) {
             console.log('Saving war status data to database...');
             await new WarstatusHistory({ data: warStatus }).save();
+
+            // Check for changes and create events
+            if (latestEntry) {
+                for (const realm in warStatus) {
+                    const newStatus = warStatus[realm];
+                    const oldStatus = latestEntry.data[realm];
+
+                    // Check for building changes
+                    newStatus.buildings.forEach(async (building, index) => {
+                        if (building.owner !== oldStatus.buildings[index].owner) {
+                            await new WarstatusEvents({
+                                timestamp: Date.now(),
+                                realm: realm,
+                                event: `${realm} captured ${building.name}`,
+                                building: building.name,
+                                data: building
+                            }).save();
+                        }
+                    });
+
+                    // Check for relic changes
+                    newStatus.relics.forEach(async (relic, index) => {
+                        if (relic !== oldStatus.relics[index]) {
+                            await new WarstatusEvents({
+                                timestamp: Date.now(),
+                                realm: realm,
+                                event: `${realm} got relic`,
+                                data: relic
+                            }).save();
+                        }
+                    });
+
+                    // Check for gem changes
+                    newStatus.gems.forEach(async (gem, index) => {
+                        if (gem !== oldStatus.gems[index]) {
+                            await new WarstatusEvents({
+                                timestamp: Date.now(),
+                                realm: realm,
+                                event: `${realm} got gem`,
+                                data: gem
+                            }).save();
+                        }
+                    });
+                }
+            }
         }
     } catch (error) {
         console.error('Error fetching war status data:', error);
