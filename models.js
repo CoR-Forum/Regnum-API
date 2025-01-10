@@ -1,4 +1,3 @@
-const { time } = require('discord.js');
 const mongoose = require('mongoose');
 
 const settingsSchema = new mongoose.Schema({
@@ -100,10 +99,22 @@ const PublicChat = mongoose.model('PublicChat', publicChatSchema);
 
 const warstatusHistorySchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now },
+    world: { type: String },
     data: { type: Object }
 });
 
 const WarstatusHistory = mongoose.model('WarstatusHistory', warstatusHistorySchema);
+
+const warstatusEventsSchema = new mongoose.Schema({
+    timestamp: { type: Date, default: Date.now },
+    world: { type: String },
+    realm: { type: String },
+    event: { type: String },
+    building: { type: String },
+    data: { type: Object }
+});
+
+const WarstatusEvents = mongoose.model('WarstatusEvents', warstatusEventsSchema);
 
 const initializeDatabase = async () => {
     const defaultSettings = [
@@ -141,5 +152,6 @@ module.exports = {
     PublicChat,
     Token,
     WarstatusHistory,
+    WarstatusEvents,
     initializeDatabase
 };

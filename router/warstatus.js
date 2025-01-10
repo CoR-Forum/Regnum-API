@@ -39,9 +39,9 @@ const normalizeBuildingName = (name) => {
         .replace('_castle', ''); // Remove trailing "_castle" if present
 };
 
-const fetchWarStatus = async () => {
+const fetchWarStatus = async (world) => {
     try {
-        const { data } = await axios.get('https://www.championsofregnum.com/index.php?l=1&sec=3&world=ra');
+        const { data } = await axios.get(`https://www.championsofregnum.com/index.php?l=1&sec=3&world=${world}`);
         const $ = cheerio.load(data);
 
         const warStatus = {};
@@ -78,10 +78,10 @@ const fetchWarStatus = async () => {
         });
 
         // Check if the latest entry in the database is older than 30 seconds
-        const latestEntry = await WarstatusHistory.findOne().sort({ timestamp: -1 });
+        const latestEntry = await WarstatusHistory.findOne({ world }).sort({ timestamp: -1 });
         if (!latestEntry || (Date.now() - new Date(latestEntry.timestamp).getTime()) > 30000) {
-            console.log('Saving war status data to database...');
-            await new WarstatusHistory({ data: warStatus }).save();
+            console.log(`Saving war status data for world=${world} to database...`);
+            await new WarstatusHistory({ world, data: warStatus }).save();
 
             // Check for changes and create events
             if (latestEntry) {
@@ -94,7 +94,8 @@ const fetchWarStatus = async () => {
                         if (building.owner !== oldStatus.buildings[index].owner) {
                             await new WarstatusEvents({
                                 timestamp: Date.now(),
-                                realm: realm,
+                                world,
+                                realm,
                                 event: `${realm} captured ${building.name}`,
                                 building: building.name,
                                 data: building
@@ -107,7 +108,8 @@ const fetchWarStatus = async () => {
                         if (relic !== oldStatus.relics[index]) {
                             await new WarstatusEvents({
                                 timestamp: Date.now(),
-                                realm: realm,
+                                world,
+                                realm,
                                 event: `${realm} got relic`,
                                 data: relic
                             }).save();
@@ -119,7 +121,8 @@ const fetchWarStatus = async () => {
                         if (gem !== oldStatus.gems[index]) {
                             await new WarstatusEvents({
                                 timestamp: Date.now(),
-                                realm: realm,
+                                world,
+                                realm,
                                 event: `${realm} got gem`,
                                 data: gem
                             }).save();
@@ -129,39 +132,44 @@ const fetchWarStatus = async () => {
             }
         }
     } catch (error) {
-        console.error('Error fetching war status data:', error);
+        console.error(`Error fetching war status data for world=${world}:`, error);
     }
 };
 
 if (process.env.NODE_ENV === 'production') {
-    setInterval(fetchWarStatus, 30000);
+    setInterval(() => fetchWarStatus('ra'), 30000);
+    setInterval(() => fetchWarStatus('amun'), 30000);
 
     // Initial fetch on server start
-    fetchWarStatus();
+    fetchWarStatus('ra');
+    fetchWarStatus('amun');
 }
 
 router.get('/warstatus', async (req, res) => {
+    const world = req.query.world || 'ra';
     try {
-        const latestEntry = await WarstatusHistory.findOne().sort({ timestamp: -1 });
+        const latestEntry = await WarstatusHistory.findOne({ world }).sort({ timestamp: -1 });
         if (latestEntry) {
             return res.json({ lastUpdate: latestEntry.timestamp, warStatus: latestEntry.data });
         } else {
             res.status(500).json({ status: 'error', message: 'No data available' });
         }
     } catch (error) {
-        console.error('Error fetching latest war status:', error);
+        console.error(`Error fetching latest war status for world=${world}:`, error);
         res.status(500).json({ status: 'error', message: 'Internal server error' });
     }
 });
 
 router.get('/warstatus/history', async (req, res) => {
-    const history = await WarstatusHistory.find().sort({ timestamp: -1 }).limit(50);
+    const world = req.query.world || 'ra';
+    const history = await WarstatusHistory.find({ world }).sort({ timestamp: -1 }).limit(50);
     res.json({ history });
 });
 
 // get last 50 events
 router.get('/warstatus/events', async (req, res) => {
-    const events = await WarstatusEvents.find().sort({ timestamp: -1 }).limit(50);
+    const world = req.query.world || 'ra';
+    const events = await WarstatusEvents.find({ world }).sort({ timestamp: -1 }).limit(50);
     res.json({ events });
 });
 
