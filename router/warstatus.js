@@ -80,7 +80,7 @@ const fetchWarStatus = async () => {
     }
 };
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'production') {
     setInterval(fetchWarStatus, 30000);
 
     // Initial fetch on server start
