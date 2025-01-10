@@ -155,8 +155,14 @@ router.get('/warstatus', async (req, res) => {
 });
 
 router.get('/warstatus/history', async (req, res) => {
-    const history = await WarstatusHistory.find().sort({ timestamp: -1 }).limit(1);
+    const history = await WarstatusHistory.find().sort({ timestamp: -1 }).limit(50);
     res.json({ history });
+});
+
+// get last 50 events
+router.get('/warstatus/events', async (req, res) => {
+    const events = await WarstatusEvents.find().sort({ timestamp: -1 }).limit(50);
+    res.json({ events });
 });
 
 module.exports = router;
