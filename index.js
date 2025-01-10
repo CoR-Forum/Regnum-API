@@ -173,11 +173,13 @@ app.post(`${BASE_PATH}/logout`, validateToken, async (req, res) => {
 });
 
 app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
-  const { licenseKey } = req.body;
+  let { licenseKey } = req.body;
 
   if (!licenseKey) {
     return res.status(400).json({ status: "error", message: "Invalid license key" });
   }
+
+  licenseKey = licenseKey.trim(); // Sanitize the license key
 
   try {
     const license = await Licenses.findOne({ key: licenseKey });
