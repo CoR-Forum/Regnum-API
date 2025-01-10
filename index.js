@@ -13,7 +13,7 @@ const settingsRoutes = require('./router/settings');
 const bossSpawnsRoutes = require('./router/bossSpawns');
 const { router: statusRoutes, updateStats } = require('./router/status');
 const { validateUsername } = require('./validation');
-require('./bot');
+require('./discordBot');
 const { RateLimiter } = require('./modules/rateLimiter');
 const warstatusRoutes = require('./router/warstatus');
 
