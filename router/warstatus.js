@@ -84,11 +84,13 @@ const fetchWarStatus = async () => {
     }
 };
 
-// Fetch data every minute
-setInterval(fetchWarStatus, 30000);
+if (process.env.NODE_ENV === 'production') {
+    // Fetch data every minute in production environment
+    setInterval(fetchWarStatus, 30000);
 
-// Initial fetch
-fetchWarStatus();
+    // Initial fetch
+    fetchWarStatus();
+}
 
 router.get('/warstatus', (req, res) => {
     if (cachedData) {
