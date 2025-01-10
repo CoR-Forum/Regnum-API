@@ -34,6 +34,25 @@ const getUserInfoFields = async (user) => {
     ];
 };
 
+const sendDiscordMessage = async (messageContent) => {
+    const channelId = process.env.DISCORD_CHANNEL_ID_WARSTATUS;
+    if (!channelId) {
+        console.error('DISCORD_CHANNEL_ID_WARSTATUS is not set in the environment variables.');
+        return;
+    }
+
+    try {
+        const channel = await client.channels.fetch(channelId);
+        if (channel) {
+            await channel.send(messageContent);
+        } else {
+            console.error('Channel not found.');
+        }
+    } catch (error) {
+        console.error('Error sending message to Discord channel:', error);
+    }
+};
+
 const commands = {
     'u': async (message, [username]) => {
         if (!username) return message.reply('Usage: !u <username>');
@@ -417,3 +436,8 @@ client.on('messageCreate', async (message) => {
 if (process.env.DISCORD_BOT === 'true') {
     client.login(process.env.DISCORD_BOT_TOKEN);
 }
+
+module.exports = {
+    // ...existing exports...
+    sendDiscordMessage
+};

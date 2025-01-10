@@ -119,6 +119,7 @@ Everything here is mandatory.
     DISCORD_BOT=true
     DISCORD_BOT_TOKEN=<discord_bot_token>
     DISCORD_ADMINS=188703762167234561,197880680619835392
+    DISCORD_CHANNEL_ID_WARSTATUS=<discord_channel_id>
 
     # Discord oAuth Configuration
     DISCORD_CLIENT_ID=<discord_client_id>

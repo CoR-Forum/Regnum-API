@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { WarstatusHistory, WarstatusEvents } = require('../models'); // Import WarstatusHistory and WarstatusEvents models
+const { sendDiscordMessage } = require('../discordBot'); // Import sendDiscordMessage function
 
 const router = express.Router();    
 
@@ -92,40 +93,46 @@ const fetchWarStatus = async (world) => {
                     // Check for building changes
                     newStatus.buildings.forEach(async (building, index) => {
                         if (building.owner !== oldStatus.buildings[index].owner) {
+                            const event = `${realm} captured ${building.name}`;
                             await new WarstatusEvents({
                                 timestamp: Date.now(),
                                 world,
                                 realm,
-                                event: `${realm} captured ${building.name}`,
+                                event,
                                 building: building.name,
                                 data: building
                             }).save();
+                            sendDiscordMessage(event);
                         }
                     });
 
                     // Check for relic changes
                     newStatus.relics.forEach(async (relic, index) => {
                         if (relic !== oldStatus.relics[index]) {
+                            const event = `${realm} got relic`;
                             await new WarstatusEvents({
                                 timestamp: Date.now(),
                                 world,
                                 realm,
-                                event: `${realm} got relic`,
+                                event,
                                 data: relic
                             }).save();
+                            sendDiscordMessage(event);
                         }
                     });
 
                     // Check for gem changes
                     newStatus.gems.forEach(async (gem, index) => {
                         if (gem !== oldStatus.gems[index]) {
+                            const event = `${realm} got gem`;
                             await new WarstatusEvents({
                                 timestamp: Date.now(),
                                 world,
                                 realm,
-                                event: `${realm} got gem`,
+                                event,
                                 data: gem
                             }).save();
+                            sendDiscordMessage(event);
                         }
                     });
                 }
