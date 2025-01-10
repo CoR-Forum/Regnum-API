@@ -34,7 +34,7 @@ const normalizeBuildingName = (name) => {
     return name.toLowerCase()
         .replace('fort ', '')
         .replace('castle ', '')
-        .replace('great wall of ', '')
+        .replace(/great wall of \w+/, 'wall') // Replace "Great Wall of <realm>" with "wall"
         .replace(/\s+/g, '_')
         .replace('_castle', ''); // Remove trailing "_castle" if present
 };
