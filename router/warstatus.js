@@ -3,10 +3,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const { WarstatusHistory } = require('../models'); // Import WarstatusHistory model
 
-const router = express.Router();
-
-let cachedData = null;
-let cacheTimestamp = 0;
+const router = express.Router();    
 
 const assetMap = {
     gems: {
@@ -74,8 +71,6 @@ const fetchWarStatus = async () => {
         });
 
         console.log('Parsed war status:', warStatus); // Log parsed war status
-        cachedData = warStatus;
-        cacheTimestamp = Date.now();
 
         // Store the war status in the database
         await new WarstatusHistory({ data: warStatus }).save();
@@ -84,7 +79,7 @@ const fetchWarStatus = async () => {
     }
 };
 
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'development') {
     // Fetch data every minute in production environment
     setInterval(fetchWarStatus, 30000);
 
@@ -92,17 +87,22 @@ if (process.env.NODE_ENV === 'production') {
     fetchWarStatus();
 }
 
-router.get('/warstatus', (req, res) => {
-    if (cachedData) {
-        console.log('Returning cached data');
-        return res.json({ warStatus: cachedData });
-    } else {
-        res.status(500).json({ status: 'error', message: 'No data available' });
+router.get('/warstatus', async (req, res) => {
+    try {
+        const latestEntry = await WarstatusHistory.findOne().sort({ timestamp: -1 });
+        if (latestEntry) {
+            return res.json({ lastUpdate: latestEntry.timestamp, warStatus: latestEntry.data });
+        } else {
+            res.status(500).json({ status: 'error', message: 'No data available' });
+        }
+    } catch (error) {
+        console.error('Error fetching latest war status:', error);
+        res.status(500).json({ status: 'error', message: 'Internal server error' });
     }
 });
 
 router.get('/warstatus/history', async (req, res) => {
-    const history = await WarstatusHistory.find().sort({ timestamp: -1 }).limit(50);
+    const history = await WarstatusHistory.find().sort({ timestamp: -1 }).limit(1);
     res.json({ history });
 });
 
