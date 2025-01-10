@@ -33,7 +33,6 @@ const assetMap = {
 const fetchWarStatus = async () => {
     try {
         const { data } = await axios.get('https://www.championsofregnum.com/index.php?l=1&sec=3&world=ra');
-        console.log('Fetched data:', data); // Log fetched data
         const $ = cheerio.load(data);
 
         const realms = ['Syrtis', 'Ignis', 'Alsius'];
@@ -70,20 +69,21 @@ const fetchWarStatus = async () => {
             warStatus[realmName] = realmStatus;
         });
 
-        console.log('Parsed war status:', warStatus); // Log parsed war status
-
-        // Store the war status in the database
-        await new WarstatusHistory({ data: warStatus }).save();
+        // Check if the latest entry in the database is older than 30 seconds
+        const latestEntry = await WarstatusHistory.findOne().sort({ timestamp: -1 });
+        if (!latestEntry || (Date.now() - new Date(latestEntry.timestamp).getTime()) > 30000) {
+            console.log('Saving war status data to database...');
+            await new WarstatusHistory({ data: warStatus }).save();
+        }
     } catch (error) {
         console.error('Error fetching war status data:', error);
     }
 };
 
 if (process.env.NODE_ENV === 'development') {
-    // Fetch data every minute in production environment
     setInterval(fetchWarStatus, 30000);
 
-    // Initial fetch
+    // Initial fetch on server start
     fetchWarStatus();
 }
 
