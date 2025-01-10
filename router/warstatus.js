@@ -161,15 +161,17 @@ router.get('/warstatus', async (req, res) => {
 });
 
 router.get('/warstatus/history', async (req, res) => {
-    const world = req.query.world || 'ra';
-    const history = await WarstatusHistory.find({ world }).sort({ timestamp: -1 }).limit(50);
+    const world = req.query.world;
+    const query = world ? { world } : {};
+    const history = await WarstatusHistory.find(query).sort({ timestamp: -1 }).limit(50);
     res.json({ history });
 });
 
 // get last 50 events
 router.get('/warstatus/events', async (req, res) => {
-    const world = req.query.world || 'ra';
-    const events = await WarstatusEvents.find({ world }).sort({ timestamp: -1 }).limit(50);
+    const world = req.query.world;
+    const query = world ? { world } : {};
+    const events = await WarstatusEvents.find(query).sort({ timestamp: -1 }).limit(50);
     res.json({ events });
 });
 
