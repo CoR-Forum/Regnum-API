@@ -180,7 +180,7 @@ app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
   }
 
   try {
-    const license = await Licenses.findOne({ key: licenseKey });
+    const license = await Licenses.findOne({ key: { $eq: licenseKey } });
     if (!license) {
       return res.status(404).json({ status: "error", message: "License not found" });
     }
