@@ -30,6 +30,14 @@ const assetMap = {
     }
 };
 
+const normalizeBuildingName = (name) => {
+    return name.toLowerCase()
+        .replace('fort ', '')
+        .replace('castle ', '')
+        .replace('great wall of ', '')
+        .replace(/\s+/g, '_');
+};
+
 const fetchWarStatus = async () => {
     try {
         const { data } = await axios.get('https://www.championsofregnum.com/index.php?l=1&sec=3&world=ra');
@@ -60,7 +68,7 @@ const fetchWarStatus = async () => {
             // Get buildings
             $(element).nextAll('.war-status-realm-buildings').first().find('.war-status-building').each((i, building) => {
                 let buildingName = $(building).find('.war-status-bulding-name').text().trim();
-                buildingName = buildingName.replace(/\s\(\d+\)$/, ''); // Remove trailing numbers in parentheses
+                buildingName = normalizeBuildingName(buildingName.replace(/\s\(\d+\)$/, '')); // Remove trailing numbers in parentheses and normalize
                 const buildingIcon = $(building).find('img').attr('src').split('/').pop();
                 realmStatus.buildings.push({ name: buildingName, owner: assetMap.buildings[buildingIcon] || 'unknown' });
             });
