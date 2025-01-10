@@ -93,7 +93,7 @@ const fetchWarStatus = async (world) => {
                     // Check for building changes
                     newStatus.buildings.forEach(async (building, index) => {
                         if (building.owner !== oldStatus.buildings[index].owner) {
-                            const event = `${building.owner} captured ${building.name} from ${oldStatus.buildings[index].owner}`;
+                            const event = `[${world}] ${building.owner} captured ${building.name} from ${oldStatus.buildings[index].owner}`;
                             await new WarstatusEvents({
                                 timestamp: Date.now(),
                                 world,
