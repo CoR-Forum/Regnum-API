@@ -144,7 +144,7 @@ const fetchWarStatus = async (world) => {
     }
 };
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'production') {
     setInterval(() => fetchWarStatus('ra'), 30000);
     setInterval(() => fetchWarStatus('amun'), 30000);
 
