@@ -34,7 +34,7 @@ const getUserInfoFields = async (user) => {
     ];
 };
 
-const sendDiscordMessage = async (messageContent) => {
+const sendWarstatusToDiscord = async (messageContent) => {
     const channelId = process.env.DISCORD_CHANNEL_ID_WARSTATUS;
     if (!channelId) {
         console.error('DISCORD_CHANNEL_ID_WARSTATUS is not set in the environment variables.');
@@ -463,6 +463,5 @@ if (process.env.DISCORD_BOT === 'true') {
 }
 
 module.exports = {
-    // ...existing exports...
-    sendDiscordMessage
+    sendWarstatusToDiscord
 };

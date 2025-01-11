@@ -2,7 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { WarstatusHistory, WarstatusEvents } = require('../models');
-const { sendDiscordMessage } = require('../discordBot');
+const { sendWarstatusToDiscord } = require('../discordBot');
 const router = express.Router();    
 
 const assetMap = {
@@ -101,7 +101,7 @@ const fetchWarStatus = async (world) => {
                                 action: "captured",
                                 building: building.name
                             }).save();
-                            sendDiscordMessage(event);
+                            sendWarstatusToDiscord(event);
                         }
                     });
 
@@ -117,7 +117,7 @@ const fetchWarStatus = async (world) => {
                                 action: "relic",
                                 relic: true
                             }).save();
-                            // sendDiscordMessage(event);
+                            // sendWarstatusToDiscord(event);
                         }
                     });
 
@@ -133,7 +133,7 @@ const fetchWarStatus = async (world) => {
                                 action: "gem",
                                 gem: gem
                             }).save();
-                            // sendDiscordMessage(event);
+                            // sendWarstatusToDiscord(event);
                         }
                     });
                 }
