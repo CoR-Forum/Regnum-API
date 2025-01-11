@@ -2,6 +2,11 @@
 
 API for the new [RegnumStarter v6](https://github.com/CoR-Forum/RegnumStarter)
 
+## API Documentation
+
+- ``/v1`` - System Status
+- ``/v1/warstatus`` - Regnum Warstatus
+
 ## Setup
 
 Everything here is mandatory.
