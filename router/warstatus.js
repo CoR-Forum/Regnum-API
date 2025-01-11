@@ -101,7 +101,9 @@ const fetchWarStatus = async (server) => {
                                 action: "captured",
                                 building: building.name
                             }).save();
-                            sendWarstatusToDiscord(event);
+                            if (server === 'ra') {
+                                sendWarstatusToDiscord(event);
+                            }
                         }
                     });
 
@@ -117,7 +119,9 @@ const fetchWarStatus = async (server) => {
                                 action: "relic",
                                 relic: true
                             }).save();
-                            // sendWarstatusToDiscord(event);
+                            if (server === 'ra') {
+                                // sendWarstatusToDiscord(event);
+                            }
                         }
                     });
 
@@ -133,7 +137,9 @@ const fetchWarStatus = async (server) => {
                                 action: "gem",
                                 gem: gem
                             }).save();
-                            // sendWarstatusToDiscord(event);
+                            if (server === 'ra') {
+                                // sendWarstatusToDiscord(event);
+                            }
                         }
                     });
                 }
