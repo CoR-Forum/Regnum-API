@@ -1,9 +1,8 @@
 const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
-const { WarstatusHistory, WarstatusEvents } = require('../models'); // Import WarstatusHistory and WarstatusEvents models
-const { sendDiscordMessage } = require('../discordBot'); // Import sendDiscordMessage function
-
+const { WarstatusHistory, WarstatusEvents } = require('../models');
+const { sendDiscordMessage } = require('../discordBot');
 const router = express.Router();    
 
 const assetMap = {
@@ -99,8 +98,8 @@ const fetchWarStatus = async (world) => {
                                 world,
                                 realm: building.owner,
                                 event,
-                                building: building.name,
-                                data: building
+                                action: "captured",
+                                building: building.name
                             }).save();
                             sendDiscordMessage(event);
                         }
@@ -115,9 +114,10 @@ const fetchWarStatus = async (world) => {
                                 world,
                                 realm,
                                 event,
-                                data: relic
+                                action: "relic",
+                                relic: true
                             }).save();
-                            sendDiscordMessage(event);
+                            // sendDiscordMessage(event);
                         }
                     });
 
@@ -130,9 +130,10 @@ const fetchWarStatus = async (world) => {
                                 world,
                                 realm,
                                 event,
-                                data: gem
+                                action: "gem",
+                                gem: gem
                             }).save();
-                            sendDiscordMessage(event);
+                            // sendDiscordMessage(event);
                         }
                     });
                 }
@@ -143,7 +144,7 @@ const fetchWarStatus = async (world) => {
     }
 };
 
-if (process.env.NODE_ENV === 'production') {
+if (process.env.NODE_ENV === 'development') {
     setInterval(() => fetchWarStatus('ra'), 30000);
     setInterval(() => fetchWarStatus('amun'), 30000);
 

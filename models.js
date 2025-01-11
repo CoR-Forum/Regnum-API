@@ -1,3 +1,4 @@
+const { bool } = require('joi');
 const mongoose = require('mongoose');
 
 const notificationQueueSchema = new mongoose.Schema({
@@ -115,8 +116,10 @@ const warstatusEventsSchema = new mongoose.Schema({
     world: { type: String },
     realm: { type: String },
     event: { type: String },
+    action: { type: String },
     building: { type: String },
-    data: { type: Object }
+    relic: { type: Boolean },
+    gem: { type: String }
 });
 
 const WarstatusEvents = mongoose.model('WarstatusEvents', warstatusEventsSchema);
