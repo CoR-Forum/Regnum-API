@@ -153,6 +153,44 @@ if (process.env.NODE_ENV === 'production') {
     fetchWarStatus('amun');
 }
 
+// router to generate statistics about the war status from warstatusEventsSchema
+router.get('/warstatus/statistics', async (req, res) => {
+    const server = req.query.server || 'ra';
+    try {
+        const events = await WarstatusEvents.find({ server }).sort({ timestamp: -1 });
+        const statistics = {
+            totalEvents: events.length,
+            // count the total captures per realm
+            realms: {
+                ignis: { captures: 0, relics: 0, gems: 0 },
+                alsius: { captures: 0, relics: 0, gems: 0 },
+                syrtis: { captures: 0, relics: 0, gems: 0 }
+            },
+            captures: 0,
+            relics: 0,
+            gems: 0
+        };
+
+        events.forEach(event => {
+            if (event.action === 'captured') {
+                statistics.captures++;
+                statistics.realms[event.realm].captures++;
+            } else if (event.action === 'relic') {
+                statistics.relics++;
+                statistics.realms[event.realm].relics++;
+            } else if (event.action === 'gem') {
+                statistics.gems++;
+                statistics.realms[event.realm].gems++;
+            }
+        });
+
+        res.json({ status: 'success', statistics });
+    } catch (error) {
+        console.error(`Error fetching war status statistics for server ${server}:`, error);
+        res.status(500).json({ status: 'error', message: 'Internal server error' });
+    }
+});
+
 router.get('/warstatus', async (req, res) => {
     const server = req.query.server || 'ra';
     try {
