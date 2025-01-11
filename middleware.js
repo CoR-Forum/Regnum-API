@@ -45,20 +45,4 @@ const validateToken = async (req, res, next) => {
     }
 };
 
-const checkPermissions = (requiredPermissions) => {
-    return (req, res, next) => {
-        if (!req.user) {
-            return res.status(401).json({ status: "error", message: "Unauthorized: No user" });
-        }
-        if (!Array.isArray(requiredPermissions) || requiredPermissions.length === 0) {
-            return res.status(400).json({ status: "error", message: "Bad Request: Invalid permissions" });
-        }
-        const hasPermission = requiredPermissions.every(permission => req.user.permissions.includes(permission));
-        if (!hasPermission) {
-            return res.status(403).json({ status: "error", message: "Forbidden: Insufficient permissions" });
-        }
-        next();
-    };
-};
-
-module.exports = { validateToken, checkPermissions };
+module.exports = { validateToken };
