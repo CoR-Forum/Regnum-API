@@ -1,6 +1,6 @@
 const express = require('express');
 const { validateToken } = require('../middleware');
-const { PublicChat, User } = require('../models');
+const { PublicChat } = require('../models');
 const { logActivity } = require('../utils');
 const sanitizeHtml = require('sanitize-html');
 const Joi = require('joi');
