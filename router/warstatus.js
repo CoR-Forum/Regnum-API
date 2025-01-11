@@ -163,7 +163,7 @@ router.get('/warstatus', async (req, res) => {
             res.status(500).json({ status: 'error', message: 'No data available' });
         }
     } catch (error) {
-        console.error(`Error fetching latest war status for world=${world}:`, error);
+        console.error(`Error fetching latest war status for world ${world}:`, error);
         res.status(500).json({ status: 'error', message: 'Internal server error' });
     }
 });
