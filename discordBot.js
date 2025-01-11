@@ -314,19 +314,6 @@ const commands = {
             handleError(message, error);
         }
     },
-    'ss': async (message, [newStatus]) => {
-        try {
-            if (newStatus) {
-                await Settings.updateOne({ name: 'status' }, { value: newStatus }, { upsert: true });
-                sendEmbed(message, createEmbed('System Status Updated', '#00ff00', [{ name: 'New Status', value: newStatus }]));
-            } else {
-                const status = await Settings.findOne({ name: 'status' });
-                sendEmbed(message, createEmbed('System Status', '#0099ff', [{ name: 'Status', value: status ? status.value : 'Not set' }]));
-            }
-        } catch (error) {
-            handleError(message, error);
-        }
-    },
     'e': async (message, [username, subject, ...text]) => {
         if (!username || !subject || !text) return message.reply('Usage: !e <username> <subject> <text>');
         const { valid, message: validationMessage } = validateUsername(username);
@@ -441,7 +428,6 @@ const commands = {
             { name: `${prefix}cd <message_id>`, value: 'Delete a chat message by ID.' }
         ];
         const systemCommands = [
-            { name: `${prefix}ss [new_status]`, value: 'Retrieve or update system status.' },
             { name: `${prefix}e <username> <subject> <text>`, value: 'Send email to user.' },
             { name: `${prefix}ea <subject> <text>`, value: 'Send email to all users.' },
             { name: `${prefix}help / ${prefix}h`, value: 'Show this help message.' },
