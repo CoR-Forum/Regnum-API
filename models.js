@@ -1,4 +1,3 @@
-const { bool } = require('joi');
 const mongoose = require('mongoose');
 
 const notificationQueueSchema = new mongoose.Schema({
@@ -142,8 +141,6 @@ module.exports = {
     UserSettings,
     Licenses,
     MemoryPointer,
-    // Remove Settings from exports
-    // Settings,
     ActivityLog,
     NotificationQueue,
     PublicChat,
