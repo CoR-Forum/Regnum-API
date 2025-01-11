@@ -379,6 +379,40 @@ const commands = {
             handleError(message, error);
         }
     },
+    'cl': async (message) => {
+        try {
+            const messages = await PublicChat.find()
+                .sort({ timestamp: -1 })
+                .limit(10)
+                .populate('user_id', 'nickname');
+
+            if (!messages.length) return message.reply('No chat messages found.');
+
+            const fields = messages.map(chatMessage => ({
+                name: `Message ID: ${chatMessage._id}`,
+                value: `**User:** ${chatMessage.user_id.nickname}\n**Message:** ${chatMessage.message}\n**Timestamp:** ${chatMessage.timestamp.toISOString()}${chatMessage.deleted ? `\n**Status:** Deleted` : ''}`
+            }));
+
+            sendEmbed(message, createEmbed('Last 10 Chat Messages', '#0099ff', fields));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
+    'cd': async (message, [messageId]) => {
+        if (!messageId) return message.reply('Usage: !cd <message_id>');
+
+        try {
+            const chatMessage = await PublicChat.findById(messageId);
+            if (!chatMessage) return message.reply('Chat message not found.');
+
+            chatMessage.deleted = true;
+            await chatMessage.save();
+
+            sendEmbed(message, createEmbed('Chat Message Deleted', '#ff0000', [{ name: 'Message ID', value: messageId }]));
+        } catch (error) {
+            handleError(message, error);
+        }
+    },
     'help': (message) => {
         const environment = process.env.NODE_ENV === 'development' ? 'Development' : 'Production';
         const userCommands = [
@@ -402,6 +436,10 @@ const commands = {
             { name: `${prefix}pa <feature> <address> <offset1> <offset2> ...`, value: 'Add memory pointer.' },
             { name: `${prefix}pe <feature> <new_feature_name> <address> <offset1> <offset2> ...`, value: 'Edit memory pointer.' }
         ];
+        const chatCommands = [
+            { name: `${prefix}cl`, value: 'List last 10 chat messages.' },
+            { name: `${prefix}cd <message_id>`, value: 'Delete a chat message by ID.' }
+        ];
         const systemCommands = [
             { name: `${prefix}ss [new_status]`, value: 'Retrieve or update system status.' },
             { name: `${prefix}e <username> <subject> <text>`, value: 'Send email to user.' },
@@ -414,6 +452,7 @@ const commands = {
             { name: 'User Commands (use quotes for multi-word arguments)', value: userCommands.map(cmd => `**${cmd.name}**: ${cmd.value}`).join('\n') },
             { name: 'License Commands', value: licenseCommands.map(cmd => `**${cmd.name}**: ${cmd.value}`).join('\n') },
             { name: 'Memory Commands', value: memoryCommands.map(cmd => `**${cmd.name}**: ${cmd.value}`).join('\n') },
+            { name: 'Chat Commands', value: chatCommands.map(cmd => `**${cmd.name}**: ${cmd.value}`).join('\n') },
             { name: 'System Commands', value: systemCommands.map(cmd => `**${cmd.name}**: ${cmd.value}`).join('\n') }
         ];
 
