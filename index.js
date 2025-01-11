@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const helmet = require('helmet');
 const cors = require('cors');
 const axios = require('axios');
-const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const { logActivity, generateToken, convertDurationToMilliseconds } = require('./utils');
 const { validateToken } = require('./middleware');
@@ -13,9 +12,10 @@ const settingsRoutes = require('./router/settings');
 const bossSpawnsRoutes = require('./router/bossSpawns');
 const { router: statusRoutes, updateStats } = require('./router/status');
 const { validateUsername } = require('./validation');
-require('./discordBot');
 const { RateLimiter } = require('./modules/rateLimiter');
 const warstatusRoutes = require('./router/warstatus');
+
+require('./discordBot');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
