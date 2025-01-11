@@ -92,6 +92,7 @@ const ActivityLog = mongoose.model('ActivityLog', activityLogSchema);
 const publicChatSchema = new mongoose.Schema({
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     message: { type: String, required: true },
+    deleted: { type: Boolean, default: false },
     timestamp: { type: Date, default: Date.now }
 });
 

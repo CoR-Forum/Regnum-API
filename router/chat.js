@@ -42,7 +42,7 @@ router.post('/send', validateToken, RateLimiter(1, 2), async (req, res) => {
 
 router.get('/receive', async (req, res) => {
     try {
-        const messages = await PublicChat.find()
+        const messages = await PublicChat.find({ deleted: false }) // Exclude deleted messages
             .sort({ timestamp: -1 })
             .limit(500)
             .populate('user_id', 'nickname');
