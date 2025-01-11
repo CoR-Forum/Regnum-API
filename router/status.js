@@ -7,7 +7,6 @@ const {
     UserSettings,
     Licenses,
     MemoryPointer,
-    Settings,
     ActivityLog,
     NotificationQueue,
     PublicChat,
@@ -37,28 +36,30 @@ const updateStats = async () => {
         return;
     }
 
-    const dbStats = await mongoose.connection.db.stats();
+    let dbStats = {};
+    if (mongoose.connection.db) {
+        try {
+            dbStats = await mongoose.connection.db.stats();
+        } catch (err) {
+            console.error("Error fetching database stats:", err);
+        }
+    }
 
     const userCount = await User.countDocuments();
     const bannedUserCount = await BannedUser.countDocuments();
     const userSettingsCount = await UserSettings.countDocuments();
     const licensesCount = await Licenses.countDocuments();
     const memoryPointerCount = await MemoryPointer.countDocuments();
-    const settingsCount = await Settings.countDocuments();
     const activityLogCount = await ActivityLog.countDocuments();
     const notificationQueueCount = await NotificationQueue.countDocuments();
     const publicChatCount = await PublicChat.countDocuments();
     const tokenCount = await Token.countDocuments();
-    const apiVersion = await Settings.findOne({ name: 'api_version' });
-    const regnumstarterVersion = await Settings.findOne({ name: 'regnumstarter_version' });
 
     cachedStats = {
         status: "success",
         message: "API is running",
         api: {
             uptime: apiUptime / 1000,
-            version: apiVersion ? apiVersion.value : "0.0.0",
-            regnumstarterVersion: regnumstarterVersion ? regnumstarterVersion.value : "0.0.0"
         },
         system: {
             load: load,
@@ -83,7 +84,6 @@ const updateStats = async () => {
                 userSettingsCount: userSettingsCount,
                 licensesCount: licensesCount,
                 memoryPointerCount: memoryPointerCount,
-                settingsCount: settingsCount,
                 activityLogCount: activityLogCount,
                 notificationQueueCount: notificationQueueCount,
                 publicChatCount: publicChatCount,

@@ -6,7 +6,7 @@ const axios = require('axios');
 const crypto = require('crypto');
 const { logActivity, generateToken, convertDurationToMilliseconds } = require('./utils');
 const { validateToken } = require('./middleware');
-const { User, UserSettings, MemoryPointer, Settings, Licenses, Token, initializeDatabase } = require('./models');
+const { User, UserSettings, MemoryPointer, Licenses, Token, initializeDatabase } = require('./models');
 const chatRoutes = require('./router/chat');
 const settingsRoutes = require('./router/settings');
 const bossSpawnsRoutes = require('./router/bossSpawns');
@@ -127,12 +127,6 @@ app.post(`${BASE_PATH}/login`, RateLimiter(1, 3), async (req, res) => {
       }
     }
 
-    const settings = await Settings.find();
-    const settingsObject = {};
-    settings.forEach(setting => {
-      settingsObject[setting.name] = setting.value;
-    });
-
     const userSettings = await UserSettings.findOne({ user_id: user._id });
 
     const responsePayload = {
@@ -144,17 +138,9 @@ app.post(`${BASE_PATH}/login`, RateLimiter(1, 3), async (req, res) => {
         username: user.username,
         nickname: user.nickname,
         settings: userSettings && userSettings.settings ? userSettings.settings : '{"SoundVolume":0.5,"enableMusic":true,"enableSoundEffects":true,"excludeFromCapture":false,"regnumInstallPath":"","showIntro":true,"showLoadingScreen":true,"textColor":[1.0,1.0,1.0,1.0]}',
-        features: []
-      },
-      system: settingsObject
+        features: validFeatures
+      }
     };
-
-    if (settingsObject.status !== "detected") {
-      responsePayload.user.features = validFeatures.map(feature => ({
-        name: feature,
-        pointer: memoryPointers[feature] || null
-      }));
-    }
 
     res.json(responsePayload);
   } catch (error) {

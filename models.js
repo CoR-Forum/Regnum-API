@@ -1,12 +1,5 @@
 const mongoose = require('mongoose');
 
-const settingsSchema = new mongoose.Schema({
-    name: { type: String, enum: ['status', 'api_version', 'regnumstarter_version'], unique: true },
-    value: { type: String },
-});
-
-const Settings = mongoose.model('Settings', settingsSchema);
-
 const notificationQueueSchema = new mongoose.Schema({
     to_email: { type: String },
     subject: { type: String },
@@ -98,6 +91,17 @@ const publicChatSchema = new mongoose.Schema({
 
 const PublicChat = mongoose.model('PublicChat', publicChatSchema);
 
+const updateChatEntries = async () => {
+    try {
+        const res = await PublicChat.updateMany({ deleted: { $exists: false } }, { $set: { deleted: false } });
+        console.log(`Updated ${res.nModified} chat entries`);
+    } catch (err) {
+        console.error("Error updating chat entries:", err);
+    }
+};
+
+updateChatEntries();
+
 const warstatusHistorySchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now },
     world: { type: String },
@@ -118,19 +122,7 @@ const warstatusEventsSchema = new mongoose.Schema({
 const WarstatusEvents = mongoose.model('WarstatusEvents', warstatusEventsSchema);
 
 const initializeDatabase = async () => {
-    const defaultSettings = [
-        { name: 'status', value: 'online' },
-        { name: 'api_version', value: '0.0.0' },
-        { name: 'regnumstarter_version', value: '0.0.0' }
-    ];
-
-    for (const setting of defaultSettings) {
-        const existingSetting = await Settings.findOne({ name: setting.name });
-        if (!existingSetting) {
-            await new Settings(setting).save();
-        }
-    }
-    console.log("Default settings inserted or updated successfully.");
+    console.log("Database initialized successfully.");
 };
 
 const tokenSchema = new mongoose.Schema({
@@ -147,7 +139,8 @@ module.exports = {
     UserSettings,
     Licenses,
     MemoryPointer,
-    Settings,
+    // Remove Settings from exports
+    // Settings,
     ActivityLog,
     NotificationQueue,
     PublicChat,
