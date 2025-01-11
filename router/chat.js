@@ -44,7 +44,7 @@ router.get('/receive', async (req, res) => {
     try {
         const messages = await PublicChat.find({ deleted: false }) // Exclude deleted messages
             .sort({ timestamp: -1 })
-            .limit(500)
+            .limit(50)
             .populate('user_id', 'nickname');
 
         const formattedMessages = messages.map(({ _id, user_id, timestamp, message }) => ({
