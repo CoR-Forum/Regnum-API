@@ -93,7 +93,7 @@ const fetchWarStatus = async (world) => {
                     // Check for building changes
                     newStatus.buildings.forEach(async (building, index) => {
                         if (building.owner !== oldStatus.buildings[index].owner) {
-                            const event = `[${world}] ${building.owner} captured ${building.name} from ${oldStatus.buildings[index].owner}`;
+                            const event = `${world !== 'ra' ? `[${world}] ` : ''}${building.owner} captured ${building.name} from ${oldStatus.buildings[index].owner}`;
                             await new WarstatusEvents({
                                 timestamp: Date.now(),
                                 world,
@@ -109,7 +109,7 @@ const fetchWarStatus = async (world) => {
                     // Check for relic changes
                     newStatus.relics.forEach(async (relic, index) => {
                         if (relic !== oldStatus.relics[index]) {
-                            const event = `${realm} got relic`;
+                            const event = `${world !== 'ra' ? `[${world}] ` : ''}${realm} got relic`;
                             await new WarstatusEvents({
                                 timestamp: Date.now(),
                                 world,
@@ -124,7 +124,7 @@ const fetchWarStatus = async (world) => {
                     // Check for gem changes
                     newStatus.gems.forEach(async (gem, index) => {
                         if (gem !== oldStatus.gems[index]) {
-                            const event = `${realm} got gem`;
+                            const event = `${world !== 'ra' ? `[${world}] ` : ''}${realm} got gem`;
                             await new WarstatusEvents({
                                 timestamp: Date.now(),
                                 world,
