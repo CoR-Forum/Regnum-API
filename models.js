@@ -104,7 +104,7 @@ updateChatEntries();
 
 const warstatusHistorySchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now },
-    world: { type: String },
+    server: { type: String },
     data: { type: Object }
 });
 
@@ -112,7 +112,7 @@ const WarstatusHistory = mongoose.model('WarstatusHistory', warstatusHistorySche
 
 const warstatusEventsSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now },
-    world: { type: String },
+    server: { type: String },
     realm: { type: String },
     event: { type: String },
     action: { type: String },
