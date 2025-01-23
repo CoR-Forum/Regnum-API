@@ -29,7 +29,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.11.0",
     "mongoose": "^8.9.5",
-    "nodemailer": "^6.9.16",
+    "nodemailer": "^6.10.0",
     "passport-discord": "^0.1.4",
     "sanitize-html": "^2.13.1",
     "supertest": "^7.0.0",
