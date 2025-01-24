@@ -34,7 +34,7 @@ const getUserInfoFields = async (user) => {
     ];
 };
 
-const sendMessageToChannel = async (channelId, messageContent) => {
+const sendMessageToDiscordChannel = async (channelId, messageContent) => {
     if (!channelId) {
         console.error('Channel ID is not set.');
         return;
@@ -482,5 +482,5 @@ if (process.env.DISCORD_BOT === 'true') {
 
 module.exports = {
     sendWarstatusToDiscord,
-    sendMessageToChannel
+    sendMessageToDiscordChannel
 };
