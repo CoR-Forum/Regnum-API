@@ -91,17 +91,6 @@ const publicChatSchema = new mongoose.Schema({
 
 const PublicChat = mongoose.model('PublicChat', publicChatSchema);
 
-const updateChatEntries = async () => {
-    try {
-        const res = await PublicChat.updateMany({ deleted: { $exists: false } }, { $set: { deleted: false } });
-        console.log(`Updated ${res.nModified} chat entries`);
-    } catch (err) {
-        console.error("Error updating chat entries:", err);
-    }
-};
-
-updateChatEntries();
-
 const warstatusHistorySchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now },
     server: { type: String },
