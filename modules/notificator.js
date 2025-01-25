@@ -107,7 +107,7 @@ const queueNotification = async (to, subject, text, type) => {
     log(`NOTIFIER: queueNotification called with type: ${type}`);
     try {
         const notification = new NotificationQueue({
-            to_email: to,
+            to,
             subject,
             body: text,
             type
@@ -143,8 +143,8 @@ const processNotificationQueue = async () => {
 
             try {
                 if (job.type === 'email') {
-                    await sendEmail(job.to_email, job.subject, job.body);
-                    await notifyAdmins(`[Processed Notification ID: ${job._id} (E-Mail)] Email sent to: ${job.to_email}: ${job.subject}`);
+                    await sendEmail(job.to, job.subject, job.body);
+                    await notifyAdmins(`[Processed Notification ID: ${job._id} (E-Mail)] Email sent to: ${job.to}: ${job.subject}`);
                     job.status = 'completed';
                 } else if (job.type.startsWith('discord')) {
                     await sendDiscordNotification(job._id, job.body, job.created_at, job.type);
