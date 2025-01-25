@@ -161,6 +161,7 @@ const processNotificationQueue = async () => {
                 if (failureLogs >= MAX_FAILURES) {
                     log(`NOTIFIER: Job id: ${job._id} has failed multiple times and will not be processed again`);
                     await notifyAdmins(`Notification ID: ${job._id} has failed multiple times and will not be processed again`);
+                    job.status = 'failed_permanently';
                 } else {
                     job.status = 'retry';
                 }
