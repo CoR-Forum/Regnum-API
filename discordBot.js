@@ -34,6 +34,24 @@ const getUserInfoFields = async (user) => {
     ];
 };
 
+const sendMessageToChannel = async (channelId, messageContent) => {
+    if (!channelId) {
+        console.error('Channel ID is not set.');
+        return;
+    }
+
+    try {
+        const channel = await client.channels.fetch(channelId);
+        if (channel) {
+            await channel.send(messageContent);
+        } else {
+            console.error('Channel not found.');
+        }
+    } catch (error) {
+        console.error('Error sending message to Discord channel:', error);
+    }
+};
+
 const sendWarstatusToDiscord = async (messageContent) => {
     const channelId = process.env.DISCORD_CHANNEL_ID_WARSTATUS;
     if (!channelId) {
@@ -463,5 +481,6 @@ if (process.env.DISCORD_BOT === 'true') {
 }
 
 module.exports = {
-    sendWarstatusToDiscord
+    sendWarstatusToDiscord,
+    sendMessageToChannel
 };
