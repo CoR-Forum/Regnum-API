@@ -2,7 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { WarstatusHistory, WarstatusEvents } = require('../models');
-const { sendWarstatusToDiscord } = require('../discordBot');
+const { queueNotification } = require('../modules/notificator');
 const router = express.Router();    
 
 const assetMap = {
@@ -102,7 +102,7 @@ const fetchWarStatus = async (server) => {
                                 building: building.name
                             }).save();
                             if (server === 'ra') {
-                                sendWarstatusToDiscord(event);
+                                queueNotification(process.env.DISCORD_WARSTATUS_CHANNEL_ID, 'War Status Update', event, 'discord'); 
                             }
                         }
                     });
@@ -120,7 +120,7 @@ const fetchWarStatus = async (server) => {
                                 relic: true
                             }).save();
                             if (server === 'ra') {
-                                // sendWarstatusToDiscord(event);
+                                queueNotification(process.env.DISCORD_WARSTATUS_CHANNEL_ID, 'War Status Update', event, 'discord');
                             }
                         }
                     });
@@ -138,7 +138,7 @@ const fetchWarStatus = async (server) => {
                                 gem: gem
                             }).save();
                             if (server === 'ra') {
-                                // sendWarstatusToDiscord(event);
+                                queueNotification(process.env.DISCORD_WARSTATUS_CHANNEL_ID, 'War Status Update', event, 'discord');
                             }
                         }
                     });
