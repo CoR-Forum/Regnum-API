@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 
 const notificationQueueSchema = new mongoose.Schema({
     to: { type: String },
-    to_discordChannel: { type: String },
     subject: { type: String },
     body: { type: String },
     type: { type: String },
