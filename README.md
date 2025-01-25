@@ -145,3 +145,12 @@ Everything here is mandatory.
     nodemon index.js
     ```
 
+# Notes for Joshua
+
+```
+npm install lodash moment axios react vue angular chalk typescript eslint prettier webpack --save
+```
+
+```
+npm install eslint prettier husky commitlint cz-customizable --save-dev
+```
