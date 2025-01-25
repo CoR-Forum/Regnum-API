@@ -2,7 +2,7 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
 const { User, BannedUser, Licenses, MemoryPointer, Settings, UserSettings, ActivityLog, PublicChat } = require('./models');
 const { validateUsername, validateEmail, validateNickname } = require('./validation');
-const { queueNotification } = require('./modules/notificator');
+const { mail } = require('./modules/notificator');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 const prefix = process.env.NODE_ENV === 'development' ? '?' : '!';
@@ -32,24 +32,6 @@ const getUserInfoFields = async (user) => {
         { name: 'Ban Status', value: banStatus ? `Banned until ${banStatus.expires_at.toISOString()} for ${banStatus.reason}` : 'Not banned', inline: false },
         { name: 'Features', value: featureList, inline: false },
     ];
-};
-
-const sendMessageToDiscordChannel = async (channelId, messageContent) => {
-    if (!channelId) {
-        console.error('Channel ID is not set.');
-        return;
-    }
-
-    try {
-        const channel = await client.channels.fetch(channelId);
-        if (channel) {
-            await channel.send(messageContent);
-        } else {
-            console.error('Channel not found.');
-        }
-    } catch (error) {
-        console.error('Error sending message to Discord channel:', error);
-    }
 };
 
 const sendWarstatusToDiscord = async (messageContent) => {
@@ -340,7 +322,7 @@ const commands = {
         try {
             const user = await User.findOne({ username });
             if (!user) return message.reply('User not found.');
-            queueNotification(user.email, subject, text.join(' '), 'email');
+            mail(user.email, subject, text.join(' '));
             sendEmbed(message, createEmbed('Email to user ' + user.username + ' queued', '#00ff00'));
         } catch (error) {
             handleError(message, error);
@@ -351,7 +333,7 @@ const commands = {
         try {
             const users = await User.find();
             users.forEach(user => {
-                queueNotification(user.email, subject, text.join(' '), 'email');
+                mail(user.email, subject, text.join(' '));
             });
             sendEmbed(message, createEmbed('Email for users ' + users.map(user => user.username).join(', ') + ' queued', '#00ff00'));
         } catch (error) {
@@ -481,6 +463,5 @@ if (process.env.DISCORD_BOT === 'true') {
 }
 
 module.exports = {
-    sendWarstatusToDiscord,
-    sendMessageToDiscordChannel
+    sendWarstatusToDiscord
 };

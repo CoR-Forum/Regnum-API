@@ -21,9 +21,9 @@ const logActivity = async (userId, activityType, description, ipAddress) => {
             ip_address: ipAddress
         });
         await activityLog.save();
-        notifyAdmins(process.env.DISCORD_LOG_CHANNEL_ID, `📝 **${activityType}** by ${userIdentifier} (${ipAddress})\n${description}`);
+        notifyAdmins(`User activity: ${description}\nUser: ${userIdentifier}\n`, 'discord_log');
     } catch (error) {
-        console.error('Error logging activity:', error);
+        console.error("Error logging activity:", error);
     }
 };
 
