@@ -74,35 +74,6 @@ const limiter = new Bottleneck({
     minTime: 1000 // Minimum time between requests in milliseconds
 });
 
-const sendDiscordNotification = limiter.wrap(async (id, message, createdAt, type) => {
-    const webhookUrls = {
-        discord_login: DISCORD_LOGIN_WEBHOOK_URL,
-        discord_log: DISCORD_LOG_WEBHOOK_URL
-    };
-
-    const webhookUrl = webhookUrls[type];
-    if (!webhookUrl) {
-        log(`NOTIFIER: Unknown Discord notification type: ${type}`);
-        throw new Error(`Unknown Discord notification type: ${type}`);
-    }
-
-    log(`NOTIFIER: sendDiscordNotification called with webhookUrl: ${webhookUrl}`);
-    try {
-        const embed = {
-            title: `Notification ID: ${id}`,
-            description: message,
-            timestamp: createdAt,
-            color: 3447003
-        };
-
-        await axios.post(webhookUrl, { embeds: [embed] });
-        log('NOTIFIER: Discord notification sent');
-    } catch (error) {
-        log(`NOTIFIER: Error sending Discord notification: ${error.message}`, error);
-        throw new Error(`Failed to send Discord notification: ${error.message}`);
-    }
-});
-
 const queueNotification = async (to, subject, text, type) => {
     log(`NOTIFIER: queueNotification called with type: ${type}`);
     try {
@@ -146,8 +117,8 @@ const processNotificationQueue = async () => {
                     await sendEmail(job.to, job.subject, job.body);
                     await notifyAdmins(`[Processed Notification ID: ${job._id} (E-Mail)] Email sent to: ${job.to}: ${job.subject}`);
                     job.status = 'completed';
-                } else if (job.type.startsWith('discord')) {
-                    await sendDiscordNotification(job._id, job.body, job.created_at, job.type);
+                } else if (job.type === 'discord') {
+                    await queueNotification(job.to, null, job.body, job.type);
                     job.status = 'completed';
                 }
                 log(`NOTIFIER: Job id: ${job._id} completed`);
@@ -190,4 +161,4 @@ process.on('exit', clearIntervalAndLog);
 process.on('SIGINT', clearIntervalAndLog);
 process.on('SIGTERM', clearIntervalAndLog);
 
-module.exports = { mail, notifyAdmins };
+module.exports = { mail, notifyAdmins, queueNotification };

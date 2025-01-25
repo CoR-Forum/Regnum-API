@@ -2,7 +2,7 @@ require('dotenv').config();
 const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
 const { User, BannedUser, Licenses, MemoryPointer, Settings, UserSettings, ActivityLog, PublicChat } = require('./models');
 const { validateUsername, validateEmail, validateNickname } = require('./validation');
-const { mail } = require('./modules/notificator');
+const { queueNotification } = require('./modules/notificator');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 const prefix = process.env.NODE_ENV === 'development' ? '?' : '!';
@@ -340,7 +340,7 @@ const commands = {
         try {
             const user = await User.findOne({ username });
             if (!user) return message.reply('User not found.');
-            mail(user.email, subject, text.join(' '));
+            queueNotification(user.email, subject, text.join(' '), 'email');
             sendEmbed(message, createEmbed('Email to user ' + user.username + ' queued', '#00ff00'));
         } catch (error) {
             handleError(message, error);
@@ -351,7 +351,7 @@ const commands = {
         try {
             const users = await User.find();
             users.forEach(user => {
-                mail(user.email, subject, text.join(' '));
+                queueNotification(user.email, subject, text.join(' '), 'email');
             });
             sendEmbed(message, createEmbed('Email for users ' + users.map(user => user.username).join(', ') + ' queued', '#00ff00'));
         } catch (error) {
