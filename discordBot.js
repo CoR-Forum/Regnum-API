@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, EmbedBuilder, PermissionsBitField } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const { User, BannedUser, Licenses, MemoryPointer, Settings, UserSettings, ActivityLog, PublicChat } = require('./models');
 const { validateUsername, validateEmail, validateNickname } = require('./validation');
 const { mail } = require('./modules/notificator');
