@@ -8,6 +8,8 @@ API for the new [RegnumStarter v6](https://github.com/CoR-Forum/RegnumStarter)
 - ``/v1/warstatus`` - Regnum Warstatus
 - ``/v1/bosses/respawns`` - Boss Respawns
 
+There are way more API endpoints, but they are not documentated.
+
 ## Setup
 
 Everything here is mandatory.
