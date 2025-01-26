@@ -12,10 +12,7 @@ const {
     EMAIL_USER,
     EMAIL_PASS,
     EMAIL_NAME,
-    DISCORD_LOGIN_WEBHOOK_URL,
-    DISCORD_LOG_WEBHOOK_URL,
-    DISCORD_LOG_CHANNEL_ID,
-    DISCORD_LOGIN_CHANNEL_ID
+    DISCORD_LOG_CHANNEL_ID
 } = process.env;
 
 const transporter = nodemailer.createTransport({
