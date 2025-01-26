@@ -1,5 +1,4 @@
 const nodemailer = require('nodemailer');
-const axios = require('axios');
 const Bottleneck = require('bottleneck');
 const { NotificationQueue } = require('../models');
 const { sendMessageToDiscordChannel } = require('../discordBot');
@@ -27,11 +26,7 @@ const transporter = nodemailer.createTransport({
 
 const log = (message, error = null) => {
     const timestamp = new Date().toISOString();
-    if (error) {
-        console.error(`[${timestamp}] ${message}`, error);
-    } else {
-        console.log(`[${timestamp}] ${message}`);
-    }
+    console[error ? 'error' : 'log'](`[${timestamp}] ${message}`, error || '');
 };
 
 const addLogEntry = async (notificationId, type, message) => {
@@ -54,8 +49,7 @@ const addLogEntry = async (notificationId, type, message) => {
 
 const sendEmail = async (to, subject, text) => {
     log(`NOTIFIER: sendEmail called with to: ${to}, subject: ${subject}`);
-    const signature = "\n\nBest regards,\n" + EMAIL_NAME;
-    const emailBody = `${text}${signature}`;
+    const emailBody = `${text}\n\nBest regards,\n${EMAIL_NAME}`;
     try {
         const info = await transporter.sendMail({
             from: `"${EMAIL_NAME}" <${EMAIL_USER}>`,
@@ -70,19 +64,12 @@ const sendEmail = async (to, subject, text) => {
     }
 };
 
-const limiter = new Bottleneck({
-    minTime: 1000 // Minimum time between requests in milliseconds
-});
+const limiter = new Bottleneck({ minTime: 1000 });
 
 const queueNotification = async (to, subject, text, type) => {
     log(`NOTIFIER: queueNotification called with type: ${type}`);
     try {
-        const notification = new NotificationQueue({
-            to: to,
-            subject,
-            body: text,
-            type
-        });
+        const notification = new NotificationQueue({ to, subject, body: text, type });
         await notification.save();
         log(`NOTIFIER: ${type} notification queued successfully`);
     } catch (error) {
@@ -90,13 +77,9 @@ const queueNotification = async (to, subject, text, type) => {
     }
 };
 
-const mail = async (to, subject, text) => {
-    await queueNotification(to, subject, text, 'email');
-};
+const mail = async (to, subject, text) => queueNotification(to, subject, text, 'email');
 
-const notifyAdmins = async (message, type = 'discord') => {
-    await queueNotification(DISCORD_LOG_CHANNEL_ID, null, message, type);
-};
+const notifyAdmins = async (message, type = 'discord') => queueNotification(DISCORD_LOG_CHANNEL_ID, null, message, type);
 
 const processNotificationQueue = async () => {
     const MAX_FAILURES = 3;
@@ -114,13 +97,13 @@ const processNotificationQueue = async () => {
 
             try {
                 if (job.type === 'email') {
-                    await sendEmail(job.to_email, job.subject, job.body);
-                    await notifyAdmins(`[Processed Notification ID: ${job._id} (E-Mail)] Email sent to: ${job.to_email}: ${job.subject}`);
-                    job.status = 'completed';
+                    await sendEmail(job.to, job.subject, job.body);
+                    await notifyAdmins(`[Processed Notification ID: ${job._id} (E-Mail)] Email sent to: ${job.to}: ${job.subject}`);
                 } else if (job.type === 'discord') {
                     await sendMessageToDiscordChannel(job.to, job.body);
-                    job.status = 'completed';
+                    await notifyAdmins(`[Processed Notification ID: ${job._id} (Discord)] Message sent to channel: ${job.to}`);
                 }
+                job.status = 'completed';
                 log(`NOTIFIER: Job id: ${job._id} completed`);
                 await addLogEntry(job._id, 'info', 'Processing completed');
             } catch (error) {
@@ -146,9 +129,7 @@ const processNotificationQueue = async () => {
     }
 };
 
-const interval = setInterval(async () => {
-    await processNotificationQueue();
-}, 2000);
+const interval = setInterval(processNotificationQueue, 2000);
 
 const clearIntervalAndLog = async () => {
     if (interval) {
