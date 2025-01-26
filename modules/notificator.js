@@ -98,10 +98,8 @@ const processNotificationQueue = async () => {
             try {
                 if (job.type === 'email') {
                     await sendEmail(job.to, job.subject, job.body);
-                    await notifyAdmins(`[Processed Notification ID: ${job._id} (E-Mail)] Email sent to: ${job.to}: ${job.subject}`);
                 } else if (job.type === 'discord') {
                     await sendMessageToDiscordChannel(job.to, job.body);
-                    await notifyAdmins(`[Processed Notification ID: ${job._id} (Discord)] Message sent to channel: ${job.to}`);
                 }
                 job.status = 'completed';
                 log(`NOTIFIER: Job id: ${job._id} completed`);
