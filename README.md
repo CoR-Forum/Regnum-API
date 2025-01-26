@@ -95,11 +95,11 @@ Everything here is mandatory.
     MONGO_URI=mongodb://<mongodb_user>:<mongodb_password>@cax.treudler.net:27017/
 
     # Woltlab MySQL Configuration
-    MYSQL_HOST=cax.treudler.net
-    MYSQL_PORT=3307
+    MYSQL_HOST=<mysql_host>
+    MYSQL_PORT=<mysql_port>
     MYSQL_USER=<mysql_user>
     MYSQL_PASSWORD=<mysql_password>
-    MYSQL_DATABASE=corforum
+    MYSQL_DATABASE=<mysql_database>
 
     # Woltlab API Configuration
     WOLTLAB_API_URL=<woltlab_api_url>
