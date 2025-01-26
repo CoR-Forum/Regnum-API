@@ -152,9 +152,6 @@ const processNotificationQueue = async () => {
                 } else if (job.type === 'discord') {
                     await sendMessageToDiscordChannel(job.to, job.body);
                     job.status = 'completed';
-                } else if (job.type.startsWith('discord')) {
-                    await sendMessageToDiscordChannel(job.type === 'discord_login' ? DISCORD_LOGIN_CHANNEL_ID : DISCORD_LOG_CHANNEL_ID, job.body);
-                    job.status = 'completed';
                 }
                 log(`NOTIFIER: Job id: ${job._id} completed`);
                 await addLogEntry(job._id, 'info', 'Processing completed');
