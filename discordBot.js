@@ -34,25 +34,6 @@ const getUserInfoFields = async (user) => {
     ];
 };
 
-const sendWarstatusToDiscord = async (messageContent) => {
-    const channelId = process.env.DISCORD_CHANNEL_ID_WARSTATUS;
-    if (!channelId) {
-        console.error('DISCORD_CHANNEL_ID_WARSTATUS is not set in the environment variables.');
-        return;
-    }
-
-    try {
-        const channel = await client.channels.fetch(channelId);
-        if (channel) {
-            await channel.send(messageContent);
-        } else {
-            console.error('Channel not found.');
-        }
-    } catch (error) {
-        console.error('Error sending message to Discord channel:', error);
-    }
-};
-
 const sendMessageToDiscordChannel = async (channelId, messageContent) => {
     try {
         const channel = await client.channels.fetch(channelId);
@@ -476,6 +457,5 @@ if (process.env.DISCORD_BOT === 'true') {
 }
 
 module.exports = {
-    sendWarstatusToDiscord,
     sendMessageToDiscordChannel
 };

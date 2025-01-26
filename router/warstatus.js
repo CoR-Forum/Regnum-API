@@ -2,7 +2,6 @@ const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { WarstatusHistory, WarstatusEvents } = require('../models');
-const { sendWarstatusToDiscord } = require('../discordBot');
 const { queueNotification } = require('../modules/notificator');
 const router = express.Router();    
 
@@ -103,7 +102,6 @@ const fetchWarStatus = async (server) => {
                                 building: building.name
                             }).save();
                             if (server === 'ra') {
-                                sendWarstatusToDiscord(event);
                                 queueNotification(process.env.DISCORD_WARSTATUS_CHANNEL_ID, event, event, "discord");
                             }
                         }
@@ -160,8 +158,6 @@ if (process.env.NODE_ENV === 'production') {
     fetchWarStatus('ra');
     fetchWarStatus('amun');
 }
-
-queueNotification(process.env.DISCORD_WARSTATUS_CHANNEL_ID, "test", "event", "discord");
 
 // router to generate statistics about the war status from warstatusEventsSchema
 router.get('/warstatus/statistics', async (req, res) => {
