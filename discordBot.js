@@ -53,6 +53,19 @@ const sendWarstatusToDiscord = async (messageContent) => {
     }
 };
 
+const sendMessageToDiscordChannel = async (channelId, messageContent) => {
+    try {
+        const channel = await client.channels.fetch(channelId);
+        if (channel) {
+            await channel.send(messageContent);
+        } else {
+            console.error('Channel not found.');
+        }
+    } catch (error) {
+        console.error('Error sending message to Discord channel:', error);
+    }
+};
+
 const commands = {
     'u': async (message, [username]) => {
         if (!username) return message.reply('Usage: !u <username>');
@@ -463,5 +476,6 @@ if (process.env.DISCORD_BOT === 'true') {
 }
 
 module.exports = {
-    sendWarstatusToDiscord
+    sendWarstatusToDiscord,
+    sendMessageToDiscordChannel
 };

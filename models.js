@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const notificationQueueSchema = new mongoose.Schema({
     to_email: { type: String },
+    to: { type: String },
     subject: { type: String },
     body: { type: String },
     type: { type: String },

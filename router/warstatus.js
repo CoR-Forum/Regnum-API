@@ -3,6 +3,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const { WarstatusHistory, WarstatusEvents } = require('../models');
 const { sendWarstatusToDiscord } = require('../discordBot');
+const { queueNotification } = require('../modules/notificator');
 const router = express.Router();    
 
 const assetMap = {
@@ -103,6 +104,7 @@ const fetchWarStatus = async (server) => {
                             }).save();
                             if (server === 'ra') {
                                 sendWarstatusToDiscord(event);
+                                queueNotification(process.env.DISCORD_WARSTATUS_CHANNEL_ID, event, event, "discord");
                             }
                         }
                     });

@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 const axios = require('axios');
 const Bottleneck = require('bottleneck');
 const { NotificationQueue } = require('../models');
+const { sendMessageToDiscordChannel } = require('../discordBot');
 require('dotenv').config();
 
 const {
@@ -12,7 +13,10 @@ const {
     EMAIL_PASS,
     EMAIL_NAME,
     DISCORD_LOGIN_WEBHOOK_URL,
-    DISCORD_LOG_WEBHOOK_URL
+    DISCORD_LOG_WEBHOOK_URL,
+    DISCORD_LOG_CHANNEL_ID,
+    DISCORD_LOGIN_CHANNEL_ID,
+    DISCORD_WARSTATUS_CHANNEL_ID
 } = process.env;
 
 const transporter = nodemailer.createTransport({
@@ -107,7 +111,7 @@ const queueNotification = async (to, subject, text, type) => {
     log(`NOTIFIER: queueNotification called with type: ${type}`);
     try {
         const notification = new NotificationQueue({
-            to_email: to,
+            to: to,
             subject,
             body: text,
             type
@@ -146,8 +150,11 @@ const processNotificationQueue = async () => {
                     await sendEmail(job.to_email, job.subject, job.body);
                     await notifyAdmins(`[Processed Notification ID: ${job._id} (E-Mail)] Email sent to: ${job.to_email}: ${job.subject}`);
                     job.status = 'completed';
+                } else if (job.type === 'discord') {
+                    await sendMessageToDiscordChannel(DISCORD_LOG_CHANNEL_ID, job.body);
+                    job.status = 'completed';
                 } else if (job.type.startsWith('discord')) {
-                    await sendDiscordNotification(job._id, job.body, job.created_at, job.type);
+                    await sendMessageToDiscordChannel(job.type === 'discord_login' ? DISCORD_LOGIN_CHANNEL_ID : DISCORD_LOG_CHANNEL_ID, job.body);
                     job.status = 'completed';
                 }
                 log(`NOTIFIER: Job id: ${job._id} completed`);
@@ -186,6 +193,9 @@ const clearIntervalAndLog = async () => {
     }
     log('NOTIFIER: Database connection pool closed');
 };
+
+// queue a notification to be sent to the admins when the application is started
+notifyAdmins('Application started');
 
 process.on('exit', clearIntervalAndLog);
 process.on('SIGINT', clearIntervalAndLog);
