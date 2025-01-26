@@ -42,7 +42,7 @@ const initializeBossRespawns = () => {
 
 initializeBossRespawns();
 
-router.get('/bossRespawns', (req, res) => {
+router.get('/bosses/respawns', (req, res) => {
     const allRespawns = {};
     for (const boss in firstRespawns) {
         calculateNextRespawns(boss);

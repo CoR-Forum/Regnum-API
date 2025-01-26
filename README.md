@@ -6,6 +6,7 @@ API for the new [RegnumStarter v6](https://github.com/CoR-Forum/RegnumStarter)
 
 - ``/v1`` - System Status
 - ``/v1/warstatus`` - Regnum Warstatus
+- ``/v1/bosses/respawns`` - Boss Respawns
 
 ## Setup
 
