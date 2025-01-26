@@ -126,8 +126,8 @@ const mail = async (to, subject, text) => {
     await queueNotification(to, subject, text, 'email');
 };
 
-const notifyAdmins = async (message, type = 'discord_log') => {
-    await queueNotification(null, null, message, type);
+const notifyAdmins = async (message, type = 'discord') => {
+    await queueNotification(DISCORD_LOG_CHANNEL_ID, null, message, type);
 };
 
 const processNotificationQueue = async () => {
