@@ -202,7 +202,7 @@ router.get('/warstatus', async (req, res) => {
     try {
         const latestEntry = await WarstatusHistory.findOne({ server }).sort({ timestamp: -1 });
         if (latestEntry) {
-            return res.json({ lastUpdate: latestEntry.timestamp, warStatus: latestEntry.data });
+            return res.json({ lastUpdate: latestEntry.timestamp, warstatus: latestEntry.data });
         } else {
             res.status(500).json({ status: 'error', message: 'No data available' });
         }
