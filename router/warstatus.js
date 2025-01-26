@@ -161,6 +161,8 @@ if (process.env.NODE_ENV === 'production') {
     fetchWarStatus('amun');
 }
 
+queueNotification(process.env.DISCORD_WARSTATUS_CHANNEL_ID, "test", "event", "discord");
+
 // router to generate statistics about the war status from warstatusEventsSchema
 router.get('/warstatus/statistics', async (req, res) => {
     const server = req.query.server || 'ra';

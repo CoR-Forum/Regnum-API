@@ -150,7 +150,7 @@ const processNotificationQueue = async () => {
                     await notifyAdmins(`[Processed Notification ID: ${job._id} (E-Mail)] Email sent to: ${job.to_email}: ${job.subject}`);
                     job.status = 'completed';
                 } else if (job.type === 'discord') {
-                    await sendMessageToDiscordChannel(DISCORD_LOG_CHANNEL_ID, job.body);
+                    await sendMessageToDiscordChannel(to, job.body);
                     job.status = 'completed';
                 } else if (job.type.startsWith('discord')) {
                     await sendMessageToDiscordChannel(job.type === 'discord_login' ? DISCORD_LOGIN_CHANNEL_ID : DISCORD_LOG_CHANNEL_ID, job.body);
@@ -197,4 +197,4 @@ process.on('exit', clearIntervalAndLog);
 process.on('SIGINT', clearIntervalAndLog);
 process.on('SIGTERM', clearIntervalAndLog);
 
-module.exports = { mail, notifyAdmins };
+module.exports = { mail, notifyAdmins, queueNotification };
