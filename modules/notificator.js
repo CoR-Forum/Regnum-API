@@ -15,8 +15,7 @@ const {
     DISCORD_LOGIN_WEBHOOK_URL,
     DISCORD_LOG_WEBHOOK_URL,
     DISCORD_LOG_CHANNEL_ID,
-    DISCORD_LOGIN_CHANNEL_ID,
-    DISCORD_WARSTATUS_CHANNEL_ID
+    DISCORD_LOGIN_CHANNEL_ID
 } = process.env;
 
 const transporter = nodemailer.createTransport({
@@ -193,9 +192,6 @@ const clearIntervalAndLog = async () => {
     }
     log('NOTIFIER: Database connection pool closed');
 };
-
-// queue a notification to be sent to the admins when the application is started
-notifyAdmins('Application started');
 
 process.on('exit', clearIntervalAndLog);
 process.on('SIGINT', clearIntervalAndLog);
