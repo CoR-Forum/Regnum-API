@@ -31,7 +31,7 @@
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "moment": "^2.30.1",
-    "mongodb": "^6.11.0",
+    "mongodb": "^6.13.0",
     "mongoose": "^8.9.4",
     "nodemailer": "^6.9.16",
     "passport-discord": "^0.1.4",
