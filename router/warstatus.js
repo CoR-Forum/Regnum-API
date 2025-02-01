@@ -3,6 +3,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const { WarstatusHistory, WarstatusEvents } = require('../models');
 const { queueNotification } = require('../modules/notificator');
+const { validateServer } = require('../validation');
 const router = express.Router();    
 
 const assetMap = {
@@ -40,6 +41,9 @@ const normalizeBuildingName = (name) => {
 };
 
 const fetchWarStatus = async (server) => {
+    if (!validateServer(server)) {
+        throw new Error(`Invalid server: ${server}`);
+    }
     try {
         const { data } = await axios.get(`https://www.championsofregnum.com/index.php?l=1&sec=3&server=${server}`);
         const $ = cheerio.load(data);
@@ -162,6 +166,9 @@ if (process.env.NODE_ENV === 'production') {
 // router to generate statistics about the war status from warstatusEventsSchema
 router.get('/warstatus/statistics', async (req, res) => {
     const server = req.query.server || 'ra';
+    if (!validateServer(server)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid server' });
+    }
     try {
         const events = await WarstatusEvents.find({ server }).sort({ timestamp: -1 });
         const statistics = {
@@ -199,6 +206,9 @@ router.get('/warstatus/statistics', async (req, res) => {
 
 router.get('/warstatus', async (req, res) => {
     const server = req.query.server || 'ra';
+    if (!validateServer(server)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid server' });
+    }
     try {
         const latestEntry = await WarstatusHistory.findOne({ server }).sort({ timestamp: -1 });
         if (latestEntry) {
@@ -214,6 +224,9 @@ router.get('/warstatus', async (req, res) => {
 
 router.get('/warstatus/history', async (req, res) => {
     const server = req.query.server;
+    if (server && !validateServer(server)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid server' });
+    }
     const query = server ? { server } : {};
     const history = await WarstatusHistory.find(query).sort({ timestamp: -1 }).limit(50);
     res.json({ history });
@@ -222,6 +235,9 @@ router.get('/warstatus/history', async (req, res) => {
 // get last 50 events
 router.get('/warstatus/events', async (req, res) => {
     const server = req.query.server;
+    if (server && !validateServer(server)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid server' });
+    }
     const query = server ? { server } : {};
     const events = await WarstatusEvents.find(query).sort({ timestamp: -1 }).limit(50);
     res.json({ events });
