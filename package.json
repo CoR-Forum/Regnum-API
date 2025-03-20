@@ -35,7 +35,7 @@
     "nodemailer": "^6.10.0",
     "passport-discord": "^0.1.4",
     "react": "^19.0.0",
-    "sanitize-html": "^2.13.1",
+    "sanitize-html": "^2.15.0",
     "supertest": "^7.0.0",
     "typescript": "^5.8.2",
     "validator": "^13.12.0",
