@@ -8,6 +8,8 @@ const {
     Licenses,
     MemoryPointer,
     ActivityLog,
+    WarstatusEvents,
+    WarstatusHistory,
     NotificationQueue,
     PublicChat,
     Token
@@ -54,6 +56,8 @@ const updateStats = async () => {
     const notificationQueueCount = await NotificationQueue.countDocuments();
     const publicChatCount = await PublicChat.countDocuments();
     const tokenCount = await Token.countDocuments();
+    const warstatusHistoryCount = await WarstatusHistory.countDocuments();
+    const warstatusEventsCount = await WarstatusEvents.countDocuments();
 
     cachedStats = {
         status: "success",
@@ -87,7 +91,9 @@ const updateStats = async () => {
                 activityLogCount: activityLogCount,
                 notificationQueueCount: notificationQueueCount,
                 publicChatCount: publicChatCount,
-                tokenCount: tokenCount
+                tokenCount: tokenCount,
+                warstatusHistoryCount: warstatusHistoryCount,
+                warstatusEventsCount: warstatusEventsCount
             }
         },
         lastUpdate: new Date().toISOString()
