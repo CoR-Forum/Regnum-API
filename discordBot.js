@@ -3,6 +3,7 @@ const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 const { User, BannedUser, Licenses, MemoryPointer, Settings, UserSettings, ActivityLog, PublicChat } = require('./models');
 const { validateUsername, validateEmail, validateNickname } = require('./validation');
 const { mail } = require('./modules/notificator');
+const axios = require('axios'); // Ensure axios is imported
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
 const prefix = process.env.NODE_ENV === 'development' ? '?' : '!';
@@ -392,6 +393,31 @@ const commands = {
             sendEmbed(message, createEmbed('Chat Message Deleted', '#ff0000', [{ name: 'Message ID', value: messageId }]));
         } catch (error) {
             handleError(message, error);
+        }
+    },
+    'ws': async (message, [server = 'ra']) => {
+        if (!['ra', 'amun', 'other'].includes(server)) {
+            return message.reply('Invalid server. Valid options are: ra, amun, other.');
+        }
+
+        try {
+            const response = await axios.get(`${process.env.BASE_URL}${process.env.BASE_PATH}/warstatus/statistics?server=${server}`);
+            const { statistics } = response.data;
+
+            const fields = [
+                { name: 'Total Events', value: statistics.totalEvents.toString(), inline: true },
+                { name: 'Total Captures', value: statistics.captures.toString(), inline: true },
+                { name: 'Total Relics', value: statistics.relics.toString(), inline: true },
+                { name: 'Total Gems', value: statistics.gems.toString(), inline: true },
+                { name: 'Ignis Stats', value: `Captures: ${statistics.realms.ignis.captures}, Relics: ${statistics.realms.ignis.relics}, Gems: ${statistics.realms.ignis.gems}`, inline: false },
+                { name: 'Alsius Stats', value: `Captures: ${statistics.realms.alsius.captures}, Relics: ${statistics.realms.alsius.relics}, Gems: ${statistics.realms.alsius.gems}`, inline: false },
+                { name: 'Syrtis Stats', value: `Captures: ${statistics.realms.syrtis.captures}, Relics: ${statistics.realms.syrtis.relics}, Gems: ${statistics.realms.syrtis.gems}`, inline: false }
+            ];
+
+            sendEmbed(message, createEmbed(`Warstatus Statistics for ${server.toUpperCase()}`, '#0099ff', fields));
+        } catch (error) {
+            console.error('Error fetching warstatus statistics:', error);
+            message.reply('Failed to fetch warstatus statistics. Please try again later.');
         }
     },
     'help': (message) => {
