@@ -44,6 +44,14 @@ const validateNickname = (nickname) => {
     return { valid: true };
 };
 
+const validateServer = (server) => {
+    const validServers = ['ra', 'amun', 'other']; // Add valid server names here
+    if (!server || !validServers.includes(server)) {
+        return false;
+    }
+    return true;
+};
+
 const checkFieldExists = async (field, value) => {
     try {
         const user = await User.findOne({ [field]: value });
@@ -65,6 +73,7 @@ module.exports = {
     validatePassword,
     validateEmail,
     validateNickname,
+    validateServer,
     checkUsernameExists,
     checkEmailExists,
     checkNicknameExists
