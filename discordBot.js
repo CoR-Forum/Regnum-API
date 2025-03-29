@@ -450,6 +450,7 @@ const commands = {
         const systemCommands = [
             { name: `${prefix}e <username> <subject> <text>`, value: 'Send email to user.' },
             { name: `${prefix}ea <subject> <text>`, value: 'Send email to all users.' },
+            { name: `${prefix}ws <server>`, value: 'Get warstatus statistics for a specific server (ra, amun, other).' },
             { name: `${prefix}help / ${prefix}h`, value: 'Show this help message.' },
             { name: 'Environment', value: environment }
         ];
