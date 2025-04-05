@@ -4,6 +4,7 @@ const cheerio = require('cheerio');
 const { WarstatusHistory, WarstatusEvents } = require('../models');
 const { queueNotification } = require('../modules/notificator');
 const { validateServer } = require('../validation');
+const { RateLimiter } = require('../modules/rateLimiter');
 const router = express.Router();    
 
 const assetMap = {
@@ -164,7 +165,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // router to generate statistics about the war status from warstatusEventsSchema
-router.get('/warstatus/statistics', async (req, res) => {
+router.get('/warstatus/statistics', RateLimiter(1, 3), async (req, res) => {
     const server = req.query.server || 'ra';
     if (!validateServer(server)) {
         return res.status(400).json({ status: 'error', message: 'Invalid server' });
@@ -204,7 +205,7 @@ router.get('/warstatus/statistics', async (req, res) => {
     }
 });
 
-router.get('/warstatus', async (req, res) => {
+router.get('/warstatus', RateLimiter(1, 3), async (req, res) => {
     const server = req.query.server || 'ra';
     if (!validateServer(server)) {
         return res.status(400).json({ status: 'error', message: 'Invalid server' });
@@ -222,7 +223,7 @@ router.get('/warstatus', async (req, res) => {
     }
 });
 
-router.get('/warstatus/history', async (req, res) => {
+router.get('/warstatus/history', RateLimiter(1, 3), async (req, res) => {
     const server = req.query.server;
     if (server && !validateServer(server)) {
         return res.status(400).json({ status: 'error', message: 'Invalid server' });
@@ -233,7 +234,7 @@ router.get('/warstatus/history', async (req, res) => {
 });
 
 // get last 50 events
-router.get('/warstatus/events', async (req, res) => {
+router.get('/warstatus/events', RateLimiter(1, 3), async (req, res) => {
     const server = req.query.server;
     if (server && !validateServer(server)) {
         return res.status(400).json({ status: 'error', message: 'Invalid server' });
