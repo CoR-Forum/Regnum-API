@@ -149,7 +149,7 @@ app.post(`${BASE_PATH}/login`, RateLimiter(1, 3), async (req, res) => {
   }
 });
 
-app.post(`${BASE_PATH}/logout`, validateToken, async (req, res) => {
+app.post(`${BASE_PATH}/logout`, RateLimiter(1, 5), validateToken, async (req, res) => {
   try {
     await Token.deleteOne({ token: req.headers['authorization'] });
     res.json({ status: "success", message: "Logout successful" });
