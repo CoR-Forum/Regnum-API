@@ -2,10 +2,11 @@ const express = require('express');
 const { validateToken } = require('../middleware');
 const { UserSettings } = require('../models');
 const { logActivity } = require('../utils');
+const { RateLimiter } = require('../modules/rateLimiter');
 
 const router = express.Router();
 
-router.put('/save-settings', validateToken, async (req, res) => {
+router.put('/save-settings', RateLimiter(1, 3), validateToken, async (req, res) => {
   const { settings } = req.body;
   const userSettings = settings;
 
