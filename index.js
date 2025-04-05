@@ -158,7 +158,7 @@ app.post(`${BASE_PATH}/logout`, RateLimiter(1, 5), validateToken, async (req, re
   }
 });
 
-app.put(`${BASE_PATH}/license/activate`, validateToken, async (req, res) => {
+app.put(`${BASE_PATH}/license/activate`, RateLimiter(1, 10), validateToken, async (req, res) => {
   const { licenseKey } = req.body;
 
   if (!licenseKey) {
