@@ -43,7 +43,7 @@ const normalizeBuildingName = (name) => {
 
 const fetchWarStatus = async (server) => {
     if (!validateServer(server)) {
-        throw new Error(`Invalid server: ${server}`);
+        throw new Error(`Invalid server`);
     }
     try {
         const { data } = await axios.get(`https://www.championsofregnum.com/index.php?l=1&sec=3&server=${server}`);
