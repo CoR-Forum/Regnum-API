@@ -200,7 +200,7 @@ router.get('/warstatus/statistics', RateLimiter(1, 3), async (req, res) => {
 
         res.json({ status: 'success', statistics });
     } catch (error) {
-        console.error(`Error fetching war status statistics for server ${server}:`, error);
+        console.error('Error fetching war status statistics for server %s:', server, error);
         res.status(500).json({ status: 'error', message: 'Internal server error' });
     }
 });
