@@ -417,7 +417,7 @@ const commands = {
             sendEmbed(message, createEmbed(`Warstatus Statistics for ${server.toUpperCase()}`, '#0099ff', fields));
         } catch (error) {
             console.error('Error fetching warstatus statistics:', error);
-            message.reply('Failed to fetch warstatus statistics. Please try again later.');
+            message.reply('Failed to fetch warstatus statistics: ' + error.message);
         }
     },
     'help': (message) => {
