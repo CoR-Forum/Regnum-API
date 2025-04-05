@@ -17,7 +17,7 @@ const messageSchema = Joi.object({
     message: Joi.string().min(1).max(500).required()
 });
 
-router.post('/send', validateToken, RateLimiter(1, 2), async (req, res) => {
+router.post('/send', RateLimiter(1, 2), validateToken, async (req, res) => {
     const { error } = messageSchema.validate(req.body);
     if (error) {
         return res.status(400).json({ status: "error", message: "Invalid message" });
