@@ -20,6 +20,8 @@ Everything here is mandatory.
 
     ```php
     <?php
+    // Built for WCF 5.3.0
+
     // Include necessary WCF files
     require_once __DIR__ . '/global.php'; // Adjust the path to your global.php
 
