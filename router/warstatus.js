@@ -239,7 +239,7 @@ router.get('/warstatus/events', RateLimiter(1, 3), async (req, res) => {
     if (server && !validateServer(server)) {
         return res.status(400).json({ status: 'error', message: 'Invalid server' });
     }
-    const query = server ? { server } : {};
+    const query = server ? { server: { $eq: server } } : {};
     const events = await WarstatusEvents.find(query).sort({ timestamp: -1 }).limit(50);
     res.json({ events });
 });
