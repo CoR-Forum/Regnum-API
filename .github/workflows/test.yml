@@ -1,9 +1,12 @@
-
 name: Node.js CI
 
 on:
   pull_request:
     branches: [ main ]
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   build:
