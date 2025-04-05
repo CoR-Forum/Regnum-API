@@ -151,7 +151,7 @@ const fetchWarStatus = async (server) => {
             }
         }
     } catch (error) {
-        console.error(`Error fetching war status data for server=${server}:`, error);
+        console.error(`Error fetching war status data for server ${server}:`, error);
     }
 };
 
