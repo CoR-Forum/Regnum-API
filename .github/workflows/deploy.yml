@@ -5,51 +5,79 @@ on:
 
 permissions:
   contents: read
-  issues: write
-  pull-requests: write
+  # Permissions below are not strictly needed for this workflow
+  # issues: write
+  # pull-requests: write
 
 jobs:
-  build:
+  build-and-deploy: #
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install dependencies for g++ and make
+    - name: Install build dependencies
       run: sudo apt-get update && sudo apt-get install -y make g++
 
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '22'
+        cache: 'npm' # Add npm caching
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci # Use npm ci for faster, reliable installs in CI
 
-    - name: Add server to known hosts
-      run: |
-        mkdir -p ~/.ssh
-        ssh-keyscan -p ${{ vars.SERVER_PORT }} ${{ vars.SERVER_HOST }} >> ~/.ssh/known_hosts
+    - name: Load SSH Key and Add Known Host
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    - name: Add server to known hosts # Needs to run after ssh-agent setup
+      run: ssh-keyscan -p ${{ vars.SERVER_PORT }} ${{ vars.SERVER_HOST }} >> ~/.ssh/known_hosts
 
-    - name: Deploy to Server
-      env:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+    - name: Deploy files via rsync
       run: |
-        echo "$SSH_PRIVATE_KEY" > private_key
-        chmod 600 private_key
-        rsync -avz -e "ssh -i private_key -p ${{ vars.SERVER_PORT }}" --exclude='.git' --exclude='node_modules' ./ ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }}:${{ vars.DEPLOY_PATH }}
-        
+        rsync -avz -e "ssh -p ${{ vars.SERVER_PORT }}" --exclude='.git' --exclude='node_modules' ./ ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }}:${{ vars.DEPLOY_PATH }}
+
+    - name: Run deployment commands on server
+      run: |
         RETRY_COUNT=0
         MAX_RETRIES=5
         SLEEP_TIME=5
+        COMMAND_SUCCESSFUL=false
 
-        until ssh -i private_key -p ${{ vars.SERVER_PORT }} ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }} "curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs && sudo npm install -g pm2 && pm2 update && cd ${{ vars.DEPLOY_PATH }} && npm install && pm2 restart regnumstarter-api || pm2 start index.js --name regnumstarter-api --update-env --watch"; do
-          RETRY_COUNT=$((RETRY_COUNT+1))
-          if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
-            echo "Max retries reached. Exiting."
-            exit 1
+        # Define the command to run on the server
+        SSH_COMMAND="ssh -p ${{ vars.SERVER_PORT }} ${{ vars.SERVER_USER }}@${{ vars.SERVER_HOST }}"
+        DEPLOY_SCRIPT="
+        set -e # Exit immediately if a command exits with a non-zero status.
+        echo 'Updating Node.js and PM2...'
+        curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+        sudo apt-get update && sudo apt-get install -y nodejs
+        sudo npm install -g pm2
+        pm2 update # Updates PM2 daemon if needed
+
+        echo 'Setting up application...'
+        cd ${{ vars.DEPLOY_PATH }}
+        npm install --production # Install only production dependencies
+
+        echo 'Restarting/Starting application with PM2...'
+        pm2 restart regnumstarter-api --update-env || pm2 start index.js --name regnumstarter-api --watch --update-env
+        echo 'Deployment script finished successfully.'
+        "
+
+        # Retry loop
+        until $COMMAND_SUCCESSFUL; do
+          if $SSH_COMMAND "$DEPLOY_SCRIPT"; then
+            echo "Server commands executed successfully."
+            COMMAND_SUCCESSFUL=true
+          else
+            RETRY_COUNT=$((RETRY_COUNT+1))
+            if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+              echo "Max retries reached. Deployment failed." >&2
+              exit 1
+            fi
+            echo "Command failed. Retrying in $SLEEP_TIME seconds... (Attempt $RETRY_COUNT/$MAX_RETRIES)" >&2
+            sleep $SLEEP_TIME
           fi
-          echo "Command failed. Retrying in $SLEEP_TIME seconds..."
-          sleep $SLEEP_TIME
         done
