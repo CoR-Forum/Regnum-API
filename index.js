@@ -208,6 +208,10 @@ app.get(`${BASE_PATH}/reset-password`, (req, res) => {
   res.redirect(302, 'https://cor-forum.de/board/lost-password/');
 });
 
+// redirect / to /v1
+app.get('/', (req, res) => {
+  res.redirect(302, BASE_PATH);
+});
 
 const server = app.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}` + BASE_PATH);
