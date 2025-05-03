@@ -1,6 +1,9 @@
 # Use an official Node.js runtime as a parent image
 FROM node:23-slim
 
+# Install nodemon
+RUN npm install -g nodemon
+
 # Set the working directory in the container
 WORKDIR /app
 
@@ -14,4 +17,4 @@ RUN rm -rf node_modules package-lock.json
 RUN npm install --verbose
 
 # Start the client (Vite development server)
-CMD ["nodemon", "index.js"]
+CMD ["npm", "run", "dev"]
