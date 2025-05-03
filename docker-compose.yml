@@ -1,0 +1,14 @@
+services:
+  api:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./.env:/app/.env
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
