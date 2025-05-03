@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "start:bot": "node bot.js"
+    "start:bot": "node bot.js",
+    "dev": "nodemon index.ts"
   },
   "keywords": [],
   "author": "",
