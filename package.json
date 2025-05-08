@@ -45,7 +45,7 @@
     "xss": "^1.0.15"
   },
   "devDependencies": {
-    "commitlint": "^19.8.0",
+    "commitlint": "^19.8.1",
     "cz-customizable": "^7.4.0",
     "eslint": "^9.25.1",
     "husky": "^9.1.7",
