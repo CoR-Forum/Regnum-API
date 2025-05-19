@@ -34,12 +34,22 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # Build and push Docker images
-      - name: Build and Push Docker Image
+      # Build and push Docker images for amd64
+      - name: Build and Push Docker Image for amd64
         uses: docker/build-push-action@v4
         with:
           context: .
           file: Dockerfile
           platforms: linux/amd64
+          push: true
+          tags: ghcr.io/cor-forum/regnum-api:latest
+
+      # Build and push Docker images for arm64
+      - name: Build and Push Docker Image for arm64
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/arm64
           push: true
           tags: ghcr.io/cor-forum/regnum-api:latest
