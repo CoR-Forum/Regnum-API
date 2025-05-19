@@ -178,14 +178,7 @@ networks:
 4. Manage the docker compose stack:
 
 ```
-#Start
-docker compose up -d
-
-#Stop
-docker compose down
-
-#Pull latest images
-docker compose pull
+docker compose help
 ```
 
 ## Option 2: Bare Metal Node Setup
