@@ -49,30 +49,61 @@ networks:
     driver: bridge
 ```
 
-2. Create ``.env`` as given below at Option 2.
+2. Create ``.env`` file:
 
-3. Manage the docker compose stack:
+```env
+    # MongoDB Configuration
+    MONGO_URI=mongodb://<mongodb_user>:<mongodb_password>@mongodb:27017/
 
-```
-# Start
-docker compose up -d
+    # Woltlab MySQL Configuration
+    MYSQL_HOST=<mysql_host>
+    MYSQL_PORT=<mysql_port>
+    MYSQL_USER=<mysql_user>
+    MYSQL_PASSWORD=<mysql_password>
+    MYSQL_DATABASE=<mysql_database>
 
-# Stop
-docker compose down
+    # Woltlab API Configuration
+    WOLTLAB_API_URL=<woltlab_api_url>
+    WOLTLAB_API_KEY=<woltlab_api_key>
 
-# Pull latest images
-docker compose pull
-```
+    # Application Configuration
+    NODE_ENV=development
+    PORT=3000
+    BASE_PATH=/v1
+    BASE_URL=http://localhost:3333
 
-## Option 2: Bare Metal Node Setup
+    # Email Configuration
+    EMAIL_HOST=mail.treudler.net
+    EMAIL_NAME=CoR-Forum Support
+    EMAIL_PASS=<email_password>
+    EMAIL_PORT=587
+    EMAIL_SURE=true
+    EMAIL_USER=system@treudler.net
 
-Everything here is mandatory.
+    # Discord Bot Configuration
+    DISCORD_BOT=true
+    DISCORD_BOT_TOKEN=<discord_bot_token>
+    # the following tokens belong to joshua and manu
+    DISCORD_ADMINS=188703762167234561,197880680619835392
+    DISCORD_CHANNEL_ID_WARSTATUS=<discord_channel_id>
 
-1. Host with Node 22.11+
-2. Woltlab Burning Board 5.3 with this API file (make sure to fill ``API_KEY``)
+    # Discord Channels
+    DISCORD_LOG_CHANNEL_ID=<id>
+    DISCORD_LOGIN_CHANNEL_ID=<id>
+    DISCORD_WARSTATUS_CHANNEL_ID=<id>
+
+    # Discord oAuth Configuration
+    DISCORD_CLIENT_ID=<discord_client_id>
+    DISCORD_CLIENT_SECRET=<discord_client_secret>
+
+    # JWT Configuration
+    JWT_SECRET=<jwt_secret>
+    ```
+
+3. Add this API file to your Woltlab Burning Board 5.3 installation (make sure to fill ``API_KEY``)
 
 
-    ```php
+```php
     <?php
     // Built for WCF 5.3.0
 
@@ -144,64 +175,32 @@ Everything here is mandatory.
     }
     ```
 
+4. Manage the docker compose stack:
 
-3. ``.env`` file in the project directory
-    ```
-    # MongoDB Configuration
-    MONGO_URI=mongodb://<mongodb_user>:<mongodb_password>@cax.treudler.net:27017/
+```
+# Start
+docker compose up -d
 
-    # Woltlab MySQL Configuration
-    MYSQL_HOST=<mysql_host>
-    MYSQL_PORT=<mysql_port>
-    MYSQL_USER=<mysql_user>
-    MYSQL_PASSWORD=<mysql_password>
-    MYSQL_DATABASE=<mysql_database>
+# Stop
+docker compose down
 
-    # Woltlab API Configuration
-    WOLTLAB_API_URL=<woltlab_api_url>
-    WOLTLAB_API_KEY=<woltlab_api_key>
+# Pull latest images
+docker compose pull
+```
 
-    # Application Configuration
-    NODE_ENV=development
-    PORT=3000
-    BASE_PATH=/v1
-    BASE_URL=http://localhost:3000
+## Option 2: Bare Metal Node Setup
 
-    # Email Configuration
-    EMAIL_HOST=mail.treudler.net
-    EMAIL_NAME=CoR-Forum Support (DEV)
-    EMAIL_PASS=<email_password>
-    EMAIL_PORT=587
-    EMAIL_SURE=true
-    EMAIL_USER=system@treudler.net
+Everything
 
-    # Discord Bot Configuration
-    DISCORD_BOT=true
-    DISCORD_BOT_TOKEN=<discord_bot_token>
-    # the following tokens belong to joshua and manu
-    DISCORD_ADMINS=188703762167234561,197880680619835392
-    DISCORD_CHANNEL_ID_WARSTATUS=<discord_channel_id>
-
-    # Discord Channels
-    DISCORD_LOG_CHANNEL_ID=<id>
-    DISCORD_LOGIN_CHANNEL_ID=<id>
-    DISCORD_WARSTATUS_CHANNEL_ID=<id>
-
-    # Discord oAuth Configuration
-    DISCORD_CLIENT_ID=<discord_client_id>
-    DISCORD_CLIENT_SECRET=<discord_client_secret>
-
-    # JWT Configuration
-    JWT_SECRET=<jwt_secret>
-    ```
-
-
-5. Install node packages
+1. Host with Node 22.11+
+2. Clone the repository.
+3. Create .env file and WoltLab API file as given for Docker setup.
+4. Install node packages
     ```sh
     npm install
     ```
 
-6. Run the API
+5. Run the API
     ```
     nodemon index.js
     ```
