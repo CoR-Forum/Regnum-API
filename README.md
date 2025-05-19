@@ -10,7 +10,61 @@ API for the new [RegnumStarter v6](https://github.com/CoR-Forum/RegnumStarter)
 
 There are way more API endpoints, but they are not documentated.
 
-## Setup
+# Getting started
+
+## Option 1: Docker Quickstart
+
+1. Create ``docker-compose.yml``:
+
+```docker
+services:
+  regnum-api:
+    image: ghcr.io/cor-forum/regnum-api:latest
+    ports:
+      - "3333:3333"
+    volumes:
+      - ./.env:/app/.env
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+    networks:
+      - backend-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=changeme
+      - MONGO_INITDB_DATABASE=admin
+    volumes:
+      - ./mongodb:/data/db
+    networks:
+      - backend-network
+
+networks:
+  backend-network:
+    name: ${COMPOSE_PROJECT_NAME}_backend-network
+    driver: bridge
+```
+
+2. Create ``.env`` as given below at Option 2.
+
+3. Manage the docker compose stack:
+
+```
+# Start
+docker compose up -d
+
+# Stop
+docker compose down
+
+# Pull latest images
+docker compose pull
+```
+
+## Option 2: Bare Metal Node Setup
 
 Everything here is mandatory.
 
