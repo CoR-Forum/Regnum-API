@@ -178,13 +178,13 @@ networks:
 4. Manage the docker compose stack:
 
 ```
-# Start
+#Start
 docker compose up -d
 
-# Stop
+#Stop
 docker compose down
 
-# Pull latest images
+#Pull latest images
 docker compose pull
 ```
 
