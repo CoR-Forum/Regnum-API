@@ -98,7 +98,7 @@ networks:
 
     # JWT Configuration
     JWT_SECRET=<jwt_secret>
-    ```
+```
 
 3. Add this API file to your Woltlab Burning Board 5.3 installation (make sure to fill ``API_KEY``)
 
@@ -173,12 +173,22 @@ networks:
             echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         }
     }
-    ```
+```
 
 4. Manage the docker compose stack:
 
 ```
-docker compose help
+# start
+docker compose up
+
+# start detached
+docker compose up -d
+
+# stop
+docker compose down
+
+# pull latest images
+docker compose pull
 ```
 
 ## Option 2: Bare Metal Node Setup
