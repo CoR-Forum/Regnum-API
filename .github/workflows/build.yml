@@ -3,13 +3,13 @@ name: Build and Push Docker Images for Regnum-API
 on:
   push:
     branches:
-      - none
+      - main
   workflow_dispatch:
 
 jobs:
   build-and-push:
     name: Build and Push Docker Images
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       # Checkout the repository
