@@ -22,7 +22,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.ACTIONS_GITHUB_TOKEN }}
 
       # Set up QEMU for multi-architecture builds
       - name: Set up QEMU
