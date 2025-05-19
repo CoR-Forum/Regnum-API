@@ -42,4 +42,4 @@ jobs:
           file: Dockerfile
           platforms: linux/amd64
           push: true
-          tags: ghcr.io/CoR-Forum/Regnum-API:latest
+          tags: ghcr.io/cor-forum/regnum-api:latest
